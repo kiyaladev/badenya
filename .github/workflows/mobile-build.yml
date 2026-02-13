@@ -1,0 +1,370 @@
+name: Build Mobile App
+
+on:
+  # Trigger on version tags
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'mobile-v*.*.*'
+  
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+      submit:
+        description: 'Submit to stores after build'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  # Build Android App
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    if: |
+      (github.event.inputs.platform == 'android' || 
+       github.event.inputs.platform == 'all' ||
+       startsWith(github.ref, 'refs/tags/'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+      
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Install dependencies
+        working-directory: ./mobile
+        run: npm ci
+      
+      - name: Determine build profile
+        id: profile
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+          else
+            echo "profile=${{ github.event.inputs.profile || 'preview' }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build Android App
+        working-directory: ./mobile
+        run: |
+          eas build --platform android \
+            --profile ${{ steps.profile.outputs.profile }} \
+            --non-interactive \
+            --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Get build ID
+        id: build
+        working-directory: ./mobile
+        run: |
+          BUILD_ID=$(eas build:list --platform android --limit 1 --json --non-interactive | jq -r '.[0].id')
+          echo "id=$BUILD_ID" >> $GITHUB_OUTPUT
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Wait for build to complete
+        working-directory: ./mobile
+        run: |
+          echo "Waiting for build ${{ steps.build.outputs.id }} to complete..."
+          eas build:view ${{ steps.build.outputs.id }} --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Submit to Google Play (Internal Testing)
+        if: |
+          (github.event.inputs.submit == 'true' || 
+           (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) &&
+          steps.profile.outputs.profile == 'production'
+        working-directory: ./mobile
+        run: |
+          eas submit --platform android \
+            --id ${{ steps.build.outputs.id }} \
+            --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Download APK/AAB
+        if: steps.profile.outputs.profile == 'preview'
+        working-directory: ./mobile
+        run: |
+          eas build:download --id ${{ steps.build.outputs.id }} --output ./builds/
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Upload build artifact
+        if: steps.profile.outputs.profile == 'preview'
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-build-${{ steps.profile.outputs.profile }}
+          path: mobile/builds/*
+          retention-days: 30
+      
+      - name: Notify success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "✅ Android build completed successfully",
+              attachments: [{
+                color: 'good',
+                fields: [
+                  {
+                    title: 'Profile',
+                    value: '${{ steps.profile.outputs.profile }}',
+                    short: true
+                  },
+                  {
+                    title: 'Build ID',
+                    value: '${{ steps.build.outputs.id }}',
+                    short: true
+                  },
+                  {
+                    title: 'Commit',
+                    value: '${{ github.sha }}',
+                    short: false
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Notify failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "❌ Android build failed",
+              attachments: [{
+                color: 'danger',
+                text: 'Build ID: ${{ steps.build.outputs.id }}'
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Build iOS App
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    if: |
+      (github.event.inputs.platform == 'ios' || 
+       github.event.inputs.platform == 'all' ||
+       startsWith(github.ref, 'refs/tags/'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+      
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Install dependencies
+        working-directory: ./mobile
+        run: npm ci
+      
+      - name: Determine build profile
+        id: profile
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "profile=production" >> $GITHUB_OUTPUT
+          else
+            echo "profile=${{ github.event.inputs.profile || 'preview' }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build iOS App
+        working-directory: ./mobile
+        run: |
+          eas build --platform ios \
+            --profile ${{ steps.profile.outputs.profile }} \
+            --non-interactive \
+            --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Get build ID
+        id: build
+        working-directory: ./mobile
+        run: |
+          BUILD_ID=$(eas build:list --platform ios --limit 1 --json --non-interactive | jq -r '.[0].id')
+          echo "id=$BUILD_ID" >> $GITHUB_OUTPUT
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Wait for build to complete
+        working-directory: ./mobile
+        run: |
+          echo "Waiting for build ${{ steps.build.outputs.id }} to complete..."
+          eas build:view ${{ steps.build.outputs.id }} --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Submit to TestFlight
+        if: |
+          (github.event.inputs.submit == 'true' || 
+           (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) &&
+          steps.profile.outputs.profile == 'production'
+        working-directory: ./mobile
+        run: |
+          eas submit --platform ios \
+            --id ${{ steps.build.outputs.id }} \
+            --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Download IPA
+        if: steps.profile.outputs.profile == 'preview'
+        working-directory: ./mobile
+        run: |
+          eas build:download --id ${{ steps.build.outputs.id }} --output ./builds/
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Upload build artifact
+        if: steps.profile.outputs.profile == 'preview'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-build-${{ steps.profile.outputs.profile }}
+          path: mobile/builds/*
+          retention-days: 30
+      
+      - name: Notify success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "✅ iOS build completed successfully",
+              attachments: [{
+                color: 'good',
+                fields: [
+                  {
+                    title: 'Profile',
+                    value: '${{ steps.profile.outputs.profile }}',
+                    short: true
+                  },
+                  {
+                    title: 'Build ID',
+                    value: '${{ steps.build.outputs.id }}',
+                    short: true
+                  },
+                  {
+                    title: 'Commit',
+                    value: '${{ github.sha }}',
+                    short: false
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Notify failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "❌ iOS build failed",
+              attachments: [{
+                color: 'danger',
+                text: 'Build ID: ${{ steps.build.outputs.id }}'
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Summary notification
+  build-summary:
+    name: Build Summary
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Check build results
+        run: |
+          echo "Android: ${{ needs.build-android.result }}"
+          echo "iOS: ${{ needs.build-ios.result }}"
+      
+      - name: Final notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "📱 Mobile build workflow completed",
+              attachments: [{
+                color: '${{ (needs.build-android.result == 'success' && needs.build-ios.result == 'success') && 'good' || 'warning' }}',
+                fields: [
+                  {
+                    title: 'Android',
+                    value: '${{ needs.build-android.result }}',
+                    short: true
+                  },
+                  {
+                    title: 'iOS',
+                    value: '${{ needs.build-ios.result }}',
+                    short: true
+                  },
+                  {
+                    title: 'Triggered by',
+                    value: '${{ github.actor }}',
+                    short: true
+                  },
+                  {
+                    title: 'Event',
+                    value: '${{ github.event_name }}',
+                    short: true
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

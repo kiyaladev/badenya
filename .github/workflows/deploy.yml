@@ -1,0 +1,371 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      component:
+        description: 'Component to deploy (backend, admin, landing, all)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - backend
+          - admin
+          - landing
+
+jobs:
+  # Run tests before deployment
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: ./backend
+        run: npm test
+      
+      - name: Build
+        working-directory: ./backend
+        run: npm run build
+
+  # Deploy backend to production server
+  deploy-backend:
+    name: Deploy Backend
+    needs: test-backend
+    runs-on: ubuntu-latest
+    # Add manual approval for production deployments
+    environment:
+      name: production
+      url: ${{ secrets.API_URL }}
+    if: |
+      github.ref == 'refs/heads/main' && 
+      (github.event.inputs.component == 'backend' || 
+       github.event.inputs.component == 'all' || 
+       github.event_name == 'push')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd /var/www/bade
+            git pull origin main
+            cd backend
+            npm ci --production
+            npm run build
+            pm2 restart badenya-api || pm2 start ecosystem.config.js
+            pm2 save
+      
+      - name: Verify Deployment
+        run: |
+          sleep 10
+          curl -f ${{ secrets.API_URL }}/health || exit 1
+      
+      - name: Notify Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "✅ Backend deployed successfully to production",
+              attachments: [{
+                color: 'good',
+                text: `Commit: ${{ github.sha }}\nAuthor: ${{ github.actor }}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Notify Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "❌ Backend deployment failed",
+              attachments: [{
+                color: 'danger',
+                text: `Commit: ${{ github.sha }}\nAuthor: ${{ github.actor }}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Build and test admin panel
+  test-admin:
+    name: Test Admin Panel
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./admin
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: ./admin
+        run: npm test
+      
+      - name: Build
+        working-directory: ./admin
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+
+  # Deploy admin panel to Vercel
+  deploy-admin:
+    name: Deploy Admin Panel
+    needs: test-admin
+    runs-on: ubuntu-latest
+    # Add manual approval for production deployments
+    environment:
+      name: production-admin
+      url: ${{ secrets.ADMIN_URL }}
+    if: |
+      github.ref == 'refs/heads/main' && 
+      (github.event.inputs.component == 'admin' || 
+       github.event.inputs.component == 'all' || 
+       github.event_name == 'push')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      
+      - name: Pull Vercel Environment
+        working-directory: ./admin
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+      
+      - name: Build Project
+        working-directory: ./admin
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+      
+      - name: Deploy to Vercel
+        working-directory: ./admin
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+      
+      - name: Notify Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "✅ Admin panel deployed successfully",
+              attachments: [{
+                color: 'good',
+                text: `URL: ${{ secrets.ADMIN_URL }}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Build and test landing page
+  test-landing:
+    name: Test Landing Page
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: landing-page/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./landing-page
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: ./landing-page
+        run: npm test
+      
+      - name: Build
+        working-directory: ./landing-page
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+
+  # Deploy landing page to Vercel
+  deploy-landing:
+    name: Deploy Landing Page
+    needs: test-landing
+    runs-on: ubuntu-latest
+    # Add manual approval for production deployments
+    environment:
+      name: production-landing
+      url: ${{ secrets.LANDING_URL }}
+    if: |
+      github.ref == 'refs/heads/main' && 
+      (github.event.inputs.component == 'landing' || 
+       github.event.inputs.component == 'all' || 
+       github.event_name == 'push')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      
+      - name: Pull Vercel Environment
+        working-directory: ./landing-page
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_LANDING_PROJECT_ID }}
+      
+      - name: Build Project
+        working-directory: ./landing-page
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_LANDING_PROJECT_ID }}
+      
+      - name: Deploy to Vercel
+        working-directory: ./landing-page
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_LANDING_PROJECT_ID }}
+      
+      - name: Notify Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "✅ Landing page deployed successfully",
+              attachments: [{
+                color: 'good',
+                text: `URL: ${{ secrets.LANDING_URL }}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Post-deployment health checks
+  health-check:
+    name: Health Check
+    needs: [deploy-backend, deploy-admin, deploy-landing]
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Check Backend API
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.API_URL }}/health)
+          if [ $response -ne 200 ]; then
+            echo "Backend health check failed with status $response"
+            exit 1
+          fi
+          echo "✅ Backend is healthy"
+      
+      - name: Check Admin Panel
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.ADMIN_URL }})
+          if [ $response -ne 200 ]; then
+            echo "Admin panel health check failed with status $response"
+            exit 1
+          fi
+          echo "✅ Admin panel is accessible"
+      
+      - name: Check Landing Page
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.LANDING_URL }})
+          if [ $response -ne 200 ]; then
+            echo "Landing page health check failed with status $response"
+            exit 1
+          fi
+          echo "✅ Landing page is accessible"
+      
+      - name: Final Notification
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "🎉 All services deployed and healthy!",
+              attachments: [{
+                color: 'good',
+                fields: [
+                  {
+                    title: 'Commit',
+                    value: '${{ github.sha }}',
+                    short: true
+                  },
+                  {
+                    title: 'Author',
+                    value: '${{ github.actor }}',
+                    short: true
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
