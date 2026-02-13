@@ -68,7 +68,7 @@
 
 ### 12. `backend/src/index.ts`
 - [x] **SÉCURITÉ** : CORS par défaut `'*'` si variable d'env manquante. Corrigé : fallback vers `http://localhost:3000`.
-- [x] **QUALITÉ** : Handler d'erreur Express manque le paramètre `next`. Corrigé : `_next: import('express').NextFunction` ajouté.
+- [x] **QUALITÉ** : Handler d'erreur Express manquait le paramètre `next`. Corrigé : `_next: import('express').NextFunction` ajouté.
 
 ### 13. `backend/src/config/database.ts`
 - [ ] **QUALITÉ** : URI MongoDB par défaut localhost — devrait échouer en production.
