@@ -26,8 +26,7 @@ interface TokenPayload {
  */
 export const generateAccessToken = (payload: TokenPayload): string => {
   const secret = process.env.JWT_SECRET as string;
-  const expiresIn = process.env.JWT_EXPIRE || '24h';
-  // @ts-ignore - expiresIn type mismatch between jsonwebtoken versions
+  const expiresIn: string = process.env.JWT_EXPIRE || '24h';
   return jwt.sign(payload, secret, { expiresIn });
 };
 
@@ -49,8 +48,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
  */
 export const generateRefreshToken = (payload: TokenPayload): string => {
   const secret = process.env.JWT_REFRESH_SECRET as string;
-  const expiresIn = process.env.JWT_REFRESH_EXPIRE || '7d';
-  // @ts-ignore - expiresIn type mismatch between jsonwebtoken versions
+  const expiresIn: string = process.env.JWT_REFRESH_EXPIRE || '7d';
   return jwt.sign(payload, secret, { expiresIn });
 };
 

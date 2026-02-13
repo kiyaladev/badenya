@@ -8,7 +8,7 @@ import AIReport from '../models/AIReport';
  * Helper to extract error message
  */
 const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) return getErrorMessage(error);
+  if (error instanceof Error) return error.message;
   return String(error);
 };
 

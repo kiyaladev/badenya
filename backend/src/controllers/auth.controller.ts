@@ -271,13 +271,10 @@ export const forgotPassword = async (
     await user.save();
 
     // TODO: Send email with reset token
-    // For now, return token in response (for development only)
+    // In production, send email instead of returning token
     res.status(200).json({
       status: 'success',
-      message: 'Password reset token generated',
-      data: {
-        resetToken, // Remove this in production
-      },
+      message: 'If the email exists, a password reset link has been sent',
     });
   } catch (error) {
     console.error('Forgot password error:', error);

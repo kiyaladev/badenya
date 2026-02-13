@@ -134,11 +134,11 @@ export const authenticate = async (
  * router.delete('/users/:id', authenticate, isAdmin, deleteUser);
  * ```
  */
-export const isAdmin = (
+export const isAdmin = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   const authReq = req as AuthRequest;
   
   if (!authReq.user) {
@@ -149,6 +149,15 @@ export const isAdmin = (
     return;
   }
 
-  // TODO: Add admin check when role field is added to User model
+  // Verify user has admin role
+  const user = await User.findById(authReq.user.id).select('role');
+  if (!user || user.role !== 'admin') {
+    res.status(403).json({
+      status: 'error',
+      message: 'Access denied. Admin only.',
+    });
+    return;
+  }
+
   next();
 };

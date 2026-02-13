@@ -27,7 +27,7 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
-export const useAuthStore = create<AuthState>(set => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   isAuthenticated: false,
@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState>(set => ({
     try {
       // TODO: Call backend API to update profile
       // For now, just update local state
-      const currentUser = (set as { getState?: () => { user?: User } }).getState?.().user;
+      const currentUser = get().user;
       if (currentUser) {
         const updatedUser = { ...currentUser, ...data };
         set({
