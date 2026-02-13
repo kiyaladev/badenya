@@ -195,7 +195,7 @@ export default function InsightDetailsScreen() {
       <View className="p-6 mx-4 mt-4 bg-gray-100 rounded-xl">
         <Text className="text-xs text-gray-500">Généré par</Text>
         <Text className="text-sm text-gray-700">
-          {currentInsight.generatedBy.firstName} {currentInsight.generatedBy.lastName}
+          {currentInsight.generatedBy.fullName}
         </Text>
         {currentInsight.tokensUsed && (
           <Text className="text-xs text-gray-400 mt-1">

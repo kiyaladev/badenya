@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Alert } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Button, Input } from '@/components/ui';
+import authService from '@/services/auth.service';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
@@ -51,8 +52,11 @@ export default function ChangePasswordScreen() {
     try {
       setLoading(true);
 
-      // TODO: Call backend API to change password
-      // await authService.changePassword(formData);
+      // Call backend API to change password
+      await authService.changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
 
       Alert.alert('Succès', 'Votre mot de passe a été modifié avec succès', [
         {

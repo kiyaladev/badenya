@@ -249,7 +249,7 @@ export default function TransactionDetailsScreen() {
           <View className="mb-4">
             <Text className="text-gray-600 text-sm mb-1">Initié par</Text>
             <Text className="text-gray-800">
-              {transaction.initiatedBy.firstName} {transaction.initiatedBy.lastName}
+              {transaction.initiatedBy.fullName}
             </Text>
           </View>
 

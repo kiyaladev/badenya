@@ -111,17 +111,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updateProfile: async (data: Partial<User>) => {
     set({ isLoading: true, error: null });
     try {
-      // TODO: Call backend API to update profile
-      // For now, just update local state
-      const currentUser = get().user;
-      if (currentUser) {
-        const updatedUser = { ...currentUser, ...data };
-        set({
-          user: updatedUser,
-          isLoading: false,
-          error: null,
-        });
-      }
+      const updatedUser = await authService.updateProfile(data);
+      set({
+        user: updatedUser,
+        isLoading: false,
+        error: null,
+      });
     } catch (error) {
       const errorMessage = getErrorMessage(error, 'Erreur lors de la mise à jour du profil');
       set({

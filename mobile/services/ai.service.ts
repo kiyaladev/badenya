@@ -25,8 +25,7 @@ export interface AIReport {
   groupId: string;
   generatedBy: {
     _id: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
   };
   periodStart: string;
   periodEnd: string;

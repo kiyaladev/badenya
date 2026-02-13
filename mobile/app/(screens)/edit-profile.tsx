@@ -15,8 +15,7 @@ export default function EditProfileScreen() {
   const { user, updateProfile } = useAuthStore();
 
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    fullName: user?.fullName || '',
     email: user?.email || '',
     phone: user?.phone || '',
   });
@@ -28,12 +27,8 @@ export default function EditProfileScreen() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Le prénom est requis';
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Le nom est requis';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Le nom complet est requis';
     }
 
     if (!formData.email.trim()) {
@@ -103,8 +98,7 @@ export default function EditProfileScreen() {
         updateData.avatar = avatar.uri;
       }
 
-      // TODO: Call backend API to update profile
-      // For now, just update local state
+      // Call backend API to update profile
       await updateProfile(updateData);
 
       Alert.alert('Succès', 'Votre profil a été mis à jour', [
@@ -141,7 +135,7 @@ export default function EditProfileScreen() {
           ) : (
             <View className="w-24 h-24 bg-primary-100 rounded-full items-center justify-center mb-3">
               <Text className="text-4xl font-bold text-primary-600">
-                {formData.firstName[0]?.toUpperCase() || 'U'}
+                {formData.fullName[0]?.toUpperCase() || 'U'}
               </Text>
             </View>
           )}
@@ -153,22 +147,11 @@ export default function EditProfileScreen() {
         {/* Form */}
         <View className="mb-4">
           <Input
-            label="Prénom *"
-            value={formData.firstName}
-            onChangeText={text => setFormData({ ...formData, firstName: text })}
-            placeholder="Votre prénom"
-            error={errors.firstName}
-            autoCapitalize="words"
-          />
-        </View>
-
-        <View className="mb-4">
-          <Input
-            label="Nom *"
-            value={formData.lastName}
-            onChangeText={text => setFormData({ ...formData, lastName: text })}
-            placeholder="Votre nom"
-            error={errors.lastName}
+            label="Nom complet *"
+            value={formData.fullName}
+            onChangeText={text => setFormData({ ...formData, fullName: text })}
+            placeholder="Votre nom complet"
+            error={errors.fullName}
             autoCapitalize="words"
           />
         </View>

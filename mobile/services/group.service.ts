@@ -18,8 +18,7 @@ export interface GroupMember {
   userId: string;
   role: 'admin' | 'treasurer' | 'member';
   joinedAt: string;
-  firstName?: string;
-  lastName?: string;
+  fullName?: string;
   avatar?: string;
 }
 
