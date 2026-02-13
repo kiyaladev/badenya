@@ -8,8 +8,7 @@ export interface LoginCredentials {
 export interface AdminUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   role: string;
 }
 

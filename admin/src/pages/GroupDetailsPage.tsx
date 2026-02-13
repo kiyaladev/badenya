@@ -203,12 +203,12 @@ export default function GroupDetailsPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
                           <span className="text-blue-600 font-medium text-sm">
-                            {typeof member.user === 'object' && member.user?.firstName?.[0] || 'U'}{typeof member.user === 'object' && member.user?.lastName?.[0] || 'S'}
+                            {typeof member.user === 'object' && member.user?.fullName?.[0] || 'U'}
                           </span>
                         </div>
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-900">
-                            {typeof member.user === 'object' ? `${member.user?.firstName || 'Utilisateur'} ${member.user?.lastName || ''}` : 'Utilisateur'}
+                            {typeof member.user === 'object' ? member.user?.fullName || 'Utilisateur' : 'Utilisateur'}
                           </p>
                           <p className="text-sm text-gray-500">{typeof member.user === 'object' && member.user?.email || ''}</p>
                         </div>

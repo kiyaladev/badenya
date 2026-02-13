@@ -232,7 +232,7 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {typeof transaction.user === 'object' ? `${transaction.user?.firstName} ${transaction.user?.lastName}` : 'N/A'}
+                        {typeof transaction.user === 'object' ? transaction.user?.fullName || 'N/A' : 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500">{typeof transaction.user === 'object' && transaction.user?.email}</div>
                     </td>

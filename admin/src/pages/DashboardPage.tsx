@@ -122,12 +122,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">
-                {user?.firstName} {user?.lastName}
+                {user?.fullName}
               </p>
               <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
+              {user?.fullName?.[0] || 'A'}
             </div>
             <button
               onClick={handleLogout}

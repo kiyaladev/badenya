@@ -184,12 +184,12 @@ export default function UsersPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
                           <span className="text-blue-600 font-medium">
-                            {user.firstName[0]}{user.lastName[0]}
+                            {user.fullName?.[0] || 'U'}
                           </span>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
+                            {user.fullName}
                           </div>
                           <div className="text-sm text-gray-500">
                             Inscrit le {new Date(user.createdAt).toLocaleDateString('fr-FR')}

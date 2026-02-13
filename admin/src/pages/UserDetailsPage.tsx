@@ -143,12 +143,12 @@ export default function UserDetailsPage() {
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-20 w-20 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-blue-600 font-bold text-2xl">
-                      {user.firstName[0]}{user.lastName[0]}
+                      {user.fullName?.[0] || 'U'}
                     </span>
                   </div>
                   <div className="ml-6">
                     <h2 className="text-2xl font-bold text-gray-900">
-                      {user.firstName} {user.lastName}
+                      {user.fullName}
                     </h2>
                     <p className="text-gray-600">{user.email}</p>
                     <div className="mt-2 flex items-center space-x-2">
