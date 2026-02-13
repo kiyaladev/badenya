@@ -1,0 +1,6 @@
+# Badenya Robots.txt
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://badenya.app/sitemap.xml

@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "name": "badenya-admin",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "@badenya_api_url",
+    "VITE_APP_NAME": "Badenya Admin"
+  },
+  "regions": ["iad1"],
+  "github": {
+    "enabled": true,
+    "autoAlias": true
+  }
+}
