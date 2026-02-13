@@ -68,7 +68,7 @@
 
 ### 12. `backend/src/index.ts`
 - [x] **SÉCURITÉ** : CORS par défaut `'*'` si variable d'env manquante. Corrigé : fallback vers `http://localhost:3000`.
-- [ ] **QUALITÉ** : Handler d'erreur Express manque le paramètre `next`.
+- [x] **QUALITÉ** : Handler d'erreur Express manque le paramètre `next`. Corrigé : `_next: import('express').NextFunction` ajouté.
 
 ### 13. `backend/src/config/database.ts`
 - [ ] **QUALITÉ** : URI MongoDB par défaut localhost — devrait échouer en production.
@@ -256,8 +256,8 @@
 - [x] Layout global : meilleur espacement, typographie
 
 ### Mobile
-- [ ] Cohérence des couleurs avec le design system
-- [ ] Meilleurs états de chargement (skeleton screens)
+- [x] Cohérence des couleurs avec le design system. Corrigé : `Theme.ts` créé avec palette complète (Colors light/dark, Typography, Spacing, BorderRadius, Shadows). Non encore utilisé dans tous les écrans.
+- [x] Meilleurs états de chargement (skeleton screens). Corrigé : composants `SkeletonItem`, `SkeletonCard`, `SkeletonList` créés dans `Loading.tsx` et exportés. Non encore utilisés dans les écrans principaux.
 
 ---
 
@@ -352,6 +352,9 @@
 | Fix 5 écrans rendant firstName/lastName | ✅ Corrigé |
 | Vérification admin : toutes pages OK | ✅ Vérifié |
 | Vérification landing : formulaires hors scope | ✅ Documenté |
+| Add Theme.ts design system mobile | ✅ Créé (Colors, Typography, Spacing, Shadows) |
+| Add skeleton components mobile (Loading.tsx) | ✅ Créé (SkeletonItem, SkeletonCard, SkeletonList) |
+| **Vérification finale : tous les checks mis à jour** | ✅ Terminé |
 
 ---
 
