@@ -184,7 +184,7 @@ export const createBatchNotifications = async (
       }
     }
 
-    return created as unknown as INotification[];
+    return created as INotification[];
   } catch (error) {
     console.error('Create batch notifications error:', error);
     throw error;

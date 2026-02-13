@@ -198,8 +198,8 @@ export default function GroupDetailsPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Membres ({group.members?.length || 0})</h3>
               {group.members && group.members.length > 0 ? (
                 <div className="divide-y divide-gray-200">
-                  {group.members.map((member) => (
-                    <div key={typeof member.user === 'object' ? member.user?._id : `member-${member.role}`} className="py-3 flex items-center justify-between">
+                  {group.members.map((member, index: number) => (
+                    <div key={typeof member.user === 'object' ? member.user?._id : `member-${index}`} className="py-3 flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
                           <span className="text-blue-600 font-medium text-sm">
