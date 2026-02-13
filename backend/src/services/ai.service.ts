@@ -7,8 +7,7 @@ import { IGroup, ITransaction } from '../models';
 
 interface PopulatedUser {
   _id: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
 }
 
@@ -153,7 +152,7 @@ class AIService {
       groupId,
       createdAt: { $gte: threeMonthsAgo },
     })
-      .populate('initiatedBy', 'firstName lastName')
+      .populate('initiatedBy', 'fullName')
       .sort({ createdAt: -1 });
 
     if (transactions.length === 0) {
@@ -168,6 +167,7 @@ class AIService {
     }
 
     // Prepare anomaly detection prompt
+    // Note: double cast needed because Mongoose populate() transforms ObjectId → PopulatedUser at runtime
     const prompt = this.buildAnomalyDetectionPrompt(group, transactions as unknown as Array<ITransaction & { initiatedBy: PopulatedUser }>);
     const result = await this.model.generateContent(prompt);
     const response = await result.response;
@@ -184,7 +184,7 @@ class AIService {
       throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
     }
 
-    const group = await Group.findById(groupId).populate('members.userId', 'firstName lastName');
+    const group = await Group.findById(groupId).populate('members.userId', 'fullName');
     if (!group) {
       throw new Error('Group not found');
     }
@@ -213,15 +213,11 @@ class AIService {
    * Prepare data context for AI analysis
    */
   private prepareDataContext(group: IGroup, summary: TransactionSummary, transactions: ITransaction[]): DataContext {
-    // Calculate monthly average
-    const monthsDiff = Math.max(
-      1,
-      Math.floor(
-        (transactions[transactions.length - 1]?.createdAt.getTime() -
-          transactions[0]?.createdAt.getTime()) /
-          (1000 * 60 * 60 * 24 * 30)
-      )
-    );
+    // Calculate actual time span in months
+    const firstTx = transactions[0]?.createdAt.getTime();
+    const lastTx = transactions[transactions.length - 1]?.createdAt.getTime();
+    const daysDiff = firstTx && lastTx ? Math.abs(lastTx - firstTx) / (1000 * 60 * 60 * 24) : 0;
+    const monthsDiff = Math.max(1, Math.round(daysDiff / 30.44)); // 30.44 = average days per month
 
     const avgMonthlyContributions = summary.totalContributions / monthsDiff;
     const avgMonthlyExpenses = summary.totalExpenses / monthsDiff;
@@ -305,7 +301,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
       .slice(0, 20)
       .map((t) => {
         const user = t.initiatedBy;
-        return `${t.createdAt.toISOString().split('T')[0]} | ${t.type} | ${t.amount} ${t.currency} | ${user?.firstName || 'Unknown'}`;
+        return `${t.createdAt.toISOString().split('T')[0]} | ${t.type} | ${t.amount} ${t.currency} | ${user?.fullName || 'Unknown'}`;
       })
       .join('\n');
 

@@ -10,10 +10,12 @@ export default function ContactPage() {
     subject: '',
     message: '',
   });
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Message envoyé ! Nous vous répondrons dans les plus brefs délais.');
+    // TODO: Connect to backend contact API when available
+    setSubmitted(true);
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 
@@ -54,6 +56,18 @@ export default function ContactPage() {
               className="bg-white p-8 rounded-xl shadow-lg"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Envoyez-nous un message</h2>
+              {submitted ? (
+                <div className="text-center py-8">
+                  <p className="text-green-600 text-xl font-semibold mb-2">✅ Message envoyé !</p>
+                  <p className="text-gray-600 mb-4">Nous vous répondrons dans les plus brefs délais.</p>
+                  <button
+                    onClick={() => setSubmitted(false)}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Envoyer un autre message
+                  </button>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -128,6 +142,7 @@ export default function ContactPage() {
                   Envoyer le message
                 </button>
               </form>
+              )}
             </motion.div>
 
             {/* Contact Information */}

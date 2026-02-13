@@ -120,10 +120,12 @@ function StatItem({ end, suffix, label, index }: {
 export default function HomePage() {
   const [email, setEmail] = useState('');
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Merci de vous être inscrit avec l'email: ${email}`);
+    // TODO: Connect to backend newsletter API when available
+    setNewsletterSubmitted(true);
     setEmail('');
   };
 
@@ -581,20 +583,28 @@ export default function HomePage() {
                 Inscrivez-vous à notre newsletter pour recevoir les dernières actualités
               </p>
               <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex gap-4">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Votre email"
-                  required
-                  className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-white focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
-                >
-                  S'inscrire
-                </button>
+                {newsletterSubmitted ? (
+                  <p className="text-white text-lg font-medium py-3">
+                    ✅ Merci pour votre inscription ! Vous recevrez nos prochaines actualités.
+                  </p>
+                ) : (
+                  <>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Votre email"
+                      required
+                      className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-white focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+                    >
+                      S'inscrire
+                    </button>
+                  </>
+                )}
               </form>
             </div>
           </motion.div>

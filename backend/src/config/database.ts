@@ -2,9 +2,16 @@ import mongoose from 'mongoose';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/badenya';
+    const mongoUri = process.env.MONGODB_URI;
     
-    await mongoose.connect(mongoUri);
+    if (!mongoUri) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('MONGODB_URI environment variable is required in production');
+      }
+      console.warn('⚠️  MONGODB_URI not set, using default localhost connection');
+    }
+    
+    await mongoose.connect(mongoUri || 'mongodb://localhost:27017/badenya');
     
     console.warn('✅ MongoDB connected successfully');
     console.warn(`📊 Database: ${mongoose.connection.name}`);

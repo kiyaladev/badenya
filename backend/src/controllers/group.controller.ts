@@ -4,6 +4,8 @@ import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
 
+const MEMBER_POPULATE_FIELDS = 'fullName email avatar' as const;
+
 // Create new group
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -42,7 +44,7 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       isActive: true,
     });
 
-    await group.populate('members.userId', 'fullName email avatar');
+    await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(201).json({
       status: 'success',
@@ -68,7 +70,7 @@ export const getUserGroups = async (req: Request, res: Response): Promise<void> 
       'members.userId': authReq.user.id,
       'members.status': 'active',
     })
-      .populate('members.userId', 'fullName email avatar')
+      .populate('members.userId', MEMBER_POPULATE_FIELDS)
       .sort({ updatedAt: -1 });
 
     res.status(200).json({
@@ -93,7 +95,7 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
     const { id } = req.params;
 
     const group = await Group.findById(id)
-      .populate('members.userId', 'fullName email avatar phone')
+      .populate('members.userId', `${MEMBER_POPULATE_FIELDS} phone`)
       .populate('createdBy', 'fullName email');
 
     if (!group) {
@@ -184,7 +186,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
     }
 
     await group.save();
-    await group.populate('members.userId', 'fullName email avatar');
+    await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(200).json({
       status: 'success',
@@ -319,7 +321,7 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
     }
 
     await group.save();
-    await group.populate('members.userId', 'fullName email avatar');
+    await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(200).json({
       status: 'success',
@@ -465,7 +467,7 @@ export const updateMemberRole = async (
 
     member.role = role;
     await group.save();
-    await group.populate('members.userId', 'fullName email avatar');
+    await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(200).json({
       status: 'success',

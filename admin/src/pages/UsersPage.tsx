@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useDebounce } from '../hooks/useDebounce';
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -11,8 +12,10 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [confirmSuspend, setConfirmSuspend] = useState<string | null>(null);
   const limit = 10;
 
   const loadUsers = useCallback(async () => {
@@ -22,7 +25,7 @@ export default function UsersPage() {
       const data = await adminService.getAllUsers({
         page: currentPage,
         limit,
-        search: searchQuery || undefined,
+        search: debouncedSearch || undefined,
       });
       setUsers(data.users);
       setTotalUsers(data.total);
@@ -32,7 +35,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery]);
+  }, [currentPage, debouncedSearch]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,15 +45,17 @@ export default function UsersPage() {
     loadUsers();
   }, [isAuthenticated, navigate, loadUsers]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
   const handleSuspendUser = async (userId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir suspendre cet utilisateur ?')) {
-      return;
-    }
     try {
       await adminService.suspendUser(userId);
+      setConfirmSuspend(null);
       await loadUsers();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de la suspension');
+      setError(getErrorMessage(err) || 'Erreur lors de la suspension');
     }
   };
 
@@ -59,7 +64,7 @@ export default function UsersPage() {
       await adminService.activateUser(userId);
       await loadUsers();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de l\'activation');
+      setError(getErrorMessage(err) || 'Erreur lors de l\'activation');
     }
   };
 
@@ -127,7 +132,6 @@ export default function UsersPage() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setCurrentPage(1);
             }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -226,7 +230,7 @@ export default function UsersPage() {
                       </button>
                       {user.isActive ? (
                         <button
-                          onClick={() => handleSuspendUser(user._id)}
+                          onClick={() => setConfirmSuspend(user._id)}
                           className="text-red-600 hover:text-red-900"
                         >
                           Suspendre
@@ -275,6 +279,30 @@ export default function UsersPage() {
           </div>
         )}
       </main>
+
+      {/* Confirmation Modal */}
+      {confirmSuspend && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmer la suspension</h3>
+            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmSuspend(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleSuspendUser(confirmSuspend)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+              >
+                Suspendre
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { requireAuth } from '../utils/typeGuards';
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { fullName, email, phone, password } = req.body;
+    const { fullName, email, phone, password, deviceId, deviceName } = req.body;
 
     // Validate input formats
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -70,8 +70,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Save refresh token (with minimal info for now)
     user.refreshTokens.push({
       token: tokens.refreshToken,
-      deviceId: 'web',
-      deviceName: 'Web Browser',
+      deviceId: deviceId || 'web',
+      deviceName: deviceName || 'Web Browser',
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
@@ -101,7 +101,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 // Login user
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, deviceId, deviceName } = req.body;
 
     // Find user by email or phone
     const user = await User.findOne({
@@ -136,8 +136,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // Save refresh token
     user.refreshTokens.push({
       token: tokens.refreshToken,
-      deviceId: 'web',
-      deviceName: 'Web Browser',
+      deviceId: deviceId || 'web',
+      deviceName: deviceName || 'Web Browser',
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
@@ -173,7 +173,7 @@ export const refreshToken = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken, deviceId, deviceName } = req.body;
 
     if (!refreshToken) {
       res.status(400).json({
@@ -219,8 +219,8 @@ export const refreshToken = async (
     );
     user.refreshTokens.push({
       token: tokens.refreshToken,
-      deviceId: 'web',
-      deviceName: 'Web Browser',
+      deviceId: deviceId || 'web',
+      deviceName: deviceName || 'Web Browser',
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
