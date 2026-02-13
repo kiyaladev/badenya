@@ -248,7 +248,7 @@
 
 - [ ] `favicon` = `vite.svg` par défaut — remplacer par un favicon Badenya dédié
 - [ ] Pas d'error boundary React
-- [ ] `sitemap.xml` — `lastmod` dates (2025-10-10) périmées, inclut `/features` et `/pricing` qui n'existent peut-être pas
+- [ ] `sitemap.xml` — `lastmod` dates (2025-10-10) périmées, inclut `/features` et `/pricing` qui n'existent pas (seules routes : `/`, `/about`, `/contact`)
 
 ---
 
