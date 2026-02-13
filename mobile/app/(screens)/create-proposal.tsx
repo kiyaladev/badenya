@@ -73,6 +73,8 @@ export default function CreateProposalScreen() {
       const amount = parseFloat(formData.amount);
       if (isNaN(amount) || amount <= 0) {
         newErrors.amount = 'Le montant doit être un nombre positif';
+      } else if (amount > 100_000_000) {
+        newErrors.amount = 'Le montant ne peut pas dépasser 100 000 000 XOF';
       }
     }
 

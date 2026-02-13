@@ -39,7 +39,7 @@ export default function RegisterScreen() {
     if (!email) {
       newErrors.email = 'Email requis';
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Email invalide';
       valid = false;
     }
@@ -77,10 +77,14 @@ export default function RegisterScreen() {
       await register({ fullName, email, phone, password });
       router.replace('/(tabs)');
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const message =
+        err instanceof Error ? err.message :
+        typeof err === 'object' && err !== null && 'response' in err
+          ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message)
+          : undefined;
       Alert.alert(
         "Erreur d'inscription",
-        error.response?.data?.message || 'Une erreur est survenue'
+        message || 'Une erreur est survenue'
       );
     }
   };

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useDebounce } from '../hooks/useDebounce';
 
 export default function GroupsPage() {
   const navigate = useNavigate();
@@ -11,9 +12,11 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGroups, setTotalGroups] = useState(0);
+  const [confirmArchive, setConfirmArchive] = useState<string | null>(null);
   const limit = 10;
 
   const loadGroups = useCallback(async () => {
@@ -23,7 +26,7 @@ export default function GroupsPage() {
       const data = await adminService.getAllGroups({
         page: currentPage,
         limit,
-        search: searchQuery || undefined,
+        search: debouncedSearch || undefined,
         type: typeFilter || undefined,
       });
       setGroups(data.groups);
@@ -34,7 +37,7 @@ export default function GroupsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, typeFilter]);
+  }, [currentPage, debouncedSearch, typeFilter]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -44,12 +47,14 @@ export default function GroupsPage() {
     loadGroups();
   }, [isAuthenticated, navigate, loadGroups]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, typeFilter]);
+
   const handleArchiveGroup = async (groupId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir archiver ce groupe ?')) {
-      return;
-    }
     try {
       await adminService.archiveGroup(groupId);
+      setConfirmArchive(null);
       await loadGroups();
     } catch (err) {
       alert(getErrorMessage(err) || 'Erreur lors de l\'archivage');
@@ -129,7 +134,6 @@ export default function GroupsPage() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setCurrentPage(1);
             }}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -137,7 +141,6 @@ export default function GroupsPage() {
             value={typeFilter}
             onChange={(e) => {
               setTypeFilter(e.target.value);
-              setCurrentPage(1);
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -210,7 +213,7 @@ export default function GroupsPage() {
                   </button>
                   {group.isActive && (
                     <button
-                      onClick={() => handleArchiveGroup(group._id)}
+                      onClick={() => setConfirmArchive(group._id)}
                       className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                     >
                       Archiver
@@ -250,6 +253,30 @@ export default function GroupsPage() {
           </div>
         )}
       </main>
+
+      {/* Confirmation Modal */}
+      {confirmArchive && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmer l'archivage</h3>
+            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir archiver ce groupe ?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmArchive(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleArchiveGroup(confirmArchive)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+              >
+                Archiver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

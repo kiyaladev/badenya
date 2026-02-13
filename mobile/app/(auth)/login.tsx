@@ -32,7 +32,7 @@ export default function LoginScreen() {
     if (!email) {
       newErrors.email = 'Email requis';
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Email invalide';
       valid = false;
     }
@@ -60,10 +60,14 @@ export default function LoginScreen() {
       await login({ email, password });
       router.replace('/(tabs)');
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const message =
+        err instanceof Error ? err.message :
+        typeof err === 'object' && err !== null && 'response' in err
+          ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message)
+          : undefined;
       Alert.alert(
         'Erreur de connexion',
-        error.response?.data?.message || 'Email ou mot de passe incorrect'
+        message || 'Email ou mot de passe incorrect'
       );
     }
   };
