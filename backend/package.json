@@ -41,7 +41,7 @@
     "pdfkit": "^0.17.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "xlsx": "^0.18.5",
+    "exceljs": "^4.4.0",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {

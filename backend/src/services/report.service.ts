@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit';
-import xlsx from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Response } from 'express';
 import Group from '../models/Group';
 import Transaction from '../models/Transaction';
@@ -320,29 +320,28 @@ export class ReportService {
     });
 
     // Create workbook and worksheet
-    const workbook = xlsx.utils.book_new();
-    const worksheet = xlsx.utils.json_to_sheet(data);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Transactions');
 
-    // Add column widths
-    const colWidths = [
-      { wch: 12 }, // Date
-      { wch: 15 }, // Type
-      { wch: 12 }, // Montant
-      { wch: 8 },  // Devise
-      { wch: 30 }, // Description
-      { wch: 15 }, // Catégorie
-      { wch: 20 }, // Initiateur
-      { wch: 25 }, // Email
-      { wch: 18 }, // Méthode de paiement
-      { wch: 12 }, // Statut
+    // Add columns with headers and widths
+    worksheet.columns = [
+      { header: 'Date', key: 'Date', width: 12 },
+      { header: 'Type', key: 'Type', width: 15 },
+      { header: 'Montant', key: 'Montant', width: 12 },
+      { header: 'Devise', key: 'Devise', width: 8 },
+      { header: 'Description', key: 'Description', width: 30 },
+      { header: 'Catégorie', key: 'Catégorie', width: 15 },
+      { header: 'Initiateur', key: 'Initiateur', width: 20 },
+      { header: 'Email', key: 'Email', width: 25 },
+      { header: 'Méthode de paiement', key: 'Méthode de paiement', width: 18 },
+      { header: 'Statut', key: 'Statut', width: 12 },
     ];
-    worksheet['!cols'] = colWidths;
 
-    // Append to workbook
-    xlsx.utils.book_append_sheet(workbook, worksheet, 'Transactions');
+    // Add data rows
+    data.forEach(row => worksheet.addRow(row));
 
     // Generate buffer
-    const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     // Set response headers
     const filename = `${group.name.replace(/\s+/g, '_')}_Transactions_${new Date().toISOString().split('T')[0]}.xlsx`;
