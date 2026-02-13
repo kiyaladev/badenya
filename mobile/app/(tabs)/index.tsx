@@ -28,7 +28,7 @@ export default function HomeScreen() {
   };
 
   const calculateTotalBalance = () => {
-    return groups.reduce((sum, group) => sum + group.balance, 0);
+    return groups.reduce((sum, group) => sum + (group.balance || 0), 0);
   };
 
   const formatCurrency = (amount: number) => {
@@ -84,14 +84,12 @@ export default function HomeScreen() {
               Bonjour 👋
             </Text>
             <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: '700' }}>
-              {user?.firstName || 'Utilisateur'}
+              {user?.fullName || 'Utilisateur'}
             </Text>
           </View>
           <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.8}>
             <Avatar
-              name={
-                user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'User'
-              }
+              name={user?.fullName || 'User'}
               size="lg"
               backgroundColor="rgba(255,255,255,0.25)"
             />

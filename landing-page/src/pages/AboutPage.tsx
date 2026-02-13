@@ -51,22 +51,25 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
+                  id: 'value-trust',
                   icon: '🤝',
                   title: 'Confiance',
                   description: 'Nous construisons une plateforme basée sur la transparence et la sécurité pour instaurer la confiance entre tous les membres.',
                 },
                 {
+                  id: 'value-innovation',
                   icon: '🚀',
                   title: 'Innovation',
                   description: 'Nous combinons les meilleures pratiques traditionnelles avec les technologies modernes pour créer des solutions adaptées.',
                 },
                 {
+                  id: 'value-impact',
                   icon: '🌍',
                   title: 'Impact',
                   description: 'Nous nous engageons à avoir un impact positif sur les communautés africaines en facilitant l\'accès à l\'épargne et à l\'investissement.',
                 },
               ].map((value) => (
-                <div key={value.title} className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
+                <div key={value.id} className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
                   <div className="text-4xl mb-4">{value.icon}</div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
                   <p className="text-gray-600">{value.description}</p>
@@ -106,22 +109,25 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
+                  id: 'team-amadou',
                   name: 'Amadou Diop',
                   role: 'CEO & Co-fondateur',
                   bio: '10 ans d\'expérience en fintech et entrepreneuriat social.',
                 },
                 {
+                  id: 'team-mariam',
                   name: 'Mariam Kante',
                   role: 'CTO & Co-fondatrice',
                   bio: 'Experte en développement mobile et architecture cloud.',
                 },
                 {
+                  id: 'team-youssouf',
                   name: 'Youssouf Traore',
                   role: 'Head of Product',
                   bio: 'Passionné par l\'UX/UI et l\'innovation centrée sur l\'utilisateur.',
                 },
               ].map((member) => (
-                <div key={member.name} className="bg-white rounded-xl shadow-lg p-6 text-center">
+                <div key={member.id} className="bg-white rounded-xl shadow-lg p-6 text-center">
                   <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <span className="text-white text-3xl font-bold">
                       {member.name.split(' ').map(n => n[0]).join('')}
@@ -145,12 +151,12 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Badenya en Chiffres</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {[
-                { number: '10K+', label: 'Utilisateurs actifs' },
-                { number: '500+', label: 'Groupes créés' },
-                { number: '50M+', label: 'XOF épargnés' },
-                { number: '4.8/5', label: 'Note moyenne' },
+                { id: 'stat-users', number: '10K+', label: 'Utilisateurs actifs' },
+                { id: 'stat-groups', number: '500+', label: 'Groupes créés' },
+                { id: 'stat-savings', number: '50M+', label: 'XOF épargnés' },
+                { id: 'stat-rating', number: '4.8/5', label: 'Note moyenne' },
               ].map((stat) => (
-                <div key={stat.label} className="text-center">
+                <div key={stat.id} className="text-center">
                   <div className="text-4xl font-bold text-blue-600 mb-2">{stat.number}</div>
                   <div className="text-gray-600">{stat.label}</div>
                 </div>

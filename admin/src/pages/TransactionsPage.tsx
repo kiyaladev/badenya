@@ -48,10 +48,10 @@ export default function TransactionsPage() {
 
   const handleFlagTransaction = async (transactionId: string) => {
     const reason = prompt('Raison du signalement:');
-    if (!reason) return;
+    if (!reason || !reason.trim()) return;
     
     try {
-      await adminService.flagTransaction(transactionId, reason);
+      await adminService.flagTransaction(transactionId, reason.trim());
       await loadTransactions();
       alert('Transaction signalée avec succès');
     } catch (err) {

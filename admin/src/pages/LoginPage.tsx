@@ -82,6 +82,8 @@ export default function LoginPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
                 placeholder="admin@badenya.com"
+                pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]+"
+                title="Veuillez entrer une adresse email valide"
                 required
               />
             </div>

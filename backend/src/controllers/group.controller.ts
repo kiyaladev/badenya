@@ -9,7 +9,6 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    if (!requireAuth(authReq, res)) return;
     
     const {
       name,
@@ -64,7 +63,6 @@ export const getUserGroups = async (req: Request, res: Response): Promise<void> 
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    if (!requireAuth(authReq, res)) return;
 
     const groups = await Group.find({
       'members.userId': authReq.user.id,
@@ -90,7 +88,6 @@ export const getUserGroups = async (req: Request, res: Response): Promise<void> 
 export const getGroupById = async (req: Request, res: Response): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
     if (!requireAuth(authReq, res)) return;
     
     const { id } = req.params;
@@ -280,6 +277,15 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
       res.status(403).json({
         status: 'error',
         message: 'Only admins or treasurers can add members',
+      });
+      return;
+    }
+
+    // Validate userId format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Invalid userId format',
       });
       return;
     }

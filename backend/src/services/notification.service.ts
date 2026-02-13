@@ -1,5 +1,5 @@
-import { Notification, User } from '../models';
-import { NotificationType } from '../models/Notification';
+import { Notification, User, Group } from '../models';
+import { NotificationType, INotification } from '../models/Notification';
 import mongoose from 'mongoose';
 
 interface NotificationData {
@@ -87,8 +87,7 @@ export const createNotification = async (
   type: NotificationType,
   templateData: NotificationData,
   additionalData?: NotificationData
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> => {
+): Promise<INotification> => {
   try {
     const template = templates[type](templateData);
 
@@ -157,8 +156,7 @@ export const createBatchNotifications = async (
   type: NotificationType,
   templateData: NotificationData,
   additionalData?: NotificationData
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any[]> => {
+): Promise<INotification[]> => {
   try {
     const template = templates[type](templateData);
 
@@ -186,7 +184,7 @@ export const createBatchNotifications = async (
       }
     }
 
-    return created;
+    return created as unknown as INotification[];
   } catch (error) {
     console.error('Create batch notifications error:', error);
     throw error;
@@ -203,7 +201,6 @@ export const notifyGroupMembers = async (
   excludeUserIds?: (mongoose.Types.ObjectId | string)[]
 ): Promise<void> => {
   try {
-    const Group = mongoose.model('Group');
     const group = await Group.findById(groupId);
 
     if (!group) {

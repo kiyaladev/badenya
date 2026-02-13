@@ -387,11 +387,13 @@ export const closeProposal = async (
     }
 
     // Update proposal
-    const votesFor = proposal.votes?.filter((v) => v.decision === 'for').length || 0;
-    const totalVotes = proposal.votes?.length || 0;
+    const votes = proposal.votes || [];
+    const votesFor = votes.filter((v) => v.decision === 'for').length;
+    const totalVotes = votes.length;
     const approvalThreshold = group.votingRules.approvalThreshold || 50;
     const forPercentage = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
-    const quorumMet = totalVotes >= (group.votingRules.quorum / 100) * group.members.filter((m) => m.status === 'active').length;
+    const totalMembers = group.members.filter((m) => m.status === 'active').length;
+    const quorumMet = totalMembers > 0 && totalVotes >= (group.votingRules.quorum / 100) * totalMembers;
     
     const approved = quorumMet && forPercentage >= approvalThreshold;
     proposal.status = approved ? 'approved' : 'rejected';

@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 // Security Middleware
 app.use(helmet()); // Set security headers
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true,
   optionsSuccessStatus: 200
 }));

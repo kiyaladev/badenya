@@ -1,5 +1,5 @@
 import * as notificationService from '../../services/notification.service';
-import { Notification, User } from '../../models';
+import { Notification, User, Group } from '../../models';
 import mongoose from 'mongoose';
 
 // Mock the models
@@ -11,16 +11,10 @@ jest.mock('../../models', () => ({
   User: {
     findById: jest.fn(),
   },
+  Group: {
+    findById: jest.fn(),
+  },
 }));
-
-// Mock mongoose.model for Group lookup
-jest.mock('mongoose', () => {
-  const actual = jest.requireActual('mongoose');
-  return {
-    ...actual,
-    model: jest.fn(),
-  };
-});
 
 describe('NotificationService', () => {
   beforeEach(() => {
@@ -267,11 +261,7 @@ describe('NotificationService', () => {
         })),
       };
 
-      const mockGroupModel = {
-        findById: jest.fn().mockResolvedValue(mockGroup),
-      };
-
-      (mongoose.model as jest.Mock).mockReturnValue(mockGroupModel);
+      (Group.findById as jest.Mock).mockResolvedValue(mockGroup);
       (Notification.insertMany as jest.Mock).mockResolvedValue([]);
       (User.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(null),
@@ -286,7 +276,7 @@ describe('NotificationService', () => {
         }
       );
 
-      expect(mockGroupModel.findById).toHaveBeenCalledWith(groupId.toString());
+      expect(Group.findById).toHaveBeenCalledWith(groupId.toString());
       expect(Notification.insertMany).toHaveBeenCalled();
     });
 
@@ -305,11 +295,7 @@ describe('NotificationService', () => {
         ],
       };
 
-      const mockGroupModel = {
-        findById: jest.fn().mockResolvedValue(mockGroup),
-      };
-
-      (mongoose.model as jest.Mock).mockReturnValue(mockGroupModel);
+      (Group.findById as jest.Mock).mockResolvedValue(mockGroup);
       (Notification.insertMany as jest.Mock).mockResolvedValue([]);
       (User.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(null),
@@ -349,11 +335,7 @@ describe('NotificationService', () => {
         ],
       };
 
-      const mockGroupModel = {
-        findById: jest.fn().mockResolvedValue(mockGroup),
-      };
-
-      (mongoose.model as jest.Mock).mockReturnValue(mockGroupModel);
+      (Group.findById as jest.Mock).mockResolvedValue(mockGroup);
       (Notification.insertMany as jest.Mock).mockResolvedValue([]);
       (User.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue(null),

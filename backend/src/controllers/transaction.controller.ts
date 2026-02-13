@@ -132,11 +132,14 @@ export const getGroupTransactions = async (
     if (type) query.type = type as string;
     if (status) query.status = status as string;
 
+    const parsedLimit = Math.max(1, Math.min(parseInt(limit as string) || 50, 1000));
+    const parsedSkip = Math.max(0, parseInt(skip as string) || 0);
+
     const transactions = await Transaction.find(query)
       .populate('initiatedBy', 'fullName email avatar')
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit as string))
-      .skip(parseInt(skip as string));
+      .limit(parsedLimit)
+      .skip(parsedSkip);
 
     const total = await Transaction.countDocuments(query);
 
