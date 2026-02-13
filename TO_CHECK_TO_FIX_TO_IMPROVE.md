@@ -25,7 +25,10 @@
 
 ## 🔴 BACKEND — Analyse par fichier
 
-> ✅ **22 corrections appliquées** : bugs critiques (boucle infinie, div/0, rôle admin), sécurité (resetToken exposé, CORS wildcard, Math.random OTP, validation input), types Express 5, doublons requireAuth, fullName cohérent. **0 erreur TS, 80/80 tests OK.**
+> ✅ **22 corrections appliquées** — 0 erreur TS, 80/80 tests OK
+> - Bugs critiques : boucle infinie, div/0, rôle admin
+> - Sécurité : resetToken exposé, CORS wildcard, Math.random OTP, validation input
+> - Types Express 5, doublons requireAuth, fullName cohérent
 
 ### Reste à faire
 
@@ -40,7 +43,10 @@
 
 ## 🟠 ADMIN — Analyse par page
 
-> ✅ **10 corrections appliquées** : `firstName`/`lastName` → `fullName` (7 fichiers), `key={index}` → IDs stables, sanitisation `prompt()`, validation email login, types `AdminUser` corrigés.
+> ✅ **10 corrections appliquées**
+> - `firstName`/`lastName` → `fullName` (7 fichiers)
+> - `key={index}` → IDs stables, sanitisation `prompt()`, validation email login
+> - Types `AdminUser` corrigés
 
 ### Reste à faire
 
@@ -54,7 +60,10 @@
 
 ## 🔵 LANDING PAGE — Analyse par page
 
-> ✅ **10 corrections appliquées** : SVG professionnels, clés stables (`key={feature.id}`), accessibilité (aria-label, aria-expanded, noscript), icônes sociales, menu mobile.
+> ✅ **10 corrections appliquées**
+> - SVG professionnels, clés stables (`key={feature.id}`)
+> - Accessibilité : aria-label, aria-expanded, noscript
+> - Icônes sociales, menu mobile amélioré
 
 ### Reste à faire
 
@@ -66,7 +75,11 @@
 
 ## 🟢 MOBILE — Analyse par écran
 
-> ✅ **25+ corrections appliquées** : `firstName`/`lastName` → `fullName` (7 services, 5 écrans, 2 stores), 3 mocks → API réelle (change-password, updateProfile, register), bugs (balance undefined, user?.id null, Zustand getState), design system créé (Theme.ts + skeleton components).
+> ✅ **25+ corrections appliquées**
+> - `firstName`/`lastName` → `fullName` (7 services, 5 écrans, 2 stores)
+> - 3 mocks → API réelle (change-password, updateProfile, register)
+> - Bugs : balance undefined, user?.id null, Zustand getState
+> - Design system créé (Theme.ts + skeleton components)
 
 ### Reste à faire
 
