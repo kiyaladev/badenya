@@ -16,8 +16,7 @@ export interface DashboardStats {
 
 export interface User {
   _id: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone?: string;
   role: string;
@@ -26,7 +25,7 @@ export interface User {
 }
 
 export interface GroupMember {
-  user: string | { _id: string; firstName: string; lastName: string; email: string };
+  user: string | { _id: string; fullName: string; email: string };
   role: string;
   joinedAt: string;
 }
@@ -40,13 +39,13 @@ export interface Group {
   members: GroupMember[];
   isActive: boolean;
   createdAt: string;
-  createdBy: string | { _id: string; firstName: string; lastName: string };
+  createdBy: string | { _id: string; fullName: string };
 }
 
 export interface Transaction {
   _id: string;
   group: string | { _id: string; name: string };
-  user: string | { _id: string; firstName: string; lastName: string; email: string };
+  user: string | { _id: string; fullName: string; email: string };
   type: string;
   amount: number;
   status: string;

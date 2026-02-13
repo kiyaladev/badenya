@@ -11,6 +11,31 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { fullName, email, phone, password } = req.body;
 
+    // Validate input formats
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Invalid email format',
+      });
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Password must be at least 8 characters',
+      });
+      return;
+    }
+
+    if (!phone || !/^\+?[\d\s\-()]{10,}$/.test(phone)) {
+      res.status(400).json({
+        status: 'error',
+        message: 'Invalid phone number format',
+      });
+      return;
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }],

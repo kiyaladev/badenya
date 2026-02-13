@@ -77,7 +77,7 @@ export const getGroupInsights = async (req: Request, res: Response): Promise<voi
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('generatedBy', 'firstName lastName');
+      .populate('generatedBy', 'fullName');
 
     const total = await AIReport.countDocuments({ groupId });
 
@@ -112,7 +112,7 @@ export const getInsightById = async (req: Request, res: Response): Promise<void>
 
     const report = await AIReport.findById(reportId)
       .populate('groupId', 'name type currency')
-      .populate('generatedBy', 'firstName lastName');
+      .populate('generatedBy', 'fullName');
 
     if (!report) {
       res.status(404).json({

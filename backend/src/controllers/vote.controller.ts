@@ -49,11 +49,16 @@ export const createVote = async (
     }
 
     // Create options with IDs
-    const voteOptions = options.map((opt: { label: string }, index: number) => ({
-      id: `option_${index + 1}`,
-      label: opt.label,
-      votes: 0,
-    }));
+    const voteOptions = options.map((opt: { label: unknown }, index: number) => {
+      if (typeof opt.label !== 'string' || opt.label.trim() === '') {
+        throw new Error('Vote option label must be a non-empty string');
+      }
+      return {
+        id: `option_${index + 1}`,
+        label: opt.label,
+        votes: 0,
+      };
+    });
 
     // Create vote
     const vote = await Vote.create({

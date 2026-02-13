@@ -15,10 +15,10 @@
 
 | Module | Pages/Fichiers | Bugs critiques | Sécurité | UI/UX | Statut |
 |--------|---------------|----------------|----------|-------|--------|
-| **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 2/5 corrigés | N/A | ✅ Tests OK (80/80) |
-| **Admin** | 7 pages | ✅ 2/2 corrigés | 0/3 | ✅ fullName fixé | ✅ Corrigé |
+| **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ✅ Tests OK (80/80) |
+| **Admin** | 7 pages | ✅ 2/2 corrigés | 2/3 corrigés | ✅ fullName fixé | ✅ Corrigé |
 | **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ✅ UI amélioré | ✅ Amélioré |
-| **Mobile** | 20+ écrans | ✅ 1/1 corrigé | 0/2 | ⏳ | 🔧 En cours |
+| **Mobile** | 20+ écrans | ✅ 1/1 corrigé | 0/2 | ✅ fullName fixé | ✅ Corrigé |
 
 ---
 
@@ -26,32 +26,32 @@
 
 ### 1. `backend/src/controllers/ai.controller.ts`
 - [x] **BUG CRITIQUE** : `getErrorMessage()` s'appelle récursivement → boucle infinie. Corrigé : retourne `error.message`.
-- [ ] **QUALITÉ** : Populate `firstName`/`lastName` alors que User a `fullName`.
+- [x] **QUALITÉ** : Populate `firstName`/`lastName` alors que User a `fullName`. Corrigé : utilise `fullName`.
 
 ### 2. `backend/src/controllers/auth.controller.ts`
 - [x] **SÉCURITÉ CRITIQUE** : `resetToken` renvoyé dans la réponse JSON (ligne 279). Supprimé.
-- [ ] **SÉCURITÉ** : Aucune validation de format email/mot de passe/téléphone avant insertion.
+- [x] **SÉCURITÉ** : Aucune validation de format email/mot de passe/téléphone avant insertion. Corrigé : validation email, mot de passe (min 8 caractères), téléphone ajoutée.
 - [ ] **QUALITÉ** : `deviceId` hardcodé à `'web'`, `deviceName` à `'Web Browser'`.
 
 ### 3. `backend/src/controllers/group.controller.ts`
-- [ ] **QUALITÉ** : `requireAuth()` appelé en double dans plusieurs méthodes.
-- [ ] **SÉCURITÉ** : `userId` de `req.body` non validé avant `ObjectId()`.
+- [x] **QUALITÉ** : `requireAuth()` appelé en double dans plusieurs méthodes. Corrigé : doublons supprimés dans createGroup, getUserGroups, getGroupById.
+- [x] **SÉCURITÉ** : `userId` de `req.body` non validé avant `ObjectId()`. Corrigé : validation ObjectId.isValid() ajoutée.
 - [ ] **QUALITÉ** : Opérations `populate()` répétées — extraire en helper.
 
 ### 4. `backend/src/controllers/proposal.controller.ts`
-- [ ] **BUG** : Division par zéro possible si `totalMembers === 0` (ligne 394).
-- [ ] **BUG** : `proposal.votes?.filter()` retourne `undefined` silencieusement → NaN.
+- [x] **BUG** : Division par zéro possible si `totalMembers === 0` (ligne 394). Corrigé : garde `totalMembers > 0` ajoutée.
+- [x] **BUG** : `proposal.votes?.filter()` retourne `undefined` silencieusement → NaN. Corrigé : fallback `|| []` ajouté.
 
 ### 5. `backend/src/controllers/transaction.controller.ts`
 - [x] **TYPE** : Express 5 `string | string[]` corrigé avec `as string`.
-- [ ] **SÉCURITÉ** : `parseInt(limit)` / `parseInt(skip)` sans vérification de bornes.
+- [x] **SÉCURITÉ** : `parseInt(limit)` / `parseInt(skip)` sans vérification de bornes. Corrigé : clampage min/max ajouté (limit 1-1000, skip ≥ 0).
 
 ### 6. `backend/src/controllers/vote.controller.ts`
 - [x] **TYPE** : Express 5 `string | string[]` corrigé avec `as string`.
-- [ ] **TYPE** : `opt.label` non vérifié comme string avant utilisation.
+- [x] **TYPE** : `opt.label` non vérifié comme string avant utilisation. Corrigé : validation typeof + non-vide ajoutée.
 
 ### 7. `backend/src/controllers/notification.controller.ts`
-- [ ] **QUALITÉ** : `requireAuth()` appelé en double.
+- [x] **QUALITÉ** : `requireAuth()` appelé en double. Corrigé : doublon supprimé.
 
 ### 8. `backend/src/middleware/auth.ts`
 - [x] **BUG CRITIQUE** : `isAdmin` ne vérifie pas le rôle. Corrigé : vérifie `user.role === 'admin'`.
@@ -66,7 +66,7 @@
 - [x] **TYPE** : `@ts-ignore` sur `expiresIn`. Corrigé : typage explicite `string`.
 
 ### 12. `backend/src/index.ts`
-- [ ] **SÉCURITÉ** : CORS par défaut `'*'` si variable d'env manquante.
+- [x] **SÉCURITÉ** : CORS par défaut `'*'` si variable d'env manquante. Corrigé : fallback vers `http://localhost:3000`.
 - [ ] **QUALITÉ** : Handler d'erreur Express manque le paramètre `next`.
 
 ### 13. `backend/src/config/database.ts`
@@ -77,13 +77,13 @@
 - [ ] **QUALITÉ** : Division par 30 jours fixes au lieu du calcul réel.
 
 ### 15. `backend/src/services/notification.service.ts`
-- [ ] **TYPE** : Type de retour `any` au lieu du type approprié.
-- [ ] **QUALITÉ** : `mongoose.model('Group')` hardcodé au lieu d'import.
+- [x] **TYPE** : Type de retour `any` au lieu du type approprié. Corrigé : `INotification` et `INotification[]` utilisés.
+- [x] **QUALITÉ** : `mongoose.model('Group')` hardcodé au lieu d'import. Corrigé : import direct de Group.
 
 ### 16. `backend/src/controllers/proposal.controller.ts`
 - [x] **TYPE** : Express 5 `string | string[]` corrigé avec `as string`.
-- [ ] **BUG** : Division par zéro possible si `totalMembers === 0`.
-- [ ] **BUG** : `proposal.votes?.filter()` retourne `undefined` silencieusement → NaN.
+- [x] **BUG** : Division par zéro possible si `totalMembers === 0`. Corrigé.
+- [x] **BUG** : `proposal.votes?.filter()` retourne `undefined` silencieusement → NaN. Corrigé.
 
 ### 17. `backend/src/controllers/report.controller.ts`
 - [x] **TYPE** : Express 5 `string | string[]` corrigé (6 occurrences).
@@ -98,7 +98,7 @@
 ## 🟠 ADMIN — Analyse par page
 
 ### 1. `admin/src/pages/LoginPage.tsx`
-- [ ] **SÉCURITÉ** : Pas de validation du format email côté client.
+- [x] **SÉCURITÉ** : Pas de validation du format email côté client. Corrigé : attribut `pattern` HTML ajouté.
 - [x] **UI/UX** : Design existant déjà bon — gradient, animations.
 
 ### 2. `admin/src/pages/DashboardPage.tsx`
@@ -115,11 +115,11 @@
 
 ### 5. `admin/src/pages/GroupDetailsPage.tsx`
 - [x] **BUG** : `member.user?.firstName` → Corrigé pour `member.user?.fullName`.
-- [ ] **BUG** : `key={index}` dans la liste membres → problèmes React.
+- [x] **BUG** : `key={index}` dans la liste membres → problèmes React. Corrigé : utilise `member.user._id`.
 
 ### 6. `admin/src/pages/TransactionsPage.tsx`
 - [x] **BUG** : `transaction.user?.firstName` → Corrigé pour `transaction.user?.fullName`.
-- [ ] **SÉCURITÉ** : `prompt()` input non sanitisé pour flag reason.
+- [x] **SÉCURITÉ** : `prompt()` input non sanitisé pour flag reason. Corrigé : trim() et vérification non-vide ajoutés.
 
 ### 7. `admin/src/pages/UserDetailsPage.tsx`
 - [x] **BUG** : `user.firstName[0]` → Corrigé pour `user.fullName?.[0]`.
@@ -143,7 +143,7 @@
 - [ ] **BUG** : Formulaire newsletter ne soumet rien (juste `alert()`).
 
 ### 2. `landing-page/src/pages/AboutPage.tsx`
-- [ ] **BUG** : `key={index}` dans les listes.
+- [x] **BUG** : `key={index}` dans les listes. Corrigé : IDs stables ajoutés à toutes les listes.
 
 ### 3. `landing-page/src/pages/ContactPage.tsx`
 - [x] **ACCESSIBILITÉ** : `aria-label` ajouté au select dropdown.
@@ -159,7 +159,7 @@
 
 ### 6. `landing-page/index.html`
 - [ ] **SEO** : Images OG manquantes (og-image.png).
-- [ ] **ACCESSIBILITÉ** : Pas de `<noscript>` fallback.
+- [x] **ACCESSIBILITÉ** : Pas de `<noscript>` fallback. Corrigé : message ajouté.
 
 ---
 
@@ -167,7 +167,7 @@
 
 ### 1. `mobile/store/authStore.ts`
 - [x] **BUG CRITIQUE** : `getState()` mal utilisé dans Zustand. Corrigé : utilise `get()`.
-- [ ] **TYPE** : Interface User avec `firstName`/`lastName` alors que backend a `fullName`.
+- [x] **TYPE** : Interface User avec `firstName`/`lastName` alors que backend a `fullName`. Corrigé : utilise `fullName`.
 
 ### 2. `mobile/app/(auth)/login.tsx`
 - [ ] **SÉCURITÉ** : Regex email faible (`/\S+@\S+\.\S+/`).
@@ -180,13 +180,13 @@
 - [ ] **SÉCURITÉ** : Pas de vérification d'expiration du token avant refresh.
 
 ### 5. `mobile/app/(tabs)/index.tsx`
-- [ ] **BUG** : `group.balance` potentiellement undefined → NaN.
+- [x] **BUG** : `group.balance` potentiellement undefined → NaN. Corrigé : fallback `|| 0` ajouté.
 
 ### 6. `mobile/app/(screens)/create-proposal.tsx`
 - [ ] **SÉCURITÉ** : `parseFloat(amount)` sans validation de range.
 
 ### 7. `mobile/app/(screens)/group-details.tsx`
-- [ ] **BUG** : Optional chaining sur `user?.id` peut être undefined.
+- [x] **BUG** : Optional chaining sur `user?.id` peut être undefined. Corrigé : vérification null ajoutée.
 
 ### 8. `mobile/utils/errorHandler.ts`
 - [x] **QUALITÉ** : Bien implémenté — sert de référence pour le pattern.
@@ -235,6 +235,26 @@
 | Fix key={index} AboutPage | ✅ Corrigé |
 | Améliorations UI/UX Landing Page | ✅ SVG, clés stables, accessibilité |
 | Améliorations UI/UX Admin | ✅ fullName, layout |
+| Fix populate fullName ai.controller | ✅ Corrigé |
+| Fix votes filter NaN + div/0 proposal | ✅ Corrigé |
+| Fix parseInt bounds transaction | ✅ Corrigé |
+| Fix opt.label type vote.controller | ✅ Corrigé |
+| Fix duplicate requireAuth (3 fichiers) | ✅ Corrigé |
+| Fix CORS wildcard default | ✅ Corrigé |
+| Fix Group import notification.service | ✅ Corrigé |
+| Fix return types notification.service | ✅ Corrigé |
+| Fix userId validation group.controller | ✅ Corrigé |
+| Add email/password/phone validation auth | ✅ Corrigé |
+| Fix key={index} GroupDetailsPage | ✅ Corrigé |
+| Fix prompt() sanitization TransactionsPage | ✅ Corrigé |
+| Fix email validation LoginPage | ✅ Corrigé |
+| Fix adminService types fullName | ✅ Corrigé |
+| Fix key={index} AboutPage (IDs stables) | ✅ Corrigé |
+| Add noscript fallback landing | ✅ Corrigé |
+| Fix mobile authStore fullName | ✅ Corrigé |
+| Fix group.balance undefined mobile | ✅ Corrigé |
+| Fix user?.id undefined group-details | ✅ Corrigé |
+| Fix mobile index.tsx firstName → fullName | ✅ Corrigé |
 
 ---
 

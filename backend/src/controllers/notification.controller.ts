@@ -11,7 +11,6 @@ export const getUserNotifications = async (
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    if (!requireAuth(authReq, res)) return;
     
     const { limit = '50', skip = '0', unreadOnly = 'false' } = req.query;
 
