@@ -182,20 +182,35 @@ export default function HomePage() {
                 <div className="bg-white rounded-xl p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Solde total</span>
-                    <span className="text-2xl font-bold text-gray-900">2,450,000 XOF</span>
+                    <span className="text-2xl font-bold text-gray-900 animate-pulse">2,450,000 XOF</span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">👥 Groupe Famille</span>
-                      <span className="font-medium">850,000 XOF</span>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">👥 Groupe Famille</span>
+                        <span className="font-medium">850,000 XOF</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full" style={{ width: '85%' }}></div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">💼 Investissement Pro</span>
-                      <span className="font-medium">1,200,000 XOF</span>
+                    <div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">💼 Investissement Pro</span>
+                        <span className="font-medium">1,200,000 XOF</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                        <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-1.5 rounded-full" style={{ width: '60%' }}></div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">🎯 Projet Immo</span>
-                      <span className="font-medium">400,000 XOF</span>
+                    <div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">🎯 Projet Immo</span>
+                        <span className="font-medium">400,000 XOF</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                        <div className="bg-gradient-to-r from-green-500 to-green-600 h-1.5 rounded-full" style={{ width: '40%' }}></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -221,38 +236,68 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: '👥',
+                id: 'feature-groups',
+                icon: (
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                ),
                 title: 'Gestion de groupes',
                 description: 'Créez et gérez plusieurs groupes d\'épargne avec des rôles et permissions.',
               },
               {
-                icon: '💰',
+                id: 'feature-contributions',
+                icon: (
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
                 title: 'Suivi des cotisations',
                 description: 'Suivez facilement toutes les contributions et les dépenses de votre groupe.',
               },
               {
-                icon: '🗳️',
+                id: 'feature-votes',
+                icon: (
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
                 title: 'Votes démocratiques',
                 description: 'Prenez des décisions importantes ensemble grâce au système de vote intégré.',
               },
               {
-                icon: '📊',
+                id: 'feature-reports',
+                icon: (
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                ),
                 title: 'Rapports détaillés',
                 description: 'Générez des rapports financiers complets et exportez-les en PDF ou Excel.',
               },
               {
-                icon: '🔔',
+                id: 'feature-notifications',
+                icon: (
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                ),
                 title: 'Notifications en temps réel',
                 description: 'Restez informé de toutes les activités importantes de vos groupes.',
               },
               {
-                icon: '🔒',
+                id: 'feature-security',
+                icon: (
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                ),
                 title: 'Sécurité maximale',
                 description: 'Vos données sont protégées avec un chiffrement de niveau bancaire.',
               },
             ].map((feature, index) => (
               <motion.div
-                key={index}
+                key={feature.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -260,8 +305,8 @@ export default function HomePage() {
                 whileHover={{ y: -8, transition: { duration: 0.3 } }}
                 className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl">{feature.icon}</span>
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  {feature.icon}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
@@ -276,12 +321,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { end: 10000, suffix: '+', label: 'Utilisateurs actifs' },
-              { end: 500, suffix: '+', label: 'Groupes créés' },
-              { end: 50, suffix: 'M+', label: 'XOF épargnés' },
-              { end: 98, suffix: '%', label: 'Satisfaction' },
+              { id: 'stat-users', end: 10000, suffix: '+', label: 'Utilisateurs actifs' },
+              { id: 'stat-groups', end: 500, suffix: '+', label: 'Groupes créés' },
+              { id: 'stat-savings', end: 50, suffix: 'M+', label: 'XOF épargnés' },
+              { id: 'stat-satisfaction', end: 98, suffix: '%', label: 'Satisfaction' },
             ].map((stat, index) => (
-              <StatItem key={index} {...stat} index={index} />
+              <StatItem key={stat.id} {...stat} index={index} />
             ))}
           </div>
         </div>
@@ -303,23 +348,26 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
+                id: 'step-download',
                 step: '01',
                 title: 'Téléchargez l\'app',
                 description: 'Installez Badenya gratuitement sur votre smartphone Android ou iOS.',
               },
               {
+                id: 'step-create',
                 step: '02',
                 title: 'Créez votre groupe',
                 description: 'Configurez votre groupe d\'épargne en quelques clics et invitez vos membres.',
               },
               {
+                id: 'step-save',
                 step: '03',
                 title: 'Commencez à épargner',
                 description: 'Gérez les cotisations, votez sur les dépenses et suivez votre progression.',
               },
             ].map((step, index) => (
               <motion.div
-                key={index}
+                key={step.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -370,6 +418,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
+                id: 'testimonial-aminata',
                 name: 'Aminata Diallo',
                 role: 'Présidente de groupe, Dakar',
                 content: 'Badenya a transformé la gestion de notre tontine familiale. Tout est transparent et facile à suivre !',
@@ -377,6 +426,7 @@ export default function HomePage() {
                 avatar: 'AD',
               },
               {
+                id: 'testimonial-moussa',
                 name: 'Moussa Kone',
                 role: 'Entrepreneur, Abidjan',
                 content: 'L\'application est intuitive et le système de vote nous aide à prendre de meilleures décisions ensemble.',
@@ -384,6 +434,7 @@ export default function HomePage() {
                 avatar: 'MK',
               },
               {
+                id: 'testimonial-fatou',
                 name: 'Fatou Sow',
                 role: 'Trésorière, Bamako',
                 content: 'Les rapports automatiques me font gagner un temps précieux. Je recommande vivement !',
@@ -392,7 +443,7 @@ export default function HomePage() {
               },
             ].map((testimonial, index) => (
               <motion.div
-                key={index}
+                key={testimonial.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
@@ -444,28 +495,33 @@ export default function HomePage() {
           <div className="space-y-4">
             {[
               {
+                id: 'faq-create-group',
                 question: 'Comment créer un groupe d\'épargne ?',
                 answer: 'Il suffit de télécharger l\'application, créer votre compte et suivre les étapes de création de groupe. Vous pourrez ensuite inviter vos membres par SMS ou email.',
               },
               {
+                id: 'faq-security',
                 question: 'Badenya est-il sécurisé ?',
                 answer: 'Oui ! Nous utilisons un chiffrement de niveau bancaire pour protéger toutes vos données. De plus, toutes les actions importantes nécessitent une authentification.',
               },
               {
+                id: 'faq-pricing',
                 question: 'Combien coûte l\'application ?',
                 answer: 'Badenya est gratuit pour les groupes de moins de 20 membres. Pour les groupes plus importants, nous proposons des plans premium avec des fonctionnalités avancées.',
               },
               {
+                id: 'faq-data-security',
                 question: 'Comment sont sécurisées mes données ?',
                 answer: 'Vos données sont protégées par un chiffrement de bout en bout et stockées sur des serveurs sécurisés. Nous utilisons les meilleures pratiques de sécurité pour garantir la confidentialité de vos informations.',
               },
               {
+                id: 'faq-payments',
                 question: 'Comment sont gérés les paiements ?',
                 answer: 'Badenya s\'intègre avec les principales plateformes de paiement mobile (Wave, Orange Money, MTN Money) pour faciliter les transactions.',
               },
             ].map((faq, index) => (
               <FAQItem
-                key={index}
+                key={faq.id}
                 question={faq.question}
                 answer={faq.answer}
                 isOpen={openFAQ === index}
@@ -506,7 +562,7 @@ export default function HomePage() {
               </a>
               <a
                 href="#"
-                className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg flex items-center space-x-3"
+                className="group bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center space-x-3"
               >
                 <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.802 8.99l-2.303 2.303-8.635-8.635z" />

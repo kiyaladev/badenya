@@ -63,6 +63,8 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2 rounded-xl hover:bg-gray-100 transition-colors"
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
           >
             <motion.svg
               className="w-6 h-6 text-gray-700"
@@ -93,6 +95,7 @@ export default function Navbar() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
+              id="mobile-menu"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
