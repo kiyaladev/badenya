@@ -19,6 +19,7 @@
 | **Admin** | 7 pages | ✅ 2/2 corrigés | 2/3 corrigés | ✅ fullName fixé | ✅ Corrigé |
 | **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ✅ UI amélioré | ✅ Amélioré |
 | **Mobile** | 20+ écrans | ✅ 1/1 corrigé | 0/2 | ✅ fullName fixé | ✅ Corrigé |
+| **API Mobile** | 19 fichiers vérifiés | ✅ 3 mocks → API réelle | ✅ Types corrigés | N/A | ✅ Corrigé |
 
 ---
 
@@ -168,13 +169,15 @@
 ### 1. `mobile/store/authStore.ts`
 - [x] **BUG CRITIQUE** : `getState()` mal utilisé dans Zustand. Corrigé : utilise `get()`.
 - [x] **TYPE** : Interface User avec `firstName`/`lastName` alors que backend a `fullName`. Corrigé : utilise `fullName`.
+- [x] **API MOCK** : `updateProfile()` ne faisait que mettre à jour l'état local (TODO). Corrigé : appelle `PUT /auth/profile` via `authService.updateProfile()`.
 
 ### 2. `mobile/app/(auth)/login.tsx`
 - [ ] **SÉCURITÉ** : Regex email faible (`/\S+@\S+\.\S+/`).
 - [ ] **TYPE** : Cast error unsafe `as { response?: ... }`.
 
 ### 3. `mobile/app/(auth)/register.tsx`
-- [ ] **TYPE** : Même pattern de cast error unsafe.
+- [x] **API** : Envoyait `firstName`/`lastName` séparés alors que le backend attend `fullName`. Corrigé : envoie `fullName`.
+- [ ] **TYPE** : Cast error unsafe `as { response?: ... }`.
 
 ### 4. `mobile/services/api.ts`
 - [ ] **SÉCURITÉ** : Pas de vérification d'expiration du token avant refresh.
@@ -190,6 +193,47 @@
 
 ### 8. `mobile/utils/errorHandler.ts`
 - [x] **QUALITÉ** : Bien implémenté — sert de référence pour le pattern.
+
+### 9. `mobile/app/(screens)/change-password.tsx`
+- [x] **API MOCK** : Le formulaire ne soumettait rien (TODO + appel commenté). Corrigé : appelle `PUT /auth/change-password` via `authService.changePassword()`.
+
+### 10. `mobile/app/(screens)/edit-profile.tsx`
+- [x] **API** : Utilisait `firstName`/`lastName` dans le formulaire alors que le backend a `fullName`. Corrigé : utilise `fullName`.
+- [x] **API** : Le commentaire TODO indiquait que l'appel API n'était pas fait. Corrigé : `updateProfile()` du store appelle maintenant le vrai endpoint.
+
+### 11. `mobile/app/(tabs)/profile.tsx`
+- [x] **TYPE** : Construisait `fullName` depuis `firstName`/`lastName` qui n'existent pas dans le modèle backend. Corrigé : utilise `user.fullName` directement.
+
+### 12. `mobile/services/auth.service.ts`
+- [x] **API MANQUANT** : Pas de méthode `updateProfile()`. Corrigé : ajoutée, appelle `PUT /auth/profile`.
+- [x] **API MANQUANT** : Pas de méthode `changePassword()`. Corrigé : ajoutée, appelle `PUT /auth/change-password`.
+- [x] **TYPE** : `RegisterData` et `AuthResponse` utilisaient `firstName`/`lastName`. Corrigé : utilise `fullName`.
+
+### 13. `mobile/services/user.service.ts`
+- [x] **TYPE** : Interface `User` avec `firstName`/`lastName`. Corrigé : utilise `fullName`.
+- [ ] **API** : Endpoint `/users/search` non implémenté côté backend — retourne `[]` en cas d'erreur (dégradation gracieuse).
+
+### 14. `mobile/services/group.service.ts`
+- [x] **TYPE** : Interface `GroupMember` avec `firstName`/`lastName`. Corrigé : utilise `fullName`.
+
+### 15. `mobile/services/proposal.service.ts`
+- [x] **TYPE** : `proposedBy` avec `firstName`/`lastName`. Corrigé : utilise `fullName`.
+
+### 16. `mobile/services/transaction.service.ts`
+- [x] **TYPE** : `initiatedBy` avec `firstName`/`lastName`. Corrigé : utilise `fullName`.
+
+### 17. `mobile/services/ai.service.ts`
+- [x] **TYPE** : `generatedBy` avec `firstName`/`lastName`. Corrigé : utilise `fullName`.
+
+### 18. `mobile/services/vote.service.ts`
+- [x] **TYPE** : `createdBy` avec `firstName`/`lastName`. Corrigé : utilise `fullName`.
+
+### 19. Écrans rendant `firstName`/`lastName`
+- [x] `add-members.tsx` : Affichait `user.firstName user.lastName`. Corrigé : `user.fullName`.
+- [x] `group-members.tsx` : Affichait `member.firstName member.lastName`. Corrigé : `member.fullName`.
+- [x] `insight-details.tsx` : Affichait `generatedBy.firstName generatedBy.lastName`. Corrigé : `generatedBy.fullName`.
+- [x] `proposal-details.tsx` : Affichait `proposedBy.firstName proposedBy.lastName`. Corrigé : `proposedBy.fullName`.
+- [x] `transaction-details.tsx` : Affichait `initiatedBy.firstName initiatedBy.lastName`. Corrigé : `initiatedBy.fullName`.
 
 ---
 
@@ -214,6 +258,48 @@
 ### Mobile
 - [ ] Cohérence des couleurs avec le design system
 - [ ] Meilleurs états de chargement (skeleton screens)
+
+---
+
+## 🔍 VÉRIFICATION API — Chaque page appelle la bonne API (pas de mocks)
+
+### Résumé de l'audit
+
+| Module | Pages vérifiées | Appels API corrects | Mocks trouvés | Corrigés |
+|--------|----------------|---------------------|---------------|----------|
+| **Admin** | 7 pages | ✅ Toutes utilisent `adminService` | 0 | N/A |
+| **Mobile** | 20+ écrans | ✅ Via stores Zustand | 3 mocks → API réelle | ✅ 3/3 |
+| **Landing Page** | 3 pages | ⚠️ Formulaires sans backend | 2 (newsletter, contact) | Hors scope |
+
+### Admin — Appels API ✅
+- **LoginPage** → `authService.login()` → `POST /auth/login` ✅
+- **DashboardPage** → `adminService.getDashboardStats()` → `GET /admin/stats` ✅
+- **UsersPage** → `adminService.getUsers()` → `GET /admin/users` ✅
+- **UserDetailsPage** → `adminService.getUserById()` → `GET /admin/users/:id` ✅
+- **GroupsPage** → `adminService.getGroups()` → `GET /admin/groups` ✅
+- **GroupDetailsPage** → `adminService.getGroupById()` → `GET /admin/groups/:id` ✅
+- **TransactionsPage** → `adminService.getTransactions()` → `GET /admin/transactions` ✅
+- ⚠️ Sections placeholder dans GroupDetailsPage et UserDetailsPage (statistiques/historique non implémentés)
+
+### Mobile — Appels API corrigés
+- **change-password.tsx** : ❌ → ✅ `authService.changePassword()` → `PUT /auth/change-password`
+- **authStore.updateProfile** : ❌ → ✅ `authService.updateProfile()` → `PUT /auth/profile`
+- **edit-profile.tsx** : ❌ → ✅ Formulaire utilise `fullName` (cohérent avec l'API backend)
+- **register.tsx** : ❌ → ✅ Envoie `fullName` au lieu de `firstName`/`lastName`
+- **Tous les écrans restants** : ✅ Appellent de vrais endpoints via les stores Zustand
+
+### Types d'interface corrigés (cohérence avec l'API backend `fullName`)
+- `auth.service.ts` : `RegisterData`, `AuthResponse` → `fullName`
+- `user.service.ts` : `User` → `fullName`
+- `group.service.ts` : `GroupMember` → `fullName`
+- `proposal.service.ts` : `proposedBy` → `fullName`
+- `transaction.service.ts` : `initiatedBy` → `fullName`
+- `ai.service.ts` : `generatedBy` → `fullName`
+- `vote.service.ts` : `createdBy` → `fullName`
+
+### Landing Page — Hors scope (pas de backend dédié)
+- Les formulaires newsletter et contact utilisent `alert()` — noté comme amélioration future
+- Les statistiques et témoignages sont du contenu statique promotionnel (normal pour une landing page)
 
 ---
 
@@ -255,6 +341,17 @@
 | Fix group.balance undefined mobile | ✅ Corrigé |
 | Fix user?.id undefined group-details | ✅ Corrigé |
 | Fix mobile index.tsx firstName → fullName | ✅ Corrigé |
+| **Vérification API mobile : audit complet** | ✅ Terminé |
+| Fix change-password.tsx → appel API réel | ✅ Corrigé |
+| Fix authStore.updateProfile → appel API réel | ✅ Corrigé |
+| Add updateProfile/changePassword auth.service | ✅ Ajouté |
+| Fix register.tsx → envoie fullName | ✅ Corrigé |
+| Fix edit-profile.tsx → fullName | ✅ Corrigé |
+| Fix profile.tsx → user.fullName direct | ✅ Corrigé |
+| Fix 7 interfaces service (fullName) | ✅ Corrigé |
+| Fix 5 écrans rendant firstName/lastName | ✅ Corrigé |
+| Vérification admin : toutes pages OK | ✅ Vérifié |
+| Vérification landing : formulaires hors scope | ✅ Documenté |
 
 ---
 
