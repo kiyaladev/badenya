@@ -65,8 +65,8 @@ export default function AboutPage() {
                   title: 'Impact',
                   description: 'Nous nous engageons à avoir un impact positif sur les communautés africaines en facilitant l\'accès à l\'épargne et à l\'investissement.',
                 },
-              ].map((value, index) => (
-                <div key={index} className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
+              ].map((value) => (
+                <div key={value.title} className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl">
                   <div className="text-4xl mb-4">{value.icon}</div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
                   <p className="text-gray-600">{value.description}</p>
@@ -120,8 +120,8 @@ export default function AboutPage() {
                   role: 'Head of Product',
                   bio: 'Passionné par l\'UX/UI et l\'innovation centrée sur l\'utilisateur.',
                 },
-              ].map((member, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-6 text-center">
+              ].map((member) => (
+                <div key={member.name} className="bg-white rounded-xl shadow-lg p-6 text-center">
                   <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <span className="text-white text-3xl font-bold">
                       {member.name.split(' ').map(n => n[0]).join('')}
@@ -149,8 +149,8 @@ export default function AboutPage() {
                 { number: '500+', label: 'Groupes créés' },
                 { number: '50M+', label: 'XOF épargnés' },
                 { number: '4.8/5', label: 'Note moyenne' },
-              ].map((stat, index) => (
-                <div key={index} className="text-center">
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
                   <div className="text-4xl font-bold text-blue-600 mb-2">{stat.number}</div>
                   <div className="text-gray-600">{stat.label}</div>
                 </div>

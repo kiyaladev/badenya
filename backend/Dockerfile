@@ -38,7 +38,7 @@ COPY --from=builder /app/ecosystem.config.js ./
 RUN mkdir -p uploads
 
 # Expose port
-EXPOSE 3000
+EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \

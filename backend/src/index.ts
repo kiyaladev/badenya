@@ -81,7 +81,7 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: Error, _req: Request, res: Response) => {
+app.use((err: Error, _req: Request, res: Response, _next: import('express').NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     status: 'error',

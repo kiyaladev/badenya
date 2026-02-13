@@ -305,7 +305,7 @@ export const castVote = async (req: Request, res: Response): Promise<void> => {
     const votesFor = proposal.votes.filter((v) => v.decision === 'for').length;
     const votesAgainst = proposal.votes.filter((v) => v.decision === 'against').length;
     const votesAbstain = proposal.votes.filter((v) => v.decision === 'abstain').length;
-    const participationRate = (totalVotes / totalMembers) * 100;
+    const participationRate = totalMembers > 0 ? (totalVotes / totalMembers) * 100 : 0;
 
     proposal.result = {
       totalVotes,
