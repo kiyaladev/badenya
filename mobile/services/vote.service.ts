@@ -7,8 +7,7 @@ export interface Vote {
   description: string;
   createdBy: {
     _id: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
   };
   type: 'simple' | 'quorum' | 'unanimous';
   quorumPercentage?: number;

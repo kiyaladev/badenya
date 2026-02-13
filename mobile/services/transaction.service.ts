@@ -10,8 +10,7 @@ export interface Transaction {
   category?: string;
   initiatedBy: {
     _id: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
   };
   recipient?: {
     userId?: string;

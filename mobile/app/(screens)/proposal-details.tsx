@@ -266,7 +266,7 @@ export default function ProposalDetailsScreen() {
           <View className="mb-3">
             <Text className="text-gray-600 text-sm mb-1">Proposé par</Text>
             <Text className="text-gray-800">
-              {proposal.proposedBy.firstName} {proposal.proposedBy.lastName}
+              {proposal.proposedBy.fullName}
             </Text>
           </View>
 

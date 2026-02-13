@@ -2,8 +2,7 @@ import api from './api';
 import * as SecureStore from 'expo-secure-store';
 
 export interface RegisterData {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   password: string;
@@ -17,14 +16,24 @@ export interface LoginData {
 export interface AuthResponse {
   user: {
     id: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
     email: string;
     phone: string;
     avatar?: string;
   };
   accessToken: string;
   refreshToken: string;
+}
+
+export interface UpdateProfileData {
+  fullName?: string;
+  phone?: string;
+  avatar?: string;
+}
+
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
 }
 
 class AuthService {
@@ -92,6 +101,21 @@ class AuthService {
   async isAuthenticated(): Promise<boolean> {
     const token = await SecureStore.getItemAsync('accessToken');
     return !!token;
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(data: UpdateProfileData): Promise<AuthResponse['user']> {
+    const response = await api.put('/auth/profile', data);
+    return response.data.data.user;
+  }
+
+  /**
+   * Change password
+   */
+  async changePassword(data: ChangePasswordData): Promise<void> {
+    await api.put('/auth/change-password', data);
   }
 
   /**

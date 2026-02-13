@@ -2,8 +2,7 @@ import api from './api';
 
 export interface User {
   _id: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   avatar?: string;

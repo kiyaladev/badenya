@@ -80,18 +80,14 @@ export default function GroupMembersScreen() {
                 {/* Avatar */}
                 <View className="w-12 h-12 bg-primary-100 rounded-full items-center justify-center mr-3">
                   <Text className="text-lg font-bold text-primary-600">
-                    {member.firstName?.[0]?.toUpperCase() ||
-                      member.lastName?.[0]?.toUpperCase() ||
-                      '?'}
+                    {member.fullName?.[0]?.toUpperCase() || '?'}
                   </Text>
                 </View>
 
                 {/* Member Info */}
                 <View className="flex-1">
                   <Text className="text-gray-800 font-medium mb-1">
-                    {member.firstName && member.lastName
-                      ? `${member.firstName} ${member.lastName}`
-                      : 'Membre'}
+                    {member.fullName || 'Membre'}
                   </Text>
                   <Text className="text-gray-500 text-xs">
                     Membre depuis{' '}

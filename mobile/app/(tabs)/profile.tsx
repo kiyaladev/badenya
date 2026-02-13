@@ -111,8 +111,7 @@ export default function ProfileScreen() {
   const totalContributions = 0; // TODO: Calculate from transactions
   const totalVotes = 0; // TODO: Calculate from votes
 
-  const fullName =
-    user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Utilisateur';
+  const fullName = user?.fullName || 'Utilisateur';
 
   return (
     <ScrollView

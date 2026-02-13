@@ -183,7 +183,7 @@ export default function AddMembersScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
                     <Text className="text-gray-800 font-semibold text-base mb-1">
-                      {user.firstName} {user.lastName}
+                      {user.fullName}
                     </Text>
                     <Text className="text-gray-600 text-sm mb-1">📧 {user.email}</Text>
                     <Text className="text-gray-600 text-sm">📱 {user.phone}</Text>

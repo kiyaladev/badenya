@@ -45,8 +45,7 @@ describe('AuthStore', () => {
     it('should login successfully', async () => {
       const mockUser = {
         id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
+        fullName: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
       };
@@ -105,8 +104,7 @@ describe('AuthStore', () => {
     it('should register successfully', async () => {
       const mockUser = {
         id: '1',
-        firstName: 'Jane',
-        lastName: 'Doe',
+        fullName: 'Jane Doe',
         email: 'jane@example.com',
         phone: '+1234567890',
       };
@@ -120,8 +118,7 @@ describe('AuthStore', () => {
 
       await act(async () => {
         await result.current.register({
-          firstName: 'Jane',
-          lastName: 'Doe',
+          fullName: 'Jane Doe',
           email: 'jane@example.com',
           phone: '+1234567890',
           password: 'password123',
@@ -145,8 +142,7 @@ describe('AuthStore', () => {
       await act(async () => {
         try {
           await result.current.register({
-            firstName: 'Jane',
-            lastName: 'Doe',
+            fullName: 'Jane Doe',
             email: 'jane@example.com',
             phone: '+1234567890',
             password: 'password123',
@@ -173,8 +169,7 @@ describe('AuthStore', () => {
         useAuthStore.setState({
           user: {
             id: '1',
-            firstName: 'John',
-            lastName: 'Doe',
+            fullName: 'John Doe',
             email: 'john@example.com',
             phone: '+1234567890',
           },
@@ -244,8 +239,7 @@ describe('AuthStore', () => {
     it('should set user', () => {
       const mockUser = {
         id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
+        fullName: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
       };

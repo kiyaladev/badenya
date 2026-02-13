@@ -14,8 +14,7 @@ export interface Proposal {
   };
   proposedBy: {
     _id: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
   };
   attachments: Array<{
     type: 'image' | 'document' | 'link';

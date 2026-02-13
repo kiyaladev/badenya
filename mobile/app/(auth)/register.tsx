@@ -5,15 +5,13 @@ import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterScreen() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
     phone: '',
     password: '',
@@ -26,21 +24,15 @@ export default function RegisterScreen() {
   const validateForm = () => {
     let valid = true;
     const newErrors = {
-      firstName: '',
-      lastName: '',
+      fullName: '',
       email: '',
       phone: '',
       password: '',
       confirmPassword: '',
     };
 
-    if (!firstName.trim()) {
-      newErrors.firstName = 'Prénom requis';
-      valid = false;
-    }
-
-    if (!lastName.trim()) {
-      newErrors.lastName = 'Nom requis';
+    if (!fullName.trim()) {
+      newErrors.fullName = 'Nom complet requis';
       valid = false;
     }
 
@@ -82,7 +74,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      await register({ firstName, lastName, email, phone, password });
+      await register({ fullName, email, phone, password });
       router.replace('/(tabs)');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -112,25 +104,14 @@ export default function RegisterScreen() {
 
           {/* Form */}
           <Input
-            label="Prénom"
-            value={firstName}
+            label="Nom complet"
+            value={fullName}
             onChangeText={text => {
-              setFirstName(text);
-              setErrors({ ...errors, firstName: '' });
+              setFullName(text);
+              setErrors({ ...errors, fullName: '' });
             }}
-            placeholder="Jean"
-            error={errors.firstName}
-          />
-
-          <Input
-            label="Nom"
-            value={lastName}
-            onChangeText={text => {
-              setLastName(text);
-              setErrors({ ...errors, lastName: '' });
-            }}
-            placeholder="Dupont"
-            error={errors.lastName}
+            placeholder="Jean Dupont"
+            error={errors.fullName}
           />
 
           <Input
