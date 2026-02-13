@@ -128,7 +128,7 @@ export const getGroupTransactions = async (
       status?: string;
     }
     
-    const query: TransactionQuery = { groupId };
+    const query: TransactionQuery = { groupId: groupId as string };
     if (type) query.type = type as string;
     if (status) query.status = status as string;
 

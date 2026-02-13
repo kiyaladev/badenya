@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 /**
  * Payload structure for JWT tokens
@@ -26,8 +26,8 @@ interface TokenPayload {
  */
 export const generateAccessToken = (payload: TokenPayload): string => {
   const secret = process.env.JWT_SECRET as string;
-  const expiresIn: string = process.env.JWT_EXPIRE || '24h';
-  return jwt.sign(payload, secret, { expiresIn });
+  const options: SignOptions = { expiresIn: (process.env.JWT_EXPIRE || '24h') as SignOptions['expiresIn'] };
+  return jwt.sign(payload, secret, options);
 };
 
 /**
@@ -48,8 +48,8 @@ export const generateAccessToken = (payload: TokenPayload): string => {
  */
 export const generateRefreshToken = (payload: TokenPayload): string => {
   const secret = process.env.JWT_REFRESH_SECRET as string;
-  const expiresIn: string = process.env.JWT_REFRESH_EXPIRE || '7d';
-  return jwt.sign(payload, secret, { expiresIn });
+  const options: SignOptions = { expiresIn: (process.env.JWT_REFRESH_EXPIRE || '7d') as SignOptions['expiresIn'] };
+  return jwt.sign(payload, secret, options);
 };
 
 /**

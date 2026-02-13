@@ -20,7 +20,7 @@ export const generateInsights = async (req: Request, res: Response): Promise<voi
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
     const userId = authReq.user.id;
 
     // Get period from query or default to last 30 days
@@ -141,7 +141,7 @@ export const getInsightById = async (req: Request, res: Response): Promise<void>
  */
 export const detectAnomalies = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
 
     const result = await aiService.detectAnomalies(groupId);
 
@@ -173,7 +173,7 @@ export const detectAnomalies = async (req: Request, res: Response): Promise<void
  */
 export const generateRecommendations = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
 
     const result = await aiService.generateRecommendations(groupId);
 

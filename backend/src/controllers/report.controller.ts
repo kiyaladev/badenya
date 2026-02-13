@@ -15,7 +15,7 @@ const getErrorMessage = (error: unknown): string => {
  */
 export const getGroupSummary = async (req: Request, res: Response) => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
     const { startDate, endDate } = req.query;
 
     let period;
@@ -48,7 +48,7 @@ export const getGroupSummary = async (req: Request, res: Response) => {
  */
 export const generatePdfReport = async (req: Request, res: Response) => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
     const { startDate, endDate } = req.query;
 
     let period;
@@ -80,7 +80,7 @@ export const generatePdfReport = async (req: Request, res: Response) => {
  */
 export const generateExcelReport = async (req: Request, res: Response) => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId as string;
     const { startDate, endDate } = req.query;
 
     let period;
@@ -112,7 +112,9 @@ export const generateExcelReport = async (req: Request, res: Response) => {
  */
 export const getMonthlyReport = async (req: Request, res: Response) => {
   try {
-    const { groupId, year, month } = req.params;
+    const groupId = req.params.groupId as string;
+    const year = req.params.year as string;
+    const month = req.params.month as string;
 
     const report = await reportService.generateMonthlyReport(
       groupId,

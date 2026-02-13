@@ -128,7 +128,7 @@ export const getGroupVotes = async (
       status?: string;
     }
     
-    const query: VoteQuery = { groupId };
+    const query: VoteQuery = { groupId: groupId as string };
     if (status) {
       query.status = status as string;
     }

@@ -140,7 +140,7 @@ export const getGroupProposals = async (
       category?: string;
     }
     
-    const query: ProposalQuery = { groupId };
+    const query: ProposalQuery = { groupId: groupId as string };
     if (status) query.status = status as string;
     if (category) query.category = category as string;
 
