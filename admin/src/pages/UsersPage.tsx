@@ -55,7 +55,7 @@ export default function UsersPage() {
       setConfirmSuspend(null);
       await loadUsers();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de la suspension');
+      setError(getErrorMessage(err) || 'Erreur lors de la suspension');
     }
   };
 
@@ -64,7 +64,7 @@ export default function UsersPage() {
       await adminService.activateUser(userId);
       await loadUsers();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de l\'activation');
+      setError(getErrorMessage(err) || 'Erreur lors de l\'activation');
     }
   };
 

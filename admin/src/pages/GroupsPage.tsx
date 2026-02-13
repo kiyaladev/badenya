@@ -57,7 +57,7 @@ export default function GroupsPage() {
       setConfirmArchive(null);
       await loadGroups();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de l\'archivage');
+      setError(getErrorMessage(err) || 'Erreur lors de l\'archivage');
     }
   };
 
