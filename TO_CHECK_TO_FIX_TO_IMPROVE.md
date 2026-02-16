@@ -474,13 +474,13 @@
 
 ## 📊 PROGRESSION — Résumé (mise à jour passe 3)
 
-| Module | Corrigé (passes 1-2) | Identifié (passe 3) | Total reste à faire |
-|--------|----------------------|---------------------|---------------------|
-| **Backend** | 31 corrections · 0 erreur TS · 80/80 tests | 8 items (sécurité middleware, JWT validation, rate limiting, middleware manquant) | ~14 items |
-| **Admin** | 27 corrections (fullName, modales, layout, ARIA, token refresh) | 8 items (toast auto-dismiss, debounce, aria-label, CSP) | ~11 items |
-| **Landing Page** | 18 corrections (SVG, accessibilité, formulaires, OG, sitemap) | 5 items (JSON-LD, page 404, validation formulaires) | ~13 items |
-| **Mobile** | 32+ corrections (fullName, mocks→API, bugs, stores harmonisés) | 7 items (user?.id bug, Keyboard.dismiss, memo, AppState) | ~14 items |
-| **Projet** | Organisation DOCS/, README, CI/CD | 4 items (LICENSE, SECURITY.md, monorepo, Docker frontend) | 4 items |
+| Module | Corrigé (passes 1-2) | Reste passes 1-2 | Identifié (passe 3) | Total reste à faire |
+|--------|----------------------|-------------------|---------------------|---------------------|
+| **Backend** | 31 corrections · 0 erreur TS · 80/80 tests | 6 items (double cast, tests intégration, TODOs email/Firebase, logging) | 8 items (sécurité middleware, JWT, rate limiting, middleware) | 14 items |
+| **Admin** | 27 corrections (fullName, modales, layout, ARIA, token refresh) | 3 items (token localStorage, focus trap, aria-describedby) | 8 items (toast, debounce, aria-label, CSP) | 11 items |
+| **Landing Page** | 18 corrections (SVG, accessibilité, formulaires, OG, sitemap) | 8 items (TODOs backend, liens morts, hardcoded, favicon, og-image) | 5 items (JSON-LD, page 404, validation) | 13 items |
+| **Mobile** | 32+ corrections (fullName, mocks→API, bugs, stores harmonisés) | 7 items (token expiration, search endpoint, TODOs, logging, offline) | 7 items (user?.id, Keyboard, memo, AppState) | 14 items |
+| **Projet** | Organisation DOCS/, README, CI/CD | 0 items | 4 items (LICENSE, SECURITY.md, monorepo, Docker) | 4 items |
 
 ---
 
