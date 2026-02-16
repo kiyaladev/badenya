@@ -139,25 +139,32 @@ export const isAdmin = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const authReq = req as AuthRequest;
-  
-  if (!authReq.user) {
-    res.status(403).json({
-      status: 'error',
-      message: 'Access denied. Admin only.',
-    });
-    return;
-  }
+  try {
+    const authReq = req as AuthRequest;
+    
+    if (!authReq.user) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.',
+      });
+      return;
+    }
 
-  // Verify user has admin role
-  const user = await User.findById(authReq.user.id).select('role');
-  if (!user || user.role !== 'admin') {
-    res.status(403).json({
-      status: 'error',
-      message: 'Access denied. Admin only.',
-    });
-    return;
-  }
+    // Verify user has admin role
+    const user = await User.findById(authReq.user.id).select('role');
+    if (!user || user.role !== 'admin') {
+      res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Admin only.',
+      });
+      return;
+    }
 
-  next();
+    next();
+  } catch {
+    res.status(500).json({
+      status: 'error',
+      message: 'Authorization check failed',
+    });
+  }
 };
