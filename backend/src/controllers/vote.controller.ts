@@ -4,6 +4,15 @@ import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
 
+const isUserGroupAdmin = async (groupId: mongoose.Types.ObjectId, userId: string): Promise<boolean> => {
+  const group = await Group.findById(groupId);
+  if (!group) return false;
+  const member = group.members.find(
+    (m) => m.userId.toString() === userId
+  );
+  return member?.role === 'admin';
+};
+
 // Create a new vote in a group
 export const createVote = async (
   req: Request,
@@ -352,18 +361,9 @@ export const closeVote = async (
 
     // Verify user is the creator or a group admin
     const isCreator = vote.createdBy.toString() === authReq.user.id;
-    let isGroupAdmin = false;
-    if (!isCreator) {
-      const group = await Group.findById(vote.groupId);
-      if (group) {
-        const member = group.members.find(
-          (m) => m.userId.toString() === authReq.user.id
-        );
-        isGroupAdmin = member?.role === 'admin';
-      }
-    }
+    const hasAdminAccess = isCreator || await isUserGroupAdmin(vote.groupId, authReq.user.id);
 
-    if (!isCreator && !isGroupAdmin) {
+    if (!hasAdminAccess) {
       res.status(403).json({
         status: 'error',
         message: 'Only the vote creator or a group admin can close this vote',
@@ -410,18 +410,9 @@ export const deleteVote = async (
 
     // Verify user is the creator or a group admin
     const isCreator = vote.createdBy.toString() === authReq.user.id;
-    let isGroupAdmin = false;
-    if (!isCreator) {
-      const group = await Group.findById(vote.groupId);
-      if (group) {
-        const member = group.members.find(
-          (m) => m.userId.toString() === authReq.user.id
-        );
-        isGroupAdmin = member?.role === 'admin';
-      }
-    }
+    const hasAdminAccess = isCreator || await isUserGroupAdmin(vote.groupId, authReq.user.id);
 
-    if (!isCreator && !isGroupAdmin) {
+    if (!hasAdminAccess) {
       res.status(403).json({
         status: 'error',
         message: 'Only the vote creator or a group admin can delete this vote',
