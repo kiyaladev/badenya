@@ -494,3 +494,37 @@ export const changePassword = async (
     });
   }
 };
+
+// Delete user account
+export const deleteAccount = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!requireAuth(authReq, res)) return;
+
+    const user = await User.findById(authReq.user.id);
+
+    if (!user) {
+      res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+      return;
+    }
+
+    await User.findByIdAndDelete(authReq.user.id);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Delete account error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete account',
+    });
+  }
+};

@@ -120,6 +120,16 @@ class AuthService {
   }
 
   /**
+   * Delete user account
+   */
+  async deleteAccount(): Promise<void> {
+    await api.delete('/auth/account');
+    // Clear tokens from secure storage
+    await SecureStore.deleteItemAsync('accessToken');
+    await SecureStore.deleteItemAsync('refreshToken');
+  }
+
+  /**
    * Get current access token
    */
   async getAccessToken(): Promise<string | null> {

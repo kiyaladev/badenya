@@ -4,6 +4,53 @@ import * as SecureStore from 'expo-secure-store';
 // Base URL for the API - in development, this should point to your local backend
 const API_BASE_URL = __DEV__ ? 'http://localhost:5000/api' : 'https://api.badenya.app/api'; // Update with production URL
 
+/**
+ * Decode JWT payload without external library
+ */
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if a JWT token is expired (with 30s buffer)
+ */
+function isTokenExpired(token: string): boolean {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return false;
+  return Date.now() >= (payload.exp * 1000) - 30000;
+}
+
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Refresh the access token using the refresh token
+ */
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = await SecureStore.getItemAsync('refreshToken');
+  if (!refreshToken) return null;
+
+  try {
+    const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
+      refreshToken,
+    });
+    const { accessToken } = response.data;
+    await SecureStore.setItemAsync('accessToken', accessToken);
+    return accessToken;
+  } catch {
+    await SecureStore.deleteItemAsync('accessToken');
+    await SecureStore.deleteItemAsync('refreshToken');
+    return null;
+  }
+}
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,10 +60,23 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token (with proactive expiration check)
 api.interceptors.request.use(
   async config => {
-    const token = await SecureStore.getItemAsync('accessToken');
+    let token = await SecureStore.getItemAsync('accessToken');
+
+    // Proactively refresh if token is expired or about to expire
+    if (token && isTokenExpired(token)) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = refreshAccessToken().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+      }
+      token = await refreshPromise;
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,7 +87,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle token refresh (fallback for unexpected 401)
 api.interceptors.response.use(
   response => response,
   async error => {
@@ -38,25 +98,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
-        if (refreshToken) {
-          // Try to refresh the token
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
-            refreshToken,
-          });
-
-          const { accessToken } = response.data;
-          await SecureStore.setItemAsync('accessToken', accessToken);
-
+        const newToken = await refreshAccessToken();
+        if (newToken) {
           // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
-        // You might want to navigate to login screen here
         return Promise.reject(refreshError);
       }
     }
