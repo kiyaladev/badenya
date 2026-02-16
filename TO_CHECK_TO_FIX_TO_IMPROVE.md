@@ -15,11 +15,12 @@
 
 | Module | Pages/Fichiers | Bugs critiques | Sécurité | UI/UX | Statut |
 |--------|---------------|----------------|----------|-------|--------|
-| **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ✅ Tests OK (80/80) — reste 4 TODOs, logging |
-| **Admin** | 7 pages | ✅ 2/2 corrigés | ✅ 3/3 corrigés (token refresh) | ✅ 6/6 alert/confirm → modales custom | ⚠️ Passe 2 en cours |
-| **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ✅ Error boundary, reduced-motion, aria-live, label newsletter | ⚠️ Passe 2 en cours |
-| **Mobile** | 20+ écrans | ✅ Bug runtime corrigé | ✅ Validation renforcée | ✅ fullName fixé, stores harmonisés | ⚠️ Passe 2 en cours |
+| **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ⚠️ Passe 3 : sécurité middleware, rate limiting, JWT validation |
+| **Admin** | 7 pages | ✅ 2/2 corrigés | ✅ 3/3 corrigés (token refresh) | ✅ 6/6 alert/confirm → modales custom | ⚠️ Passe 3 : toast auto-dismiss, debounce, aria-label |
+| **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ✅ Error boundary, reduced-motion, aria-live, label newsletter | ⚠️ Passe 3 : JSON-LD, page 404, validation formulaires |
+| **Mobile** | 20+ écrans | ✅ Bug runtime corrigé | ✅ Validation renforcée | ✅ fullName fixé, stores harmonisés | ⚠️ Passe 3 : user?.id bug, Keyboard.dismiss, memo, AppState |
 | **API Mobile** | 19 fichiers vérifiés | ✅ 3 mocks → API réelle | ✅ Types corrigés | N/A | ✅ Corrigé |
+| **Projet** | Config racine | — | — | — | ⚠️ Passe 3 : LICENSE, SECURITY.md, monorepo, Docker |
 
 ---
 
@@ -352,3 +353,168 @@
 - [x] Mettre à jour `sitemap.xml` (dates `lastmod` périmées, routes inexistantes) — **corrigé**
 - [ ] Implémenter la suppression de compte mobile (`settings.tsx`)
 - [x] Ajouter la validation `endDate > now` côté contrôleur de votes — **corrigé**
+
+---
+
+## 📝 PASSE 3 — Audit approfondi (février 2026)
+
+> Troisième audit systématique du projet. Focus sur : sécurité renforcée, robustesse middleware, validation JWT, rate limiting, accessibilité avancée, configuration projet, performance mobile.
+
+---
+
+### 🔴 BACKEND — Passe 3
+
+> Sécurité middleware, validation des secrets, rate limiting incomplet, middleware manquant, comparaison de tokens non sécurisée.
+
+#### Sécurité middleware
+
+- [ ] `middleware/auth.ts:137-163` — `isAdmin` middleware sans `try-catch` : si `User.findById()` échoue, rejet de promesse non géré → crash potentiel du serveur
+- [ ] `utils/jwt.ts:28,50,77` — `JWT_SECRET` et `JWT_REFRESH_SECRET` castés `as string` sans validation — si absents, `jwt.sign()` échoue silencieusement ou génère des tokens invalides
+- [ ] `controllers/auth.controller.ts:200` — Comparaison de refresh token avec `===` (égalité simple) au lieu de `crypto.timingSafeEqual()` → vulnérabilité timing attack
+
+#### Rate limiting
+
+- [ ] `routes/auth.routes.ts:297-298` — `PUT /profile` et `PUT /change-password` sans rate limiting (seuls les `POST` sont protégés) → spam possible sur les endpoints sensibles
+
+#### Middleware manquant
+
+- [ ] `index.ts` — `xss-clean` listé dans `package.json` mais jamais importé ni utilisé (seul `express-mongo-sanitize` est appliqué)
+- [ ] `index.ts` — Pas de middleware `compression` (gzip) pour optimiser les réponses API
+- [ ] `index.ts` — Pas de middleware `express-request-id` ou corrélation ID pour le traçage des erreurs en production
+
+#### Validation au démarrage
+
+- [ ] `index.ts` — Les secrets JWT ne sont pas validés au démarrage du serveur — échec tardif au premier appel API au lieu d'un fail-fast à l'initialisation
+
+---
+
+### 🟠 ADMIN — Passe 3
+
+> Toast sans auto-dismiss, debounce manquant sur TransactionsPage, accessibilité des notifications, validation des recherches.
+
+#### UX & Robustesse
+
+- [ ] `UserDetailsPage.tsx`, `GroupDetailsPage.tsx`, `TransactionsPage.tsx` — Notifications toast sans auto-dismiss (restent affichées indéfiniment, l'utilisateur doit cliquer ✕ manuellement)
+- [ ] `TransactionsPage.tsx:94-103` — Recherche sans debounce (contrairement à UsersPage et GroupsPage qui ont 300ms) → appels API à chaque frappe
+- [ ] `TransactionsPage.tsx:287-293` — Bouton « Signaler » dans la modale sans état de chargement → clics multiples possibles
+- [ ] `components/AdminLayout.tsx:39` — Bouton de déconnexion sans `try-catch` → échec silencieux si l'API ne répond pas
+
+#### Accessibilité
+
+- [ ] `UsersPage.tsx:80`, `GroupsPage.tsx:81`, `TransactionsPage.tsx:96` — Champs de recherche sans `aria-label` (uniquement `placeholder`) → non accessible aux lecteurs d'écran
+- [ ] `TransactionsPage.tsx:256` — Notification toast sans `role="status"` ni `aria-live="polite"` → non annoncée par les lecteurs d'écran
+
+#### Types & Qualité de code
+
+- [ ] `services/api.ts:7,9` — Assertions `as any` qui contournent le mode strict TypeScript → perte de sécurité de type
+- [ ] `vite.config.ts` — Configuration vide — pas de headers CSP, pas de configuration de sécurité, pas de validation d'environnement
+
+---
+
+### 🔵 LANDING PAGE — Passe 3
+
+> SEO structuré manquant, page 404 absente, validation de formulaires insuffisante.
+
+#### SEO & Structure
+
+- [ ] `index.html` — Pas de données structurées JSON-LD (`<script type="application/ld+json">`) — manque Organisation, FAQPage, SoftwareApplication schemas
+- [ ] `App.tsx:15` — Pas de page 404 dédiée — `<Navigate to="/" replace />` redirige silencieusement toutes les URLs invalides vers l'accueil
+
+#### Validation de formulaires
+
+- [ ] `HomePage.tsx:596` — Champ email newsletter sans validation regex côté client (repose uniquement sur le HTML5 `type="email"`)
+- [ ] `ContactPage.tsx:73-84` — Champ nom sans contrainte de longueur (`minLength`, `maxLength`)
+- [ ] `ContactPage.tsx:123-135` — Textarea message sans contrainte de longueur
+
+---
+
+### 🟢 MOBILE — Passe 3
+
+> Incohérence `user?.id` vs `user?._id`, clavier non fermé après soumission, validation de paramètres de route manquante, performances de listes, gestion du cycle de vie app.
+
+#### Bugs potentiels
+
+- [ ] `group-details.tsx:73` — Utilise `user?.id` au lieu de `user?._id` (incohérent avec `add-members.tsx:31` qui utilise `currentUser?._id`) → vérifications de permission potentiellement cassées
+
+#### UX Formulaires
+
+- [ ] `login.tsx`, `register.tsx`, `create-proposal.tsx`, `edit-profile.tsx`, `add-contribution.tsx`, `create-group.tsx` — Pas de `Keyboard.dismiss()` après soumission de formulaire → clavier reste ouvert après validation
+- [ ] Écrans avec `useLocalSearchParams()` (`create-proposal.tsx:14`, `transaction-details.tsx:10`, `proposals.tsx:10`) — Paramètres de route non validés (pas de vérification si `id` est défini avant utilisation)
+
+#### Performance
+
+- [ ] `components/GroupCard.tsx`, `TransactionItem.tsx`, `VoteCard.tsx` — Pas de `React.memo()` → re-render complet des listes (potentiellement 100+ éléments) à chaque changement d'état parent
+
+#### Cycle de vie de l'app
+
+- [ ] `app/_layout.tsx` — Pas de listener `AppState` pour détecter le retour de l'app au premier plan → token potentiellement expiré après mise en arrière-plan prolongée
+- [ ] `app/(tabs)/_layout.tsx` — Pas d'error boundary sur les écrans d'onglets → un crash dans un onglet fait tomber toute la navigation
+
+#### Recherche utilisateur
+
+- [ ] `app/(screens)/add-members.tsx:41-67` — Échec de recherche silencieux (retourne un tableau vide au lieu d'afficher une erreur) → l'utilisateur ne sait pas que la recherche a échoué
+
+---
+
+### 🏗️ PROJET — Passe 3
+
+> Configuration projet, fichiers manquants, hygiène du dépôt.
+
+#### Fichiers manquants
+
+- [ ] Pas de `LICENSE` à la racine — README indique « [À définir — Propriétaire ou Open Source] »
+- [ ] Pas de `SECURITY.md` — Aucune politique de signalement de vulnérabilités
+- [ ] Pas de `package.json` racine pour la gestion monorepo (scripts centralisés, commandes `npm run` globales)
+
+#### Docker
+
+- [ ] Seul le backend a un `Dockerfile` et `docker-compose.yml` — l'admin et la landing page n'ont pas de conteneurisation
+
+---
+
+## 📊 PROGRESSION — Résumé (mise à jour passe 3)
+
+| Module | Corrigé (passes 1-2) | Reste passes 1-2 | Identifié (passe 3) | Total reste à faire |
+|--------|----------------------|-------------------|---------------------|---------------------|
+| **Backend** | 31 corrections · 0 erreur TS · 80/80 tests | 6 items (double cast, tests intégration, TODOs email/Firebase, logging) | 8 items (sécurité middleware, JWT, rate limiting, middleware) | 14 items |
+| **Admin** | 27 corrections (fullName, modales, layout, ARIA, token refresh) | 3 items (token localStorage, focus trap, aria-describedby) | 8 items (toast, debounce, aria-label, CSP) | 11 items |
+| **Landing Page** | 18 corrections (SVG, accessibilité, formulaires, OG, sitemap) | 8 items (TODOs backend, liens morts, hardcoded, favicon, og-image) | 5 items (JSON-LD, page 404, validation) | 13 items |
+| **Mobile** | 32+ corrections (fullName, mocks→API, bugs, stores harmonisés) | 7 items (token expiration, search endpoint, TODOs, logging, offline) | 7 items (user?.id, Keyboard, memo, AppState) | 14 items |
+| **Projet** | Organisation DOCS/, README, CI/CD | 0 items | 4 items (LICENSE, SECURITY.md, monorepo, Docker) | 4 items |
+
+---
+
+## 🔮 AMÉLIORATIONS FUTURES RECOMMANDÉES (mise à jour passe 3)
+
+### Critique (sécurité / crashes)
+- [ ] **Backend** : Ajouter `try-catch` dans le middleware `isAdmin` (`auth.ts:137-163`)
+- [ ] **Backend** : Valider `JWT_SECRET` et `JWT_REFRESH_SECRET` au démarrage du serveur (fail-fast)
+- [ ] **Backend** : Utiliser `crypto.timingSafeEqual()` pour la comparaison des refresh tokens
+- [ ] **Mobile** : Corriger `user?.id` → `user?._id` dans `group-details.tsx:73`
+
+### Haute priorité
+- [ ] **Backend** : Ajouter rate limiting sur `PUT /profile` et `PUT /change-password`
+- [ ] **Backend** : Importer et appliquer `xss-clean` (listé dans les dépendances mais non utilisé)
+- [ ] **Backend** : Ajouter `compression` middleware pour les réponses API
+- [ ] **Admin** : Ajouter auto-dismiss (3-5s) aux notifications toast
+- [ ] **Admin** : Ajouter debounce 300ms sur la recherche de TransactionsPage
+- [ ] **Admin** : Ajouter `aria-label` aux champs de recherche
+- [ ] **Mobile** : Ajouter error boundary sur les écrans d'onglets
+- [ ] **Mobile** : Ajouter listener `AppState` pour vérifier l'expiration du token
+- [ ] **Projet** : Ajouter fichier `LICENSE`
+
+### Moyenne priorité
+- [ ] **Landing Page** : Ajouter données structurées JSON-LD (Organisation, FAQPage)
+- [ ] **Landing Page** : Créer une page 404 dédiée
+- [ ] **Landing Page** : Renforcer la validation des formulaires (regex email, longueur des champs)
+- [ ] **Mobile** : Ajouter `Keyboard.dismiss()` après soumission des formulaires
+- [ ] **Mobile** : Ajouter `React.memo()` sur les composants de liste (GroupCard, TransactionItem, VoteCard)
+- [ ] **Mobile** : Valider les paramètres de route (`useLocalSearchParams`)
+- [ ] **Admin** : Ajouter headers CSP dans la configuration Vite
+- [ ] **Projet** : Ajouter `SECURITY.md` pour la politique de signalement de vulnérabilités
+- [ ] **Projet** : Créer un `package.json` racine monorepo
+
+### Basse priorité
+- [ ] **Admin** : Éliminer les assertions `as any` dans `api.ts`
+- [ ] **Mobile** : Afficher une erreur en cas d'échec de recherche dans `add-members.tsx`
+- [ ] **Projet** : Ajouter Docker pour admin et landing page
