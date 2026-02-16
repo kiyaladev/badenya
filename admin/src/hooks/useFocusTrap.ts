@@ -21,10 +21,6 @@ export function useFocusTrap<T extends HTMLElement>(isActive: boolean) {
     firstFocusable?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        return;
-      }
-
       if (e.key !== 'Tab') return;
 
       if (e.shiftKey) {
