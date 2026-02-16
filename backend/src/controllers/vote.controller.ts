@@ -350,12 +350,23 @@ export const closeVote = async (
       return;
     }
 
-    // Verify user is the creator or an admin
-    if (vote.createdBy.toString() !== authReq.user.id) {
-      // TODO: Also check if user is group admin
+    // Verify user is the creator or a group admin
+    const isCreator = vote.createdBy.toString() === authReq.user.id;
+    let isGroupAdmin = false;
+    if (!isCreator) {
+      const group = await Group.findById(vote.groupId);
+      if (group) {
+        const member = group.members.find(
+          (m) => m.userId.toString() === authReq.user.id
+        );
+        isGroupAdmin = member?.role === 'admin';
+      }
+    }
+
+    if (!isCreator && !isGroupAdmin) {
       res.status(403).json({
         status: 'error',
-        message: 'Only the vote creator can close this vote',
+        message: 'Only the vote creator or a group admin can close this vote',
       });
       return;
     }
@@ -397,12 +408,23 @@ export const deleteVote = async (
       return;
     }
 
-    // Verify user is the creator or an admin
-    if (vote.createdBy.toString() !== authReq.user.id) {
-      // TODO: Also check if user is group admin
+    // Verify user is the creator or a group admin
+    const isCreator = vote.createdBy.toString() === authReq.user.id;
+    let isGroupAdmin = false;
+    if (!isCreator) {
+      const group = await Group.findById(vote.groupId);
+      if (group) {
+        const member = group.members.find(
+          (m) => m.userId.toString() === authReq.user.id
+        );
+        isGroupAdmin = member?.role === 'admin';
+      }
+    }
+
+    if (!isCreator && !isGroupAdmin) {
       res.status(403).json({
         status: 'error',
-        message: 'Only the vote creator can delete this vote',
+        message: 'Only the vote creator or a group admin can delete this vote',
       });
       return;
     }
