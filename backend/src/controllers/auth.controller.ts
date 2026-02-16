@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { User } from '../models';
+import { User, Notification, Group } from '../models';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { generateToken } from '../utils/crypto';
@@ -504,7 +504,8 @@ export const deleteAccount = async (
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
 
-    const user = await User.findById(authReq.user.id);
+    const userId = authReq.user.id;
+    const user = await User.findById(userId);
 
     if (!user) {
       res.status(404).json({
@@ -514,7 +515,13 @@ export const deleteAccount = async (
       return;
     }
 
-    await User.findByIdAndDelete(authReq.user.id);
+    // Cleanup related data
+    await Notification.deleteMany({ userId });
+    await Group.updateMany(
+      { 'members.userId': userId },
+      { $pull: { members: { userId } } }
+    );
+    await User.findByIdAndDelete(userId);
 
     res.status(200).json({
       status: 'success',

@@ -5,14 +5,26 @@ import * as SecureStore from 'expo-secure-store';
 const API_BASE_URL = __DEV__ ? 'http://localhost:5000/api' : 'https://api.badenya.app/api'; // Update with production URL
 
 /**
- * Decode JWT payload without external library
+ * Decode JWT payload without external library (React Native compatible)
  */
 function decodeJwtPayload(token: string): { exp?: number } | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(payload));
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    // Manual base64 decode (React Native compatible — avoids reliance on atob)
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let output = '';
+    for (let i = 0; i < base64.length; i += 4) {
+      const a = chars.indexOf(base64[i]);
+      const b = chars.indexOf(base64[i + 1]);
+      const c = chars.indexOf(base64[i + 2]);
+      const d = chars.indexOf(base64[i + 3]);
+      output += String.fromCharCode((a << 2) | (b >> 4));
+      if (c !== 64) output += String.fromCharCode(((b & 15) << 4) | (c >> 2));
+      if (d !== 64) output += String.fromCharCode(((c & 3) << 6) | d);
+    }
+    return JSON.parse(output);
   } catch {
     return null;
   }
@@ -23,7 +35,7 @@ function decodeJwtPayload(token: string): { exp?: number } | null {
  */
 function isTokenExpired(token: string): boolean {
   const payload = decodeJwtPayload(token);
-  if (!payload?.exp) return false;
+  if (!payload?.exp) return true;
   return Date.now() >= (payload.exp * 1000) - 30000;
 }
 
