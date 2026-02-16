@@ -3,6 +3,7 @@ import { Proposal, Group } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
+import logger from '../utils/logger';
 
 // Create new proposal
 export const createProposal = async (
@@ -91,7 +92,7 @@ export const createProposal = async (
       data: { proposal },
     });
   } catch (error) {
-    console.error('Create proposal error:', error);
+    logger.error('Create proposal error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to create proposal',
@@ -157,7 +158,7 @@ export const getGroupProposals = async (
       },
     });
   } catch (error) {
-    console.error('Get group proposals error:', error);
+    logger.error('Get group proposals error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get proposals',
@@ -216,7 +217,7 @@ export const getProposalById = async (
       data: { proposal },
     });
   } catch (error) {
-    console.error('Get proposal error:', error);
+    logger.error('Get proposal error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get proposal',
@@ -327,7 +328,7 @@ export const castVote = async (req: Request, res: Response): Promise<void> => {
       data: { proposal },
     });
   } catch (error) {
-    console.error('Cast vote error:', error);
+    logger.error('Cast vote error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to cast vote',
@@ -412,7 +413,7 @@ export const closeProposal = async (
       data: { proposal },
     });
   } catch (error) {
-    console.error('Close proposal error:', error);
+    logger.error('Close proposal error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to close proposal',
@@ -490,7 +491,7 @@ export const executeProposal = async (
       data: { proposal },
     });
   } catch (error) {
-    console.error('Execute proposal error:', error);
+    logger.error('Execute proposal error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to execute proposal',

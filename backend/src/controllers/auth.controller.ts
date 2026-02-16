@@ -6,6 +6,7 @@ import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { generateToken } from '../utils/crypto';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
+import logger from '../utils/logger';
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -91,7 +92,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error) {
-    console.error('Register error:', error);
+    logger.error('Register error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to register user',
@@ -160,7 +161,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to login',
@@ -241,7 +242,7 @@ export const refreshToken = async (
       data: { tokens },
     });
   } catch (error) {
-    console.error('Refresh token error:', error);
+    logger.error('Refresh token error:', error);
     res.status(401).json({
       status: 'error',
       message: 'Invalid refresh token',
@@ -271,7 +272,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       message: 'Logout successful',
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to logout',
@@ -311,7 +312,7 @@ export const forgotPassword = async (
       message: 'If the email exists, a password reset link has been sent',
     });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error('Forgot password error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to process password reset request',
@@ -355,7 +356,7 @@ export const resetPassword = async (
       message: 'Password reset successful',
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error('Reset password error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to reset password',
@@ -387,7 +388,7 @@ export const getCurrentUser = async (
       data: { user },
     });
   } catch (error) {
-    console.error('Get current user error:', error);
+    logger.error('Get current user error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get user',
@@ -434,7 +435,7 @@ export const updateProfile = async (
       data: { user: safeUser },
     });
   } catch (error) {
-    console.error('Update profile error:', error);
+    logger.error('Update profile error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to update profile',
@@ -486,7 +487,7 @@ export const changePassword = async (
       message: 'Password changed successfully',
     });
   } catch (error) {
-    console.error('Change password error:', error);
+    logger.error('Change password error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to change password',

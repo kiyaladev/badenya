@@ -9,6 +9,8 @@ import swaggerUi from 'swagger-ui-express';
 import { connectDatabase } from './config/database';
 import swaggerSpec from './config/swagger';
 import routes from './routes';
+import { correlationId } from './middleware/correlationId';
+import logger from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -17,7 +19,7 @@ dotenv.config();
 const requiredSecrets = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
 for (const secret of requiredSecrets) {
   if (!process.env[secret]) {
-    console.error(`❌ Missing required environment variable: ${secret}`);
+    logger.error(`❌ Missing required environment variable: ${secret}`);
     process.exit(1);
   }
 }
@@ -27,6 +29,7 @@ const PORT = process.env.PORT || 5000;
 
 // Security Middleware
 app.use(helmet()); // Set security headers
+app.use(correlationId); // Assign correlation ID to each request
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true,
@@ -95,7 +98,7 @@ app.use((_req: Request, res: Response) => {
 
 // Error handler
 app.use((err: Error, _req: Request, res: Response, _next: import('express').NextFunction) => {
-  console.error(err.stack);
+  logger.error(err.stack);
   res.status(500).json({
     status: 'error',
     message: 'Internal server error',
@@ -109,11 +112,11 @@ const startServer = async () => {
     await connectDatabase();
     
     app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🚀 Server is running on port ${PORT}`);
+      logger.info(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };

@@ -3,6 +3,7 @@ import { Group } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
+import logger from '../utils/logger';
 
 const MEMBER_POPULATE_FIELDS = 'fullName email avatar' as const;
 
@@ -52,7 +53,7 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       data: { group },
     });
   } catch (error) {
-    console.error('Create group error:', error);
+    logger.error('Create group error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to create group',
@@ -78,7 +79,7 @@ export const getUserGroups = async (req: Request, res: Response): Promise<void> 
       data: { groups, count: groups.length },
     });
   } catch (error) {
-    console.error('Get user groups error:', error);
+    logger.error('Get user groups error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get groups',
@@ -124,7 +125,7 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
       data: { group },
     });
   } catch (error) {
-    console.error('Get group error:', error);
+    logger.error('Get group error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get group',
@@ -194,7 +195,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
       data: { group },
     });
   } catch (error) {
-    console.error('Update group error:', error);
+    logger.error('Update group error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to update group',
@@ -241,7 +242,7 @@ export const archiveGroup = async (req: Request, res: Response): Promise<void> =
       message: 'Group archived successfully',
     });
   } catch (error) {
-    console.error('Archive group error:', error);
+    logger.error('Archive group error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to archive group',
@@ -329,7 +330,7 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
       data: { group },
     });
   } catch (error) {
-    console.error('Add member error:', error);
+    logger.error('Add member error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to add member',
@@ -399,7 +400,7 @@ export const removeMember = async (req: Request, res: Response): Promise<void> =
       message: 'Member removed successfully',
     });
   } catch (error) {
-    console.error('Remove member error:', error);
+    logger.error('Remove member error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to remove member',
@@ -475,7 +476,7 @@ export const updateMemberRole = async (
       data: { group },
     });
   } catch (error) {
-    console.error('Update member role error:', error);
+    logger.error('Update member role error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to update member role',

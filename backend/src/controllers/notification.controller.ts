@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Notification, User } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
+import logger from '../utils/logger';
 
 // Get all notifications for current user
 export const getUserNotifications = async (
@@ -49,7 +50,7 @@ export const getUserNotifications = async (
       },
     });
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logger.error('Get notifications error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get notifications',
@@ -87,7 +88,7 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
       data: { notification },
     });
   } catch (error) {
-    console.error('Mark notification as read error:', error);
+    logger.error('Mark notification as read error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to mark notification as read',
@@ -115,7 +116,7 @@ export const markAllAsRead = async (
       data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
-    console.error('Mark all as read error:', error);
+    logger.error('Mark all as read error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to mark all notifications as read',
@@ -151,7 +152,7 @@ export const deleteNotification = async (
       message: 'Notification deleted successfully',
     });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logger.error('Delete notification error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to delete notification',
@@ -196,7 +197,7 @@ export const sendNotification = async (
       data: { notification },
     });
   } catch (error) {
-    console.error('Send notification error:', error);
+    logger.error('Send notification error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to send notification',
@@ -247,7 +248,7 @@ export const updateDeviceToken = async (
       message: 'Device token updated successfully',
     });
   } catch (error) {
-    console.error('Update device token error:', error);
+    logger.error('Update device token error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to update device token',
@@ -292,7 +293,7 @@ export const removeDeviceToken = async (
       message: 'Device token removed successfully',
     });
   } catch (error) {
-    console.error('Remove device token error:', error);
+    logger.error('Remove device token error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to remove device token',

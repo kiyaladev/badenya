@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Transaction, Group } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
+import logger from '../utils/logger';
 
 // Create new transaction
 export const createTransaction = async (
@@ -79,7 +80,7 @@ export const createTransaction = async (
       data: { transaction },
     });
   } catch (error) {
-    console.error('Create transaction error:', error);
+    logger.error('Create transaction error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to create transaction',
@@ -152,7 +153,7 @@ export const getGroupTransactions = async (
       },
     });
   } catch (error) {
-    console.error('Get group transactions error:', error);
+    logger.error('Get group transactions error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get transactions',
@@ -210,7 +211,7 @@ export const getTransactionById = async (
       data: { transaction },
     });
   } catch (error) {
-    console.error('Get transaction error:', error);
+    logger.error('Get transaction error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get transaction',
@@ -311,7 +312,7 @@ export const verifyTransaction = async (
       data: { transaction },
     });
   } catch (error) {
-    console.error('Verify transaction error:', error);
+    logger.error('Verify transaction error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to verify transaction',
@@ -388,7 +389,7 @@ export const cancelTransaction = async (
       message: 'Transaction cancelled successfully',
     });
   } catch (error) {
-    console.error('Cancel transaction error:', error);
+    logger.error('Cancel transaction error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to cancel transaction',

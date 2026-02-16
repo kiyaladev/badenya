@@ -1,6 +1,7 @@
 import { Notification, User, Group } from '../models';
 import { NotificationType, INotification } from '../models/Notification';
 import mongoose from 'mongoose';
+import logger from '../utils/logger';
 
 interface NotificationData {
   groupId?: mongoose.Types.ObjectId | string;
@@ -106,7 +107,7 @@ export const createNotification = async (
 
     return notification;
   } catch (error) {
-    console.error('Create notification error:', error);
+    logger.error('Create notification error:', error);
     throw error;
   }
 };
@@ -125,7 +126,7 @@ const sendPushNotification = async (
     const user = await User.findById(userId).select('deviceTokens');
     
     if (!user || !user.deviceTokens || user.deviceTokens.length === 0) {
-      console.warn('No device tokens found for user:', userId);
+      logger.warn('No device tokens found for user:', userId);
       return;
     }
 
@@ -141,9 +142,9 @@ const sendPushNotification = async (
     // };
     // await admin.messaging().sendMulticast(message);
 
-    console.warn('Push notification would be sent to:', user.deviceTokens.length, 'devices');
+    logger.warn('Push notification would be sent to:', user.deviceTokens.length, 'devices');
   } catch (error) {
-    console.error('Send push notification error:', error);
+    logger.error('Send push notification error:', error);
     // Don't throw error - notification is still created in DB
   }
 };
@@ -180,13 +181,13 @@ export const createBatchNotifications = async (
           await sendPushNotification(userId, notification);
         }
       } catch (error) {
-        console.error('Error sending push to user:', userId, error);
+        logger.error('Error sending push to user:', userId, error);
       }
     }
 
     return created as INotification[];
   } catch (error) {
-    console.error('Create batch notifications error:', error);
+    logger.error('Create batch notifications error:', error);
     throw error;
   }
 };
@@ -229,7 +230,7 @@ export const notifyGroupMembers = async (
       });
     }
   } catch (error) {
-    console.error('Notify group members error:', error);
+    logger.error('Notify group members error:', error);
     throw error;
   }
 };

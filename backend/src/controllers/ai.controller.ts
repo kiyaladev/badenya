@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import aiService from '../services/ai.service';
 import AIReport from '../models/AIReport';
+import logger from '../utils/logger';
 
 /**
  * Helper to extract error message
@@ -44,7 +45,7 @@ export const generateInsights = async (req: Request, res: Response): Promise<voi
       data: aiReport,
     });
   } catch (error: unknown) {
-    console.error('Generate insights error:', error);
+    logger.error('Generate insights error:', error);
     
     const errorMsg = getErrorMessage(error);
     if (errorMsg.includes('not available')) {
@@ -94,7 +95,7 @@ export const getGroupInsights = async (req: Request, res: Response): Promise<voi
       },
     });
   } catch (error: unknown) {
-    console.error('Get insights error:', error);
+    logger.error('Get insights error:', error);
     res.status(500).json({
       status: 'error',
       message: getErrorMessage(error) || 'Failed to retrieve insights',
@@ -127,7 +128,7 @@ export const getInsightById = async (req: Request, res: Response): Promise<void>
       data: report,
     });
   } catch (error: unknown) {
-    console.error('Get insight by ID error:', error);
+    logger.error('Get insight by ID error:', error);
     res.status(500).json({
       status: 'error',
       message: getErrorMessage(error) || 'Failed to retrieve insight',
@@ -150,7 +151,7 @@ export const detectAnomalies = async (req: Request, res: Response): Promise<void
       data: result,
     });
   } catch (error: unknown) {
-    console.error('Detect anomalies error:', error);
+    logger.error('Detect anomalies error:', error);
     
     if (getErrorMessage(error).includes('not available')) {
       res.status(503).json({
@@ -182,7 +183,7 @@ export const generateRecommendations = async (req: Request, res: Response): Prom
       data: result,
     });
   } catch (error: unknown) {
-    console.error('Generate recommendations error:', error);
+    logger.error('Generate recommendations error:', error);
     
     if (getErrorMessage(error).includes('not available')) {
       res.status(503).json({
@@ -236,7 +237,7 @@ export const deleteInsight = async (req: Request, res: Response): Promise<void> 
       message: 'Insight report deleted successfully',
     });
   } catch (error: unknown) {
-    console.error('Delete insight error:', error);
+    logger.error('Delete insight error:', error);
     res.status(500).json({
       status: 'error',
       message: getErrorMessage(error) || 'Failed to delete insight',
