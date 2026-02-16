@@ -6,9 +6,9 @@
 
 | Module | Corrigé | Reste à faire |
 |--------|---------|---------------|
-| **Backend** | 45+ corrections · 0 erreur TS · 80/80 tests | ~3 items |
+| **Backend** | 50+ corrections · 0 erreur TS · 83/83 tests | ~2 items |
 | **Admin** | 37 corrections | ~0 items |
-| **Landing Page** | 24 corrections | ~3 items |
+| **Landing Page** | 28 corrections | ~0 items |
 | **Mobile** | 45+ corrections | ~1 item |
 | **Projet** | DOCS/, README, LICENSE, SECURITY.md, package.json racine, Dockerfiles | ~0 items |
 
@@ -16,16 +16,17 @@
 
 ## 🔴 BACKEND
 
-> ✅ **45+ corrections** (passes 1-6) — 0 erreur TS, 80/80 tests
+> ✅ **50+ corrections** (passes 1-7) — 0 erreur TS, 83/83 tests
 > - Bugs critiques, sécurité, types Express 5, fullName, vote admin, transaction validation
 > - Passe 3 : `try-catch` isAdmin, JWT secret validation (fail-fast au démarrage + throw dans jwt.ts), `crypto.timingSafeEqual()` pour refresh tokens, rate limiting PUT /profile et /change-password, middleware `compression`
 > - Passe 4 : suppression du package deprecated `xss-clean` (jamais importé dans le code)
 > - Passe 5 : logging structuré Winston (remplacement de 60+ `console.*`), middleware corrélation ID (`X-Request-Id`), endpoint `GET /users/search` et `GET /users/stats`, correction port health check Dockerfile (3000 → 5000)
 > - Passe 6 : interface `PopulatedTransaction` pour supprimer le double cast `as unknown as Array<...>` dans `ai.service.ts`, endpoint `DELETE /api/v1/auth/account` pour suppression de compte
+> - Passe 7 : service email (`nodemailer`) avec fallback log si SMTP non configuré, envoi d'email dans `forgotPassword`, endpoints `POST /contact` et `POST /contact/newsletter` avec rate limiting et validation
 
 ### Reste à faire
 
-- [ ] `auth.controller.ts:308` — TODO: envoi d'email pour reset password
+- [x] ~~`auth.controller.ts:308` — envoi d'email pour reset password~~ ✅ (Passe 7)
 - [ ] `notification.controller.ts/service.ts` — TODO: intégration Firebase Cloud Messaging
 - [ ] Tests intégration — 4 suites échouent (nécessitent MongoDB réel)
 
@@ -47,17 +48,16 @@
 
 ## 🔵 LANDING PAGE
 
-> ✅ **24 corrections** (passes 1-6)
+> ✅ **28 corrections** (passes 1-7)
 > - SVG, accessibilité, formulaires, OG images, error boundary, reduced-motion, sitemap
 > - Passe 3 : JSON-LD (Organisation + SoftwareApplication), page 404 dédiée, validation email regex newsletter, contraintes longueur formulaire contact
 > - Passe 4 : correction des 14+ liens `href="#"` morts (réseaux sociaux → vrais URLs, légal/carrières/blog → placeholders)
 > - Passe 6 : favicon Badenya SVG (remplacement de `vite.svg`)
+> - Passe 7 : connexion des formulaires contact et newsletter au backend (`POST /contact`, `POST /contact/newsletter`), états de chargement et erreurs, image OG `og-image.png` (1200×630px), extraction des valeurs hardcodées en constantes nommées
 
 ### Reste à faire
 
-- [ ] Images OG : créer `og-image.png` (1200×630px)
-- [ ] `HomePage.tsx/ContactPage.tsx` — TODO: connecter formulaires au backend
-- [ ] Valeurs hardcodées (statistiques, montants démo)
+> ✅ Tous les items corrigés
 
 ---
 
@@ -91,14 +91,14 @@
 ### Haute priorité
 - [ ] Tokens admin : localStorage → `httpOnly` cookies
 - [ ] Gestion offline mobile (NetInfo + cache)
-- [ ] Implémenter envoi d'email forgotPassword
+- [x] ~~Implémenter envoi d'email forgotPassword~~ ✅ (Passe 7)
 - [ ] Firebase Cloud Messaging (backend + mobile)
 
 ### Moyenne priorité
-- [ ] Connecter formulaires landing page au backend
+- [x] ~~Connecter formulaires landing page au backend~~ ✅ (Passe 7)
 - [ ] Tests d'intégration avec `mongodb-memory-server`
 - [ ] i18n multi-langue (fr/en/ar)
 
 ### Basse priorité
-- [ ] Fichier `og-image.png` et favicon Badenya
-- [ ] Valeurs hardcodées landing page (statistiques, montants démo)
+- [x] ~~Fichier `og-image.png` et favicon Badenya~~ ✅ (Passe 7)
+- [x] ~~Valeurs hardcodées landing page (statistiques, montants démo)~~ ✅ (Passe 7)
