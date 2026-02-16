@@ -7,6 +7,14 @@ import routes from '../../routes';
  * Create Express app for testing without starting server
  */
 export const createTestApp = (): Application => {
+  // Set required env vars for tests
+  if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = 'test-jwt-secret';
+  }
+  if (!process.env.JWT_REFRESH_SECRET) {
+    process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret';
+  }
+
   const app: Application = express();
 
   // Security Middleware
