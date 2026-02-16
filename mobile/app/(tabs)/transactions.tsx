@@ -9,7 +9,7 @@ export default function TransactionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'all' | 'contributions' | 'expenses'>('all');
 
-  const { transactions, loading, fetchGroupTransactions } = useTransactionStore();
+  const { transactions, isLoading, fetchGroupTransactions } = useTransactionStore();
   const { groups } = useGroupStore();
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function TransactionsScreen() {
     .filter(t => t.type === 'expense' && t.status === 'completed')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  if (loading && transactions.length === 0) {
+  if (isLoading && transactions.length === 0) {
     return <Loading />;
   }
 

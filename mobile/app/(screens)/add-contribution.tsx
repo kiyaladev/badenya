@@ -15,7 +15,7 @@ type PaymentMethodType = 'cash' | 'mobile_money' | 'bank_transfer' | 'card';
 export default function AddContributionScreen() {
   const router = useRouter();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const { createTransaction, loading } = useTransactionStore();
+  const { createTransaction, isLoading } = useTransactionStore();
 
   const [formData, setFormData] = useState({
     amount: '',
@@ -207,7 +207,7 @@ export default function AddContributionScreen() {
             <TouchableOpacity
               onPress={handleAddAttachment}
               className="flex-row items-center"
-              disabled={loading}
+              disabled={isLoading}
             >
               <Text className="text-primary-600 font-medium">📎 Ajouter</Text>
             </TouchableOpacity>
@@ -238,7 +238,7 @@ export default function AddContributionScreen() {
                   <TouchableOpacity
                     onPress={() => handleRemoveAttachment(index)}
                     className="p-2"
-                    disabled={loading}
+                    disabled={isLoading}
                   >
                     <Text className="text-red-600 text-lg">✕</Text>
                   </TouchableOpacity>
@@ -260,12 +260,12 @@ export default function AddContributionScreen() {
         <Button
           title="Enregistrer la contribution"
           onPress={handleSubmit}
-          loading={loading}
+          loading={isLoading}
           className="mb-6"
         />
 
         {/* Cancel Button */}
-        <TouchableOpacity className="py-3" onPress={() => router.back()} disabled={loading}>
+        <TouchableOpacity className="py-3" onPress={() => router.back()} disabled={isLoading}>
           <Text className="text-center text-gray-600 font-medium">Annuler</Text>
         </TouchableOpacity>
       </View>

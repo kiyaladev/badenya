@@ -9,7 +9,7 @@ export default function GroupInsightsScreen() {
   const router = useRouter();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const { groups } = useGroupStore();
-  const { insights, isLoading, generateInsights, fetchGroupInsights, clearError } = useAIStore();
+  const { insights, isLoading, error, generateInsights, fetchGroupInsights, clearError } = useAIStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(false);

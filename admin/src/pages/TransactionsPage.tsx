@@ -15,6 +15,9 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
+  const [flagModal, setFlagModal] = useState<string | null>(null);
+  const [flagReason, setFlagReason] = useState('');
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const limit = 10;
 
   const loadTransactions = useCallback(async () => {
@@ -47,15 +50,19 @@ export default function TransactionsPage() {
   }, [isAuthenticated, navigate, loadTransactions]);
 
   const handleFlagTransaction = async (transactionId: string) => {
-    const reason = prompt('Raison du signalement:');
-    if (!reason || !reason.trim()) return;
-    
+    const reason = flagReason.trim();
+    if (!reason) return;
+
     try {
-      await adminService.flagTransaction(transactionId, reason.trim());
+      await adminService.flagTransaction(transactionId, reason);
+      setFlagModal(null);
+      setFlagReason('');
+      setNotification({ type: 'success', message: 'Transaction signalée avec succès' });
       await loadTransactions();
-      alert('Transaction signalée avec succès');
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors du signalement');
+      setFlagModal(null);
+      setFlagReason('');
+      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors du signalement' });
     }
   };
 
@@ -254,7 +261,7 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={() => handleFlagTransaction(transaction._id)}
+                        onClick={() => { setFlagModal(transaction._id); setFlagReason(''); }}
                         className="text-red-600 hover:text-red-900"
                       >
                         Signaler
@@ -295,6 +302,51 @@ export default function TransactionsPage() {
           </div>
         )}
       </main>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+          notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          <div className="flex items-center justify-between">
+            <p>{notification.message}</p>
+            <button onClick={() => setNotification(null)} className="ml-4 text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Flag Transaction Modal */}
+      {flagModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Signaler la transaction</h3>
+            <p className="text-gray-600 mb-4">Veuillez indiquer la raison du signalement :</p>
+            <input
+              type="text"
+              value={flagReason}
+              onChange={(e) => setFlagReason(e.target.value)}
+              placeholder="Raison du signalement"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-6"
+              autoFocus
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => { setFlagModal(null); setFlagReason(''); }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleFlagTransaction(flagModal)}
+                disabled={!flagReason.trim()}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Signaler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
