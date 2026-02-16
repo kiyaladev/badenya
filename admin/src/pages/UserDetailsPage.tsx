@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import AdminLayout from '../components/AdminLayout';
 
 export default function UserDetailsPage() {
@@ -13,6 +14,7 @@ export default function UserDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmSuspend, setConfirmSuspend] = useState(false);
+  const suspendModalRef = useFocusTrap<HTMLDivElement>(confirmSuspend);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadUser = useCallback(async () => {
@@ -210,7 +212,7 @@ export default function UserDetailsPage() {
       {/* Confirm Suspend Modal */}
       {confirmSuspend && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-suspend-title">
+          <div ref={suspendModalRef} className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-suspend-title">
             <h3 id="confirm-suspend-title" className="text-lg font-semibold text-gray-900 mb-2">Confirmer la suspension</h3>
             <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
             <div className="flex justify-end space-x-3">

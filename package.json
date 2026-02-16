@@ -1,0 +1,34 @@
+{
+  "name": "badenya",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Badenya — Gestion financière collaborative (monorepo)",
+  "workspaces": [
+    "backend",
+    "admin",
+    "landing-page"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:admin": "npm run dev --workspace=admin",
+    "dev:landing": "npm run dev --workspace=landing-page",
+    "build:backend": "npm run build --workspace=backend",
+    "build:admin": "npm run build --workspace=admin",
+    "build:landing": "npm run build --workspace=landing-page",
+    "test:backend": "npm run test:unit --workspace=backend",
+    "test:admin": "npm run test --workspace=admin",
+    "test:landing": "npm run test --workspace=landing-page",
+    "lint:backend": "npm run lint --workspace=backend",
+    "lint:admin": "npm run lint --workspace=admin",
+    "lint:landing": "npm run lint --workspace=landing-page"
+  },
+  "keywords": [
+    "fintech",
+    "tontine",
+    "savings",
+    "collaborative",
+    "monorepo"
+  ],
+  "author": "Badenya Team",
+  "license": "MIT"
+}

@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import AdminLayout from '../components/AdminLayout';
 
 export default function GroupsPage() {
@@ -18,6 +19,7 @@ export default function GroupsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGroups, setTotalGroups] = useState(0);
   const [confirmArchive, setConfirmArchive] = useState<string | null>(null);
+  const archiveModalRef = useFocusTrap<HTMLDivElement>(!!confirmArchive);
   const limit = 10;
 
   const loadGroups = useCallback(async () => {
@@ -206,7 +208,7 @@ export default function GroupsPage() {
       {/* Confirmation Modal */}
       {confirmArchive && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-archive-title">
+          <div ref={archiveModalRef} className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-archive-title">
             <h3 id="confirm-archive-title" className="text-lg font-semibold text-gray-900 mb-2">Confirmer l'archivage</h3>
             <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir archiver ce groupe ?</p>
             <div className="flex justify-end space-x-3">
