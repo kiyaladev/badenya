@@ -57,6 +57,20 @@ class AuthService {
   setAuthenticated(value: boolean): void {
     this._isAuthenticated = value;
   }
+
+  /**
+   * Check auth status by calling /auth/me.
+   * Used on page refresh to verify httpOnly cookie is still valid.
+   */
+  async checkAuth(): Promise<boolean> {
+    try {
+      await this.getCurrentUser();
+      return true;
+    } catch {
+      this._isAuthenticated = false;
+      return false;
+    }
+  }
 }
 
 export default new AuthService();

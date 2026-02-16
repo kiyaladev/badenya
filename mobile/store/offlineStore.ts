@@ -45,12 +45,17 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
     for (const request of queue) {
       try {
         await executeRequest(request);
-        await offlineService.dequeueRequest(request.id);
         processed++;
       } catch (error) {
         logger.error('Offline', `Failed to process queued request: ${request.method} ${request.url}`, error);
         // Stop processing on failure (might be offline again)
         break;
+      }
+      // Only dequeue after successful execution
+      try {
+        await offlineService.dequeueRequest(request.id);
+      } catch (dequeueError) {
+        logger.error('Offline', `Failed to dequeue request ${request.id}, may retry`, dequeueError);
       }
     }
 

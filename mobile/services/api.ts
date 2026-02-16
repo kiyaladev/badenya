@@ -121,7 +121,7 @@ api.interceptors.response.use(
           await offlineService.enqueueRequest({
             method: method as 'POST' | 'PUT' | 'DELETE' | 'PATCH',
             url: originalRequest.url || '',
-            data: originalRequest.data ? JSON.parse(originalRequest.data) : undefined,
+            data: typeof originalRequest.data === 'string' ? JSON.parse(originalRequest.data) : originalRequest.data,
           });
           return Promise.reject(new Error('Request queued for offline sync'));
         }

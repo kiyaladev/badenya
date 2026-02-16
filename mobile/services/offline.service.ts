@@ -53,7 +53,7 @@ export const enqueueRequest = async (request: Omit<QueuedRequest, 'id' | 'create
     const queue = await getQueue();
     const entry: QueuedRequest = {
       ...request,
-      id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      id: `${Date.now()}_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`,
       createdAt: Date.now(),
     };
     queue.push(entry);
