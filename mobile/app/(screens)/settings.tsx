@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import pushNotificationService from '@/services/push-notification.service';
+import authService from '@/services/auth.service';
+import logger from '@/services/logger';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -45,7 +47,7 @@ export default function SettingsScreen() {
         setPushNotifications(false);
       }
     } catch (error) {
-      console.error('Error toggling push notifications:', error);
+      logger.error('Settings', 'Error toggling push notifications', error);
       Alert.alert('Erreur', 'Impossible de modifier les paramètres de notification');
     }
   };
@@ -81,9 +83,14 @@ export default function SettingsScreen() {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement account deletion
-            Alert.alert('À venir', 'Cette fonctionnalité sera bientôt disponible');
+          onPress: async () => {
+            try {
+              await authService.deleteAccount();
+              router.replace('/(auth)/login');
+            } catch (error) {
+              logger.error('Settings', 'Error deleting account', error);
+              Alert.alert('Erreur', 'Impossible de supprimer le compte. Veuillez réessayer.');
+            }
           },
         },
       ]

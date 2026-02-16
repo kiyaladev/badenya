@@ -6,26 +6,26 @@
 
 | Module | Corrigé | Reste à faire |
 |--------|---------|---------------|
-| **Backend** | 43+ corrections · 0 erreur TS · 80/80 tests | ~4 items |
+| **Backend** | 45+ corrections · 0 erreur TS · 80/80 tests | ~3 items |
 | **Admin** | 37 corrections | ~0 items |
-| **Landing Page** | 23 corrections | ~4 items |
-| **Mobile** | 41+ corrections | ~4 items |
+| **Landing Page** | 24 corrections | ~3 items |
+| **Mobile** | 45+ corrections | ~1 item |
 | **Projet** | DOCS/, README, LICENSE, SECURITY.md, package.json racine, Dockerfiles | ~0 items |
 
 ---
 
 ## 🔴 BACKEND
 
-> ✅ **43+ corrections** (passes 1-5) — 0 erreur TS, 80/80 tests
+> ✅ **45+ corrections** (passes 1-6) — 0 erreur TS, 80/80 tests
 > - Bugs critiques, sécurité, types Express 5, fullName, vote admin, transaction validation
 > - Passe 3 : `try-catch` isAdmin, JWT secret validation (fail-fast au démarrage + throw dans jwt.ts), `crypto.timingSafeEqual()` pour refresh tokens, rate limiting PUT /profile et /change-password, middleware `compression`
 > - Passe 4 : suppression du package deprecated `xss-clean` (jamais importé dans le code)
 > - Passe 5 : logging structuré Winston (remplacement de 60+ `console.*`), middleware corrélation ID (`X-Request-Id`), endpoint `GET /users/search` et `GET /users/stats`, correction port health check Dockerfile (3000 → 5000)
+> - Passe 6 : interface `PopulatedTransaction` pour supprimer le double cast `as unknown as Array<...>` dans `ai.service.ts`, endpoint `DELETE /api/v1/auth/account` pour suppression de compte
 
 ### Reste à faire
 
-- [ ] `services/ai.service.ts` — Double cast `as unknown as Array<...>` (nécessaire avec Mongoose populate)
-- [ ] `auth.controller.ts:298` — TODO: envoi d'email pour reset password
+- [ ] `auth.controller.ts:308` — TODO: envoi d'email pour reset password
 - [ ] `notification.controller.ts/service.ts` — TODO: intégration Firebase Cloud Messaging
 - [ ] Tests intégration — 4 suites échouent (nécessitent MongoDB réel)
 
@@ -47,15 +47,15 @@
 
 ## 🔵 LANDING PAGE
 
-> ✅ **23 corrections** (passes 1-4)
+> ✅ **24 corrections** (passes 1-6)
 > - SVG, accessibilité, formulaires, OG images, error boundary, reduced-motion, sitemap
 > - Passe 3 : JSON-LD (Organisation + SoftwareApplication), page 404 dédiée, validation email regex newsletter, contraintes longueur formulaire contact
 > - Passe 4 : correction des 14+ liens `href="#"` morts (réseaux sociaux → vrais URLs, légal/carrières/blog → placeholders)
+> - Passe 6 : favicon Badenya SVG (remplacement de `vite.svg`)
 
 ### Reste à faire
 
 - [ ] Images OG : créer `og-image.png` (1200×630px)
-- [ ] `favicon` = `vite.svg` → remplacer par favicon Badenya
 - [ ] `HomePage.tsx/ContactPage.tsx` — TODO: connecter formulaires au backend
 - [ ] Valeurs hardcodées (statistiques, montants démo)
 
@@ -63,17 +63,15 @@
 
 ## 🟢 MOBILE
 
-> ✅ **41+ corrections** (passes 1-5)
+> ✅ **45+ corrections** (passes 1-6)
 > - fullName, mocks→API, bugs, design system, regex, validation, stores harmonisés
 > - Passe 3 : `user?._id` corrigé (group-details.tsx), `Keyboard.dismiss()` (6 écrans), `React.memo()` (GroupCard, TransactionItem, VoteCard), `AppState` listener (vérification auth au retour foreground)
 > - Passe 4 : `ErrorBoundary` export dans `(tabs)/_layout.tsx`
 > - Passe 5 : `totalContributions`/`totalVotes` calculés via `GET /users/stats` (suppression du hardcoded 0), `user.service.ts` connecté au vrai backend
+> - Passe 6 : logging structuré centralisé (`logger.ts` — remplacement de 31 `console.error()`), vérification proactive d'expiration du token JWT dans `api.ts` (décodage + buffer 30s), suppression de compte implémentée (`auth.service.ts` + `settings.tsx` → `DELETE /auth/account`)
 
 ### Reste à faire
 
-- [ ] `services/api.ts` — Pas de vérification d'expiration du token avant refresh
-- [ ] `settings.tsx` — Suppression de compte non implémentée
-- [ ] 31 `console.error()` → logging structuré
 - [ ] Gestion offline (NetInfo, cache local, file d'attente)
 
 ---
@@ -103,5 +101,4 @@
 
 ### Basse priorité
 - [ ] Fichier `og-image.png` et favicon Badenya
-- [ ] Suppression de compte mobile
-- [ ] Double cast `as unknown as Array` dans ai.service.ts
+- [ ] Valeurs hardcodées landing page (statistiques, montants démo)

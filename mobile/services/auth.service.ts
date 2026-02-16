@@ -1,5 +1,6 @@
 import api from './api';
 import * as SecureStore from 'expo-secure-store';
+import logger from './logger';
 
 export interface RegisterData {
   fullName: string;
@@ -73,7 +74,7 @@ class AuthService {
       // Call logout endpoint (optional, if backend needs to invalidate tokens)
       await api.post('/auth/logout');
     } catch (error) {
-      console.error('Logout API error:', error);
+      logger.error('Auth', 'Logout API error', error);
     } finally {
       // Clear tokens from secure storage
       await SecureStore.deleteItemAsync('accessToken');
@@ -116,6 +117,16 @@ class AuthService {
    */
   async changePassword(data: ChangePasswordData): Promise<void> {
     await api.put('/auth/change-password', data);
+  }
+
+  /**
+   * Delete user account
+   */
+  async deleteAccount(): Promise<void> {
+    await api.delete('/auth/account');
+    // Clear tokens from secure storage
+    await SecureStore.deleteItemAsync('accessToken');
+    await SecureStore.deleteItemAsync('refreshToken');
   }
 
   /**

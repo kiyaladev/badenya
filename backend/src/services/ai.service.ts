@@ -12,6 +12,10 @@ interface PopulatedUser {
   email: string;
 }
 
+interface PopulatedTransaction extends Omit<ITransaction, 'initiatedBy'> {
+  initiatedBy: PopulatedUser;
+}
+
 interface TransactionSummary {
   totalContributions: number;
   totalExpenses: number;
@@ -168,8 +172,7 @@ class AIService {
     }
 
     // Prepare anomaly detection prompt
-    // Note: double cast needed because Mongoose populate() transforms ObjectId → PopulatedUser at runtime
-    const prompt = this.buildAnomalyDetectionPrompt(group, transactions as unknown as Array<ITransaction & { initiatedBy: PopulatedUser }>);
+    const prompt = this.buildAnomalyDetectionPrompt(group, transactions as unknown as PopulatedTransaction[]);
     const result = await this.model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -297,7 +300,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
   /**
    * Build anomaly detection prompt
    */
-  private buildAnomalyDetectionPrompt(group: IGroup, transactions: Array<ITransaction & { initiatedBy: PopulatedUser }>): string {
+  private buildAnomalyDetectionPrompt(group: IGroup, transactions: PopulatedTransaction[]): string {
     const txSummary = transactions
       .slice(0, 20)
       .map((t) => {

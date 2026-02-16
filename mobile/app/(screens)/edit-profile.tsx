@@ -9,6 +9,7 @@ import {
   deleteImageLocally,
   ImageInfo,
 } from '@/services/upload.service';
+import logger from '@/services/logger';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function EditProfileScreen() {
         }
       }
     } catch (error) {
-      console.error('Error choosing avatar:', error);
+      logger.error('EditProfile', 'Error choosing avatar', error);
       Alert.alert('Erreur', 'Impossible de sélectionner la photo');
     }
   };

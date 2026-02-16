@@ -10,6 +10,7 @@ import {
   getCurrentUser,
   updateProfile,
   changePassword,
+  deleteAccount,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -296,5 +297,6 @@ router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, getCurrentUser);
 router.put('/profile', authenticate, authLimiter, updateProfileValidation, validate, updateProfile);
 router.put('/change-password', authenticate, authLimiter, changePasswordValidation, validate, changePassword);
+router.delete('/account', authenticate, deleteAccount);
 
 export default router;

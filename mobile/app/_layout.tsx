@@ -12,6 +12,7 @@ import type { Subscription } from 'expo-modules-core';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/store/authStore';
 import pushNotificationService from '@/services/push-notification.service';
+import logger from '@/services/logger';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -73,7 +74,7 @@ function RootLayoutNav() {
   useEffect(() => {
     // Register for push notifications when user is authenticated
     if (isAuthenticated) {
-      pushNotificationService.registerForPushNotifications().catch(console.error);
+      pushNotificationService.registerForPushNotifications().catch((err) => logger.error('Layout', 'Failed to register push notifications', err));
     }
 
     // Setup notification listeners

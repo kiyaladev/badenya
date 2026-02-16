@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { User } from '../models';
+import { User, Notification, Group } from '../models';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { generateToken } from '../utils/crypto';
@@ -491,6 +491,47 @@ export const changePassword = async (
     res.status(500).json({
       status: 'error',
       message: 'Failed to change password',
+    });
+  }
+};
+
+// Delete user account
+export const deleteAccount = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!requireAuth(authReq, res)) return;
+
+    const userId = authReq.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Cleanup related data
+    await Notification.deleteMany({ userId });
+    await Group.updateMany(
+      { 'members.userId': userId },
+      { $pull: { members: { userId } } }
+    );
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Delete account error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete account',
     });
   }
 };
