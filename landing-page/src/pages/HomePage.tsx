@@ -108,7 +108,7 @@ function StatItem({ end, suffix, label, index }: {
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: index * 0.1 }}
       >
-        <p className="text-4xl md:text-5xl font-bold text-white mb-2">
+        <p className="text-4xl md:text-5xl font-bold text-white mb-2" aria-live="polite">
           {count.toLocaleString()}{suffix}
         </p>
         <p className="text-blue-100 text-sm md:text-base">{label}</p>
@@ -589,17 +589,23 @@ export default function HomePage() {
                   </p>
                 ) : (
                   <>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Votre email"
-                      required
-                      className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-white focus:outline-none"
-                    />
+                    <div className="flex-1">
+                      <label htmlFor="newsletter-email" className="block text-sm text-white/80 mb-1 text-left">
+                        Adresse email
+                      </label>
+                      <input
+                        id="newsletter-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Votre email"
+                        required
+                        className="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-white focus:outline-none"
+                      />
+                    </div>
                     <button
                       type="submit"
-                      className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+                      className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition self-end"
                     >
                       S'inscrire
                     </button>

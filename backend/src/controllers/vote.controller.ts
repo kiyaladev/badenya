@@ -66,6 +66,18 @@ export const createVote = async (
       return;
     }
 
+    // Validate quorumPercentage range (defense-in-depth, also validated at route level)
+    if (quorumPercentage !== undefined && quorumPercentage !== null) {
+      const qp = Number(quorumPercentage);
+      if (isNaN(qp) || qp < 0 || qp > 100) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Quorum percentage must be between 0 and 100',
+        });
+        return;
+      }
+    }
+
     // Create options with IDs
     const voteOptions = options.map((opt: { label: unknown }, index: number) => {
       if (typeof opt.label !== 'string' || opt.label.trim() === '') {
