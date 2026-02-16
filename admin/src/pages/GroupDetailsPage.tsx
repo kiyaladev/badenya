@@ -11,6 +11,8 @@ export default function GroupDetailsPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadGroup = useCallback(async () => {
     if (!id) return;
@@ -38,14 +40,15 @@ export default function GroupDetailsPage() {
   }, [isAuthenticated, navigate, id, loadGroup]);
 
   const handleArchiveGroup = async () => {
-    if (!id || !confirm('Êtes-vous sûr de vouloir archiver ce groupe ?')) {
-      return;
-    }
+    if (!id) return;
     try {
       await adminService.archiveGroup(id);
+      setConfirmArchive(false);
+      setNotification({ type: 'success', message: 'Groupe archivé avec succès' });
       await loadGroup();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de l\'archivage');
+      setConfirmArchive(false);
+      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'archivage' });
     }
   };
 
@@ -154,7 +157,7 @@ export default function GroupDetailsPage() {
                 </div>
                 {group.isActive && (
                   <button
-                    onClick={handleArchiveGroup}
+                    onClick={() => setConfirmArchive(true)}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                   >
                     Archiver le groupe
@@ -242,6 +245,42 @@ export default function GroupDetailsPage() {
           </div>
         )}
       </main>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+          notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          <div className="flex items-center justify-between">
+            <p>{notification.message}</p>
+            <button onClick={() => setNotification(null)} className="ml-4 text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Archive Modal */}
+      {confirmArchive && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmer l'archivage</h3>
+            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir archiver ce groupe ?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmArchive(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleArchiveGroup}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+              >
+                Archiver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

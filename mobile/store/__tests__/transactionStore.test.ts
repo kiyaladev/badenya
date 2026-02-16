@@ -19,7 +19,7 @@ describe('TransactionStore', () => {
     useTransactionStore.setState({
       transactions: [],
       currentTransaction: null,
-      loading: false,
+      isLoading: false,
       error: null,
     });
     jest.clearAllMocks();
@@ -54,7 +54,7 @@ describe('TransactionStore', () => {
 
       expect(transactionService.getGroupTransactions).toHaveBeenCalledWith('group1');
       expect(useTransactionStore.getState().transactions).toEqual(mockTransactions);
-      expect(useTransactionStore.getState().loading).toBe(false);
+      expect(useTransactionStore.getState().isLoading).toBe(false);
       expect(useTransactionStore.getState().error).toBeNull();
     });
 
@@ -67,7 +67,7 @@ describe('TransactionStore', () => {
       await useTransactionStore.getState().fetchGroupTransactions('group1');
 
       expect(useTransactionStore.getState().transactions).toEqual([]);
-      expect(useTransactionStore.getState().loading).toBe(false);
+      expect(useTransactionStore.getState().isLoading).toBe(false);
       expect(useTransactionStore.getState().error).toBe(errorMessage);
     });
 
@@ -98,7 +98,7 @@ describe('TransactionStore', () => {
 
       expect(transactionService.getTransactionById).toHaveBeenCalledWith('1');
       expect(useTransactionStore.getState().currentTransaction).toEqual(mockTransaction);
-      expect(useTransactionStore.getState().loading).toBe(false);
+      expect(useTransactionStore.getState().isLoading).toBe(false);
       expect(useTransactionStore.getState().error).toBeNull();
     });
 
@@ -144,7 +144,7 @@ describe('TransactionStore', () => {
       );
       expect(result).toEqual(createdTransaction);
       expect(useTransactionStore.getState().transactions).toContain(createdTransaction);
-      expect(useTransactionStore.getState().loading).toBe(false);
+      expect(useTransactionStore.getState().isLoading).toBe(false);
       expect(useTransactionStore.getState().error).toBeNull();
     });
 
@@ -226,7 +226,7 @@ describe('TransactionStore', () => {
 
       expect(transactionService.verifyTransaction).toHaveBeenCalledWith('1', 'Verified by admin');
       expect(useTransactionStore.getState().transactions[0].status).toBe('completed');
-      expect(useTransactionStore.getState().loading).toBe(false);
+      expect(useTransactionStore.getState().isLoading).toBe(false);
       expect(useTransactionStore.getState().error).toBeNull();
     });
 
@@ -276,7 +276,7 @@ describe('TransactionStore', () => {
       expect(transactionService.cancelTransaction).toHaveBeenCalledWith('1', 'Duplicate entry');
       expect(useTransactionStore.getState().transactions).toHaveLength(1);
       expect(useTransactionStore.getState().transactions[0]._id).toBe('2');
-      expect(useTransactionStore.getState().loading).toBe(false);
+      expect(useTransactionStore.getState().isLoading).toBe(false);
       expect(useTransactionStore.getState().error).toBeNull();
     });
 

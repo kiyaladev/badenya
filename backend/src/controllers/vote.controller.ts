@@ -48,6 +48,15 @@ export const createVote = async (
       return;
     }
 
+    // Validate endDate is in the future
+    if (endDate && new Date(endDate).getTime() <= Date.now()) {
+      res.status(400).json({
+        status: 'error',
+        message: 'End date must be in the future',
+      });
+      return;
+    }
+
     // Create options with IDs
     const voteOptions = options.map((opt: { label: unknown }, index: number) => {
       if (typeof opt.label !== 'string' || opt.label.trim() === '') {

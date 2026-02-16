@@ -11,6 +11,8 @@ export default function UserDetailsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmSuspend, setConfirmSuspend] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadUser = useCallback(async () => {
     if (!id) return;
@@ -38,14 +40,15 @@ export default function UserDetailsPage() {
   }, [isAuthenticated, navigate, id, loadUser]);
 
   const handleSuspendUser = async () => {
-    if (!id || !confirm('Êtes-vous sûr de vouloir suspendre cet utilisateur ?')) {
-      return;
-    }
+    if (!id) return;
     try {
       await adminService.suspendUser(id);
+      setConfirmSuspend(false);
+      setNotification({ type: 'success', message: 'Utilisateur suspendu avec succès' });
       await loadUser();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de la suspension');
+      setConfirmSuspend(false);
+      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de la suspension' });
     }
   };
 
@@ -53,9 +56,10 @@ export default function UserDetailsPage() {
     if (!id) return;
     try {
       await adminService.activateUser(id);
+      setNotification({ type: 'success', message: 'Utilisateur activé avec succès' });
       await loadUser();
     } catch (err) {
-      alert(getErrorMessage(err) || 'Erreur lors de l\'activation');
+      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'activation' });
     }
   };
 
@@ -168,7 +172,7 @@ export default function UserDetailsPage() {
                 <div className="space-y-2">
                   {user.isActive ? (
                     <button
-                      onClick={handleSuspendUser}
+                      onClick={() => setConfirmSuspend(true)}
                       className="block w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                     >
                       Suspendre l'utilisateur
@@ -237,6 +241,42 @@ export default function UserDetailsPage() {
           </div>
         )}
       </main>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+          notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          <div className="flex items-center justify-between">
+            <p>{notification.message}</p>
+            <button onClick={() => setNotification(null)} className="ml-4 text-gray-400 hover:text-gray-600">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Suspend Modal */}
+      {confirmSuspend && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmer la suspension</h3>
+            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmSuspend(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSuspendUser}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+              >
+                Suspendre
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
