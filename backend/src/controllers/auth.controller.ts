@@ -9,6 +9,18 @@ import { requireAuth } from '../utils/typeGuards';
 import logger from '../utils/logger';
 import { sendPasswordResetEmail } from '../services/email.service';
 
+/** Cookie options for httpOnly auth tokens (admin panel) */
+const cookieOptions = (maxAgeMs: number) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: maxAgeMs,
+});
+
+const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7d
+
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -84,7 +96,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const userResponse = user.toObject();
     const { password: _, refreshTokens: __, ...safeUser } = userResponse;
 
-    res.status(201).json({
+    res.status(201)
+      .cookie('admin_token', tokens.accessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE))
+      .cookie('admin_refresh_token', tokens.refreshToken, cookieOptions(REFRESH_TOKEN_MAX_AGE))
+      .json({
       status: 'success',
       message: 'User registered successfully',
       data: {
@@ -153,7 +168,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const userResponse = user.toObject();
     const { password: _, refreshTokens: __, ...safeUser } = userResponse;
 
-    res.status(200).json({
+    res.status(200)
+      .cookie('admin_token', tokens.accessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE))
+      .cookie('admin_refresh_token', tokens.refreshToken, cookieOptions(REFRESH_TOKEN_MAX_AGE))
+      .json({
       status: 'success',
       message: 'Login successful',
       data: {
@@ -176,7 +194,8 @@ export const refreshToken = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { refreshToken, deviceId, deviceName } = req.body;
+    const refreshToken = req.body.refreshToken || req.cookies?.admin_refresh_token;
+    const { deviceId, deviceName } = req.body;
 
     if (!refreshToken) {
       res.status(400).json({
@@ -237,7 +256,10 @@ export const refreshToken = async (
     });
     await user.save();
 
-    res.status(200).json({
+    res.status(200)
+      .cookie('admin_token', tokens.accessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE))
+      .cookie('admin_refresh_token', tokens.refreshToken, cookieOptions(REFRESH_TOKEN_MAX_AGE))
+      .json({
       status: 'success',
       message: 'Token refreshed successfully',
       data: { tokens },
@@ -256,19 +278,22 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    const { refreshToken } = req.body;
+    const refreshTokenValue = req.body.refreshToken || req.cookies?.admin_refresh_token;
 
     // Find user and remove refresh token
     const user = await User.findById(authReq.user.id);
 
-    if (user && refreshToken) {
+    if (user && refreshTokenValue) {
       user.refreshTokens = user.refreshTokens.filter(
-        (t) => t.token !== refreshToken
+        (t) => t.token !== refreshTokenValue
       );
       await user.save();
     }
 
-    res.status(200).json({
+    res.status(200)
+      .clearCookie('admin_token', { path: '/' })
+      .clearCookie('admin_refresh_token', { path: '/' })
+      .json({
       status: 'success',
       message: 'Logout successful',
     });

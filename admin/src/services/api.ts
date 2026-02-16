@@ -16,21 +16,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
-
-// Request interceptor to add token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('admin_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor for error handling with token refresh
 let isRefreshing = false;
@@ -39,12 +26,12 @@ let failedQueue: Array<{
   reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: unknown | null, token: string | null = null) => {
+const processQueue = (error: unknown | null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve(null);
     }
   });
   failedQueue = [];
@@ -61,8 +48,6 @@ api.interceptors.response.use(
         originalRequest.url?.includes('/auth/login') ||
         originalRequest.url?.includes('/auth/refresh-token')
       ) {
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_refresh_token');
         window.location.href = '/login';
         return Promise.reject(error);
       }
@@ -71,8 +56,7 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+          .then(() => {
             return api(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -81,34 +65,15 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('admin_refresh_token');
-      if (!refreshToken) {
-        localStorage.removeItem('admin_token');
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
-
       try {
-        // Use raw axios to avoid triggering the 401 interceptor on the refresh request itself
-        const response = await axios.post(`${apiUrl}/auth/refresh-token`, {
-          refreshToken,
-        });
+        // Refresh token is sent automatically via httpOnly cookie
+        await axios.post(`${apiUrl}/auth/refresh-token`, {}, { withCredentials: true });
 
-        const newToken = response.data.data.token;
-        const newRefreshToken = response.data.data.refreshToken;
+        processQueue(null);
 
-        localStorage.setItem('admin_token', newToken);
-        localStorage.setItem('admin_refresh_token', newRefreshToken);
-        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-        processQueue(null, newToken);
-
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_refresh_token');
+        processQueue(refreshError);
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

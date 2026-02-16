@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import routes from '../../routes';
 
 /**
@@ -19,6 +20,7 @@ export const createTestApp = (): Application => {
 
   // Security Middleware
   app.use(helmet());
+  app.use(cookieParser());
   app.use(cors({
     origin: '*',
     credentials: true,

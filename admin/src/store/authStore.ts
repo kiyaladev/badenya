@@ -97,9 +97,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null
       });
       
-      // Clear invalid token
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_refresh_token');
+      // Mark as unauthenticated
+      authService.setAuthenticated(false);
     }
   },
 

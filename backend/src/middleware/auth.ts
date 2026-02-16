@@ -47,18 +47,23 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Get token from header
+    // Get token from header or cookie
     const authHeader = req.headers.authorization;
+    let token: string | undefined;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.cookies?.admin_token) {
+      token = req.cookies.admin_token;
+    }
+    
+    if (!token) {
       res.status(401).json({
         status: 'error',
         message: 'No token provided',
       });
       return;
     }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Verify token
     const jwtSecret = process.env.JWT_SECRET;
