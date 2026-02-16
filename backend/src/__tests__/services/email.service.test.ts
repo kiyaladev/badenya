@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { sendEmail as _sendEmail } from '../../services/email.service';
+// Email service uses jest.resetModules() + dynamic import for each test to ensure clean module state.
 
 // Mock nodemailer
 jest.mock('nodemailer', () => ({

@@ -33,7 +33,8 @@ export default function ContactPage() {
 
       setSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch {
+    } catch (error) {
+      console.error('Contact form submission failed:', error);
       setSubmitError('Une erreur est survenue. Veuillez réessayer plus tard.');
     } finally {
       setIsSubmitting(false);

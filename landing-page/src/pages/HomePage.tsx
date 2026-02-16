@@ -159,7 +159,8 @@ export default function HomePage() {
 
       setNewsletterSubmitted(true);
       setEmail('');
-    } catch {
+    } catch (error) {
+      console.error('Newsletter subscription failed:', error);
       setNewsletterError('Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setNewsletterSubmitting(false);
