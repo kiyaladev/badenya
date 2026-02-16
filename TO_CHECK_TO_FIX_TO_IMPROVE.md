@@ -16,8 +16,8 @@
 | Module | Pages/Fichiers | Bugs critiques | Sécurité | UI/UX | Statut |
 |--------|---------------|----------------|----------|-------|--------|
 | **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ✅ Tests OK (80/80) — reste 4 TODOs, logging |
-| **Admin** | 7 pages | ✅ 2/2 corrigés | 2/3 corrigés | ✅ 6/6 alert/confirm → modales custom | ⚠️ Passe 2 en cours |
-| **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ⚠️ 14+ liens morts, favicon | ⚠️ Passe 2 en cours |
+| **Admin** | 7 pages | ✅ 2/2 corrigés | ✅ 3/3 corrigés (token refresh) | ✅ 6/6 alert/confirm → modales custom | ⚠️ Passe 2 en cours |
+| **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ✅ Error boundary, reduced-motion, aria-live, label newsletter | ⚠️ Passe 2 en cours |
 | **Mobile** | 20+ écrans | ✅ Bug runtime corrigé | ✅ Validation renforcée | ✅ fullName fixé, stores harmonisés | ⚠️ Passe 2 en cours |
 | **API Mobile** | 19 fichiers vérifiés | ✅ 3 mocks → API réelle | ✅ Types corrigés | N/A | ✅ Corrigé |
 
@@ -25,12 +25,12 @@
 
 ## 🔴 BACKEND — Analyse par fichier
 
-> ✅ **29 corrections appliquées** — 0 erreur TS, 80/80 tests OK
+> ✅ **30 corrections appliquées** — 0 erreur TS, 80/80 tests OK
 > - Bugs critiques : boucle infinie, div/0, rôle admin
 > - Sécurité : resetToken exposé, CORS wildcard, Math.random OTP, validation input
 > - Types Express 5, doublons requireAuth, fullName cohérent
 > - `deviceId`/`deviceName` extraits du request body, populate helper, production DB guard, ai.service fullName + calcul mois réel
-> - Vote controller : vérification admin du groupe pour closeVote/deleteVote
+> - Vote controller : vérification admin du groupe pour closeVote/deleteVote, validation quorumPercentage côté contrôleur
 > - Transaction routes : validation `isMongoId()` sur `groupId` et `id`
 
 ### Reste à faire
@@ -46,7 +46,7 @@
 
 ## 🟠 ADMIN — Analyse par page
 
-> ✅ **21 corrections appliquées**
+> ✅ **23 corrections appliquées**
 > - `firstName`/`lastName` → `fullName` (7 fichiers)
 > - `key={index}` → IDs stables, sanitisation `prompt()`, validation email login
 > - Types `AdminUser` corrigés
@@ -55,6 +55,7 @@
 > - `<AdminLayout>` composant extrait (header + navigation dédupliqués, 5 pages)
 > - `<ErrorBoundary>` ajouté dans `main.tsx`
 > - Accessibilité ARIA ajoutée à toutes les modales (`role="dialog"`, `aria-labelledby`, `aria-modal`)
+> - Token refresh automatique sur 401 dans `api.ts`
 
 ### Reste à faire
 
@@ -62,18 +63,19 @@
 - [x] `UsersPage.tsx` — Debounce 300ms sur la recherche
 - [x] `GroupsPage.tsx` — Debounce 300ms sur filtres/recherche + modale custom
 - [ ] `api.ts` — Token dans localStorage (vulnérable XSS)
-- [ ] `api.ts` — Pas de token refresh → 401 = déconnexion directe
+- [x] `api.ts` — ~~Pas de token refresh → 401 = déconnexion directe~~ — **corrigé : intercepteur de réponse avec refresh token automatique sur 401**
 
 ---
 
 ## 🔵 LANDING PAGE — Analyse par page
 
-> ✅ **13 corrections appliquées**
+> ✅ **17 corrections appliquées**
 > - SVG professionnels, clés stables (`key={feature.id}`)
-> - Accessibilité : aria-label, aria-expanded, noscript
+> - Accessibilité : aria-label, aria-expanded, noscript, aria-live compteurs, label newsletter
 > - Icônes sociales, menu mobile amélioré
 > - Formulaires newsletter et contact avec état de succès inline (remplace `alert()`)
 > - Images OG standardisées (og-image.png unique pour OG + Twitter)
+> - Error boundary ajouté, `prefers-reduced-motion` via MotionConfig
 
 ### Reste à faire
 
@@ -126,9 +128,9 @@
 
 | Module | Corrigé | Reste à faire |
 |--------|---------|---------------|
-| **Backend** | 29 corrections (bugs, sécurité, types, qualité, deviceId, populate, DB guard, ai.service, vote admin, transaction validation) · 0 erreur TS · 80/80 tests | 2 items (double cast Mongoose + tests intégration) |
-| **Admin** | 26 corrections (fullName, clés, sanitisation, validation, debounce, modales, layout, error boundary, ARIA) | 2 items (sécurité token localStorage + refresh) |
-| **Landing Page** | 13 corrections (SVG, accessibilité, clés stables, formulaires, OG images) | 1 item (créer fichier og-image.png) |
+| **Backend** | 30 corrections (bugs, sécurité, types, qualité, deviceId, populate, DB guard, ai.service, vote admin, transaction validation, quorum validation) · 0 erreur TS · 80/80 tests | 2 items (double cast Mongoose + tests intégration) |
+| **Admin** | 27 corrections (fullName, clés, sanitisation, validation, debounce, modales, layout, error boundary, ARIA, token refresh) | 1 item (sécurité token localStorage) |
+| **Landing Page** | 17 corrections (SVG, accessibilité, clés stables, formulaires, OG images, error boundary, prefers-reduced-motion, aria-live, newsletter label) | 1 item (créer fichier og-image.png) |
 | **Mobile** | 30+ corrections (fullName, mocks→API, bugs, types, design system, regex, error handling, validation montant) | 2 items (token expiration + search endpoint) |
 | **Vérification API** | Audit complet · 3 mocks éliminés · 7 interfaces corrigées | Landing formulaires = état succès inline |
 
@@ -142,7 +144,7 @@
 
 ### 🔴 BACKEND — Passe 2
 
-> 4 TODOs identifiés dans le code source, 60+ `console.*` en production, ~~validations complémentaires à renforcer~~ ✅ Transaction routes + vote admin check corrigés.
+> 4 TODOs identifiés dans le code source, 60+ `console.*` en production, ~~validations complémentaires à renforcer~~ ✅ Transaction routes + vote admin check + quorumPercentage corrigés.
 
 #### TODOs dans le code
 
@@ -170,7 +172,7 @@
 #### Validation
 
 - [x] `vote.controller.ts` — `endDate` validé ISO 8601 côté route mais pas vérifié `> Date.now()` côté contrôleur (date dans le passé acceptée) — **corrigé : validation ajoutée**
-- [ ] `vote.controller.ts` — `quorumPercentage` validé `0-100` côté route mais pas re-vérifié côté contrôleur
+- [x] `vote.controller.ts` — ~~`quorumPercentage` validé `0-100` côté route mais pas re-vérifié côté contrôleur~~ — **corrigé : validation 0-100 ajoutée dans le contrôleur**
 - [x] Routes de transactions — ~~pas de validation `isMongoId()` sur `param('groupId')` (contrairement aux votes)~~ — **corrigé : `groupIdValidation` et `transactionIdValidation` ajoutés**
 
 #### Fonctionnalités incomplètes
@@ -216,13 +218,13 @@
 #### Robustesse
 
 - [x] Pas d'error boundary React — ~~si un composant crash, l'app entière tombe~~ — **corrigé : `<ErrorBoundary>` ajouté dans `main.tsx`**
-- [ ] `api.ts` — pas de tentative de refresh token, déconnexion directe sur 401
+- [x] `api.ts` — ~~pas de tentative de refresh token, déconnexion directe sur 401~~ — **corrigé : intercepteur avec refresh token automatique**
 
 ---
 
 ### 🔵 LANDING PAGE — Passe 2
 
-> 2 TODOs backend, 14+ liens `href="#"` morts, valeurs hardcodées, animations sans `prefers-reduced-motion`, favicon Vite.
+> 2 TODOs backend, 14+ liens `href="#"` morts, valeurs hardcodées, ~~animations sans `prefers-reduced-motion`~~ ✅, favicon Vite, ~~pas d'error boundary~~ ✅.
 
 #### TODOs dans le code
 
@@ -245,14 +247,14 @@
 
 #### Performance & Accessibilité
 
-- [ ] Animations framer-motion sans `prefers-reduced-motion` media query — mauvais pour l'accessibilité
-- [ ] Compteurs statistiques animés — pas de `aria-live` pour les lecteurs d'écran
-- [ ] Formulaire newsletter — `placeholder` utilisé au lieu d'un `<label>` visible
+- [x] Animations framer-motion — ~~sans `prefers-reduced-motion` media query~~ — **corrigé : `MotionConfig reducedMotion="user"` ajouté dans App.tsx**
+- [x] Compteurs statistiques animés — ~~pas de `aria-live` pour les lecteurs d'écran~~ — **corrigé : `aria-live="polite"` ajouté**
+- [x] Formulaire newsletter — ~~`placeholder` utilisé au lieu d'un `<label>` visible~~ — **corrigé : `<label>` visible ajouté avec `htmlFor`**
 
 #### Divers
 
 - [ ] `favicon` = `vite.svg` par défaut — remplacer par un favicon Badenya dédié
-- [ ] Pas d'error boundary React
+- [x] ~~Pas d'error boundary React~~ — **corrigé : `<ErrorBoundary>` ajouté dans `main.tsx`**
 - [x] `sitemap.xml` — ~~`lastmod` dates (2025-10-10) périmées, inclut `/features` et `/pricing` qui n'existent pas~~ — **corrigé : routes inexistantes supprimées, dates mises à jour (2026-02-16)**
 
 ---
@@ -306,9 +308,9 @@
 
 | Module | Corrigé (passe 1 + 2) | Identifié (passe 2) | Total reste à faire |
 |--------|-------------------|---------------------|---------------------|
-| **Backend** | 30 corrections · 0 erreur TS · 80/80 tests | 6 TODOs, 60+ console.*, validations, fonctionnalités incomplètes | ~7 items |
-| **Admin** | 26 corrections (fullName, clés, debounce, modales, toasts, layout, error boundary, ARIA) | ~~6 alert/confirm/prompt~~ ✅, 9 console.error, ~~duplication code~~ ✅, ~~accessibilité ARIA modales~~ ✅ | ~4 items |
-| **Landing Page** | 14 corrections (SVG, accessibilité, formulaires, OG, sitemap) | 2 TODOs backend, 14+ liens morts, hardcoded values, animations, favicon | ~11 items |
+| **Backend** | 31 corrections · 0 erreur TS · 80/80 tests | 6 TODOs, 60+ console.*, ~~validations~~ ✅, fonctionnalités incomplètes | ~6 items |
+| **Admin** | 27 corrections (fullName, clés, debounce, modales, toasts, layout, error boundary, ARIA, token refresh) | ~~6 alert/confirm/prompt~~ ✅, 9 console.error, ~~duplication code~~ ✅, ~~accessibilité ARIA modales~~ ✅, ~~token refresh~~ ✅ | ~3 items |
+| **Landing Page** | 18 corrections (SVG, accessibilité, formulaires, OG, sitemap, error boundary, reduced-motion, aria-live, newsletter label) | 2 TODOs backend, 14+ liens morts, hardcoded values, ~~animations~~ ✅, favicon | ~8 items |
 | **Mobile** | 32+ corrections (fullName, mocks→API, bugs, regex, validation, stores harmonisés) | ~~1 bug runtime~~ ✅, 3 TODOs, ~~incohérence stores~~ ✅, 31 console.error, pas d'offline | ~7 items |
 
 ---
@@ -322,10 +324,10 @@
 ### Haute priorité
 - [ ] Remplacer 60+ `console.*` backend par Winston ou Pino (logging structuré)
 - [x] Migrer les `alert()`/`confirm()`/`prompt()` restants vers des modales React (admin: 5 pages) — **corrigé**
-- [ ] Ajouter un token refresh automatique dans `admin/src/services/api.ts` au lieu de déconnexion sur 401
+- [x] Ajouter un token refresh automatique dans `admin/src/services/api.ts` au lieu de déconnexion sur 401 — **corrigé**
 - [ ] Migrer le stockage des tokens admin de `localStorage` vers `httpOnly` cookies
 - [x] Ajouter des error boundaries React dans admin ~~, landing page et mobile~~ — **corrigé pour admin**
-- [ ] Ajouter des error boundaries React dans landing page et mobile
+- [x] Ajouter des error boundaries React dans landing page ~~et mobile~~ — **corrigé pour landing page**
 - [ ] Implémenter la gestion offline dans l'app mobile (NetInfo + cache)
 - [x] Remplacer `confirm()` et `prompt()` natifs par des modales React custom (UsersPage, GroupsPage — fait)
 - [x] Ajouter un debounce sur les recherches/filtres (UsersPage, GroupsPage — fait)
@@ -338,7 +340,7 @@
 - [ ] Ajouter des tests d'intégration avec `mongodb-memory-server` configuré
 - [ ] Implémenter le endpoint `GET /users/search` côté backend (utilisé par mobile)
 - [ ] Compléter l'intégration Firebase Cloud Messaging (backend + mobile)
-- [ ] Ajouter `prefers-reduced-motion` pour les animations framer-motion
+- [x] Ajouter `prefers-reduced-motion` pour les animations framer-motion — **corrigé**
 - [ ] Implémenter les fonctions TODO du profil mobile (`totalContributions`, `totalVotes`)
 - [x] Ajouter accessibilité ARIA complète dans les modales admin — **corrigé : `role="dialog"`, `aria-labelledby`, `aria-modal` ajoutés**
 
