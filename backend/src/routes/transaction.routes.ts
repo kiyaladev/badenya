@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import {
   createTransaction,
   getGroupTransactions,
@@ -237,23 +237,44 @@ const cancelTransactionValidation = [
   body('reason').optional().trim(),
 ];
 
+const groupIdValidation = [
+  param('groupId').isMongoId().withMessage('Valid group ID is required'),
+];
+
+const transactionIdValidation = [
+  param('id').isMongoId().withMessage('Valid transaction ID is required'),
+];
+
 // Routes
 router.post(
   '/groups/:groupId/transactions',
+  groupIdValidation,
   createTransactionValidation,
   validate,
   createTransaction
 );
-router.get('/groups/:groupId/transactions', getGroupTransactions);
-router.get('/transactions/:id', getTransactionById);
+router.get(
+  '/groups/:groupId/transactions',
+  groupIdValidation,
+  validate,
+  getGroupTransactions
+);
+router.get(
+  '/transactions/:id',
+  transactionIdValidation,
+  validate,
+  getTransactionById
+);
 router.put(
   '/transactions/:id/verify',
+  transactionIdValidation,
   verifyTransactionValidation,
   validate,
   verifyTransaction
 );
 router.delete(
   '/transactions/:id',
+  transactionIdValidation,
   cancelTransactionValidation,
   validate,
   cancelTransaction

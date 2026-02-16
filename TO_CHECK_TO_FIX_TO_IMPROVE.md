@@ -15,7 +15,7 @@
 
 | Module | Pages/Fichiers | Bugs critiques | Sécurité | UI/UX | Statut |
 |--------|---------------|----------------|----------|-------|--------|
-| **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ✅ Tests OK (80/80) — reste 6 TODOs, logging |
+| **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ✅ Tests OK (80/80) — reste 4 TODOs, logging |
 | **Admin** | 7 pages | ✅ 2/2 corrigés | 2/3 corrigés | ✅ 6/6 alert/confirm → modales custom | ⚠️ Passe 2 en cours |
 | **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ⚠️ 14+ liens morts, favicon | ⚠️ Passe 2 en cours |
 | **Mobile** | 20+ écrans | ✅ Bug runtime corrigé | ✅ Validation renforcée | ✅ fullName fixé, stores harmonisés | ⚠️ Passe 2 en cours |
@@ -25,11 +25,13 @@
 
 ## 🔴 BACKEND — Analyse par fichier
 
-> ✅ **27 corrections appliquées** — 0 erreur TS, 80/80 tests OK
+> ✅ **29 corrections appliquées** — 0 erreur TS, 80/80 tests OK
 > - Bugs critiques : boucle infinie, div/0, rôle admin
 > - Sécurité : resetToken exposé, CORS wildcard, Math.random OTP, validation input
 > - Types Express 5, doublons requireAuth, fullName cohérent
 > - `deviceId`/`deviceName` extraits du request body, populate helper, production DB guard, ai.service fullName + calcul mois réel
+> - Vote controller : vérification admin du groupe pour closeVote/deleteVote
+> - Transaction routes : validation `isMongoId()` sur `groupId` et `id`
 
 ### Reste à faire
 
@@ -44,12 +46,15 @@
 
 ## 🟠 ADMIN — Analyse par page
 
-> ✅ **15 corrections appliquées**
+> ✅ **21 corrections appliquées**
 > - `firstName`/`lastName` → `fullName` (7 fichiers)
 > - `key={index}` → IDs stables, sanitisation `prompt()`, validation email login
 > - Types `AdminUser` corrigés
 > - Debounce 300ms sur recherches/filtres (UsersPage, GroupsPage)
 > - `confirm()` natif → modales React custom (UsersPage, GroupsPage)
+> - `<AdminLayout>` composant extrait (header + navigation dédupliqués, 5 pages)
+> - `<ErrorBoundary>` ajouté dans `main.tsx`
+> - Accessibilité ARIA ajoutée à toutes les modales (`role="dialog"`, `aria-labelledby`, `aria-modal`)
 
 ### Reste à faire
 
@@ -121,8 +126,8 @@
 
 | Module | Corrigé | Reste à faire |
 |--------|---------|---------------|
-| **Backend** | 27 corrections (bugs, sécurité, types, qualité, deviceId, populate, DB guard, ai.service) · 0 erreur TS · 80/80 tests | 2 items (double cast Mongoose + tests intégration) |
-| **Admin** | 15 corrections (fullName, clés, sanitisation, validation, debounce, modales) | 2 items (sécurité token localStorage + refresh) |
+| **Backend** | 29 corrections (bugs, sécurité, types, qualité, deviceId, populate, DB guard, ai.service, vote admin, transaction validation) · 0 erreur TS · 80/80 tests | 2 items (double cast Mongoose + tests intégration) |
+| **Admin** | 26 corrections (fullName, clés, sanitisation, validation, debounce, modales, layout, error boundary, ARIA) | 2 items (sécurité token localStorage + refresh) |
 | **Landing Page** | 13 corrections (SVG, accessibilité, clés stables, formulaires, OG images) | 1 item (créer fichier og-image.png) |
 | **Mobile** | 30+ corrections (fullName, mocks→API, bugs, types, design system, regex, error handling, validation montant) | 2 items (token expiration + search endpoint) |
 | **Vérification API** | Audit complet · 3 mocks éliminés · 7 interfaces corrigées | Landing formulaires = état succès inline |
@@ -137,12 +142,12 @@
 
 ### 🔴 BACKEND — Passe 2
 
-> 6 TODOs identifiés dans le code source, 60+ `console.*` en production, validations complémentaires à renforcer.
+> 4 TODOs identifiés dans le code source, 60+ `console.*` en production, ~~validations complémentaires à renforcer~~ ✅ Transaction routes + vote admin check corrigés.
 
 #### TODOs dans le code
 
 - [ ] `auth.controller.ts:298` — TODO: envoi d'email pour reset password non implémenté (mot de passe oublié ne fonctionne pas)
-- [ ] `vote.controller.ts:346,393` — TODO: vérifier si l'utilisateur est admin du groupe avant fermeture/suppression de vote
+- [x] `vote.controller.ts:346,393` — ~~TODO: vérifier si l'utilisateur est admin du groupe avant fermeture/suppression de vote~~ — **corrigé : vérification du rôle admin du groupe ajoutée**
 - [ ] `notification.controller.ts:190` — TODO: envoi push via Firebase Cloud Messaging (placeholder)
 - [ ] `notification.service.ts:104,132` — TODO: intégration Firebase Cloud Messaging (`console.warn` en remplacement)
 
@@ -166,7 +171,7 @@
 
 - [x] `vote.controller.ts` — `endDate` validé ISO 8601 côté route mais pas vérifié `> Date.now()` côté contrôleur (date dans le passé acceptée) — **corrigé : validation ajoutée**
 - [ ] `vote.controller.ts` — `quorumPercentage` validé `0-100` côté route mais pas re-vérifié côté contrôleur
-- [ ] Routes de transactions — pas de validation `isMongoId()` sur `param('groupId')` (contrairement aux votes)
+- [x] Routes de transactions — ~~pas de validation `isMongoId()` sur `param('groupId')` (contrairement aux votes)~~ — **corrigé : `groupIdValidation` et `transactionIdValidation` ajoutés**
 
 #### Fonctionnalités incomplètes
 
@@ -178,7 +183,7 @@
 
 ### 🟠 ADMIN — Passe 2
 
-> ~~3 pages utilisent encore `alert()`/`confirm()`/`prompt()` natifs~~ ✅ Corrigé — modales React custom + notifications toast ajoutées. 9 `console.error()`, composants dupliqués, accessibilité incomplète.
+> ~~3 pages utilisent encore `alert()`/`confirm()`/`prompt()` natifs~~ ✅ Corrigé — modales React custom + notifications toast ajoutées. 9 `console.error()`, ~~composants dupliqués~~ ✅ Extrait via `<AdminLayout>`, ~~accessibilité incomplète~~ ✅ ARIA ajouté, ~~pas d'error boundary~~ ✅ Ajouté.
 
 #### `alert()`/`confirm()`/`prompt()` restants
 
@@ -197,20 +202,20 @@
 
 #### Duplication de code
 
-- [ ] Navigation sidebar dupliquée dans chaque page (~40 lignes identiques) → extraire en composant `<Sidebar>`
-- [ ] En-tête avec bouton déconnexion dupliqué → extraire en composant `<Header>`
-- [ ] Layout commun (sidebar + header + content) dupliqué → extraire en composant `<Layout>`
+- [x] Navigation sidebar dupliquée dans chaque page (~40 lignes identiques) → ~~extraire en composant `<Sidebar>`~~ — **corrigé : `<AdminLayout>` composant extrait**
+- [x] En-tête avec bouton déconnexion dupliqué → ~~extraire en composant `<Header>`~~ — **corrigé : intégré dans `<AdminLayout>`**
+- [x] Layout commun (sidebar + header + content) dupliqué → ~~extraire en composant `<Layout>`~~ — **corrigé : `<AdminLayout>` utilisé par 5 pages**
 
 #### Accessibilité
 
-- [ ] Modales (UsersPage, GroupsPage) — manquent `role="dialog"`, `aria-labelledby`, `aria-modal="true"`
+- [x] Modales (UsersPage, GroupsPage, UserDetailsPage, GroupDetailsPage, TransactionsPage) — ~~manquent `role="dialog"`, `aria-labelledby`, `aria-modal="true"`~~ — **corrigé : attributs ARIA ajoutés à toutes les modales**
 - [ ] Modales — pas de focus trap (focus s'échappe vers les éléments en arrière-plan)
 - [ ] Formulaires — pas de `aria-describedby` pour les messages d'erreur
 - [ ] Tables — manquent `role` et labels ARIA appropriés
 
 #### Robustesse
 
-- [ ] Pas d'error boundary React — si un composant crash, l'app entière tombe
+- [x] Pas d'error boundary React — ~~si un composant crash, l'app entière tombe~~ — **corrigé : `<ErrorBoundary>` ajouté dans `main.tsx`**
 - [ ] `api.ts` — pas de tentative de refresh token, déconnexion directe sur 401
 
 ---
@@ -301,8 +306,8 @@
 
 | Module | Corrigé (passe 1 + 2) | Identifié (passe 2) | Total reste à faire |
 |--------|-------------------|---------------------|---------------------|
-| **Backend** | 28 corrections · 0 erreur TS · 80/80 tests | 6 TODOs, 60+ console.*, validations, fonctionnalités incomplètes | ~9 items |
-| **Admin** | 21 corrections (fullName, clés, debounce, modales 5 pages, toasts) | ~~6 alert/confirm/prompt~~ ✅, 9 console.error, duplication code, accessibilité | ~7 items |
+| **Backend** | 30 corrections · 0 erreur TS · 80/80 tests | 6 TODOs, 60+ console.*, validations, fonctionnalités incomplètes | ~7 items |
+| **Admin** | 26 corrections (fullName, clés, debounce, modales, toasts, layout, error boundary, ARIA) | ~~6 alert/confirm/prompt~~ ✅, 9 console.error, ~~duplication code~~ ✅, ~~accessibilité ARIA modales~~ ✅ | ~4 items |
 | **Landing Page** | 14 corrections (SVG, accessibilité, formulaires, OG, sitemap) | 2 TODOs backend, 14+ liens morts, hardcoded values, animations, favicon | ~11 items |
 | **Mobile** | 32+ corrections (fullName, mocks→API, bugs, regex, validation, stores harmonisés) | ~~1 bug runtime~~ ✅, 3 TODOs, ~~incohérence stores~~ ✅, 31 console.error, pas d'offline | ~7 items |
 
@@ -319,13 +324,14 @@
 - [x] Migrer les `alert()`/`confirm()`/`prompt()` restants vers des modales React (admin: 5 pages) — **corrigé**
 - [ ] Ajouter un token refresh automatique dans `admin/src/services/api.ts` au lieu de déconnexion sur 401
 - [ ] Migrer le stockage des tokens admin de `localStorage` vers `httpOnly` cookies
-- [ ] Ajouter des error boundaries React dans admin, landing page et mobile
+- [x] Ajouter des error boundaries React dans admin ~~, landing page et mobile~~ — **corrigé pour admin**
+- [ ] Ajouter des error boundaries React dans landing page et mobile
 - [ ] Implémenter la gestion offline dans l'app mobile (NetInfo + cache)
 - [x] Remplacer `confirm()` et `prompt()` natifs par des modales React custom (UsersPage, GroupsPage — fait)
 - [x] Ajouter un debounce sur les recherches/filtres (UsersPage, GroupsPage — fait)
 
 ### Moyenne priorité
-- [ ] Extraire les composants dupliqués admin : `<Layout>`, `<Sidebar>`, `<Header>`
+- [x] **Admin** : Extraire les composants dupliqués admin : `<Layout>`, `<Sidebar>`, `<Header>` → **corrigé via `<AdminLayout>`**
 - [x] Harmoniser `loading` → `isLoading` dans `transactionStore.ts` (mobile) — **corrigé**
 - [ ] Ajouter un `package.json` racine pour la gestion monorepo
 - [ ] Connecter les formulaires de la landing page (newsletter, contact) au backend
@@ -334,7 +340,7 @@
 - [ ] Compléter l'intégration Firebase Cloud Messaging (backend + mobile)
 - [ ] Ajouter `prefers-reduced-motion` pour les animations framer-motion
 - [ ] Implémenter les fonctions TODO du profil mobile (`totalContributions`, `totalVotes`)
-- [ ] Ajouter accessibilité ARIA complète dans les modales admin
+- [x] Ajouter accessibilité ARIA complète dans les modales admin — **corrigé : `role="dialog"`, `aria-labelledby`, `aria-modal` ajoutés**
 
 ### Basse priorité
 - [ ] Ajouter un framework i18n pour supporter la multi-langue (fr/en/ar)

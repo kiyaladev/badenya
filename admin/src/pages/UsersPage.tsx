@@ -4,10 +4,11 @@ import { useAuthStore } from '../store/authStore';
 import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
+import AdminLayout from '../components/AdminLayout';
 
 export default function UsersPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,59 +72,7 @@ export default function UsersPage() {
   const totalPages = Math.ceil(totalUsers / limit);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Badenya Admin</h1>
-              <p className="text-sm text-gray-600">Gestion des utilisateurs</p>
-            </div>
-            <button
-              onClick={logout}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-            >
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Tableau de bord
-            </button>
-            <button
-              onClick={() => navigate('/users')}
-              className="border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600"
-            >
-              Utilisateurs
-            </button>
-            <button
-              onClick={() => navigate('/groups')}
-              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Groupes
-            </button>
-            <button
-              onClick={() => navigate('/transactions')}
-              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Transactions
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout subtitle="Gestion des utilisateurs">
         {/* Search Bar */}
         <div className="mb-6">
           <input
@@ -278,13 +227,12 @@ export default function UsersPage() {
             </div>
           </div>
         )}
-      </main>
 
       {/* Confirmation Modal */}
       {confirmSuspend && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmer la suspension</h3>
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-suspend-title">
+            <h3 id="confirm-suspend-title" className="text-lg font-semibold text-gray-900 mb-2">Confirmer la suspension</h3>
             <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
             <div className="flex justify-end space-x-3">
               <button
@@ -303,6 +251,6 @@ export default function UsersPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }

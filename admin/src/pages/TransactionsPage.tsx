@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type Transaction } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
+import AdminLayout from '../components/AdminLayout';
 
 export default function TransactionsPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,59 +88,7 @@ export default function TransactionsPage() {
   const totalPages = Math.ceil(totalTransactions / limit);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Badenya Admin</h1>
-              <p className="text-sm text-gray-600">Monitoring des transactions</p>
-            </div>
-            <button
-              onClick={logout}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-            >
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Tableau de bord
-            </button>
-            <button
-              onClick={() => navigate('/users')}
-              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Utilisateurs
-            </button>
-            <button
-              onClick={() => navigate('/groups')}
-              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
-            >
-              Groupes
-            </button>
-            <button
-              onClick={() => navigate('/transactions')}
-              className="border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600"
-            >
-              Transactions
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout subtitle="Monitoring des transactions">
         {/* Filters */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
@@ -301,7 +250,6 @@ export default function TransactionsPage() {
             </div>
           </div>
         )}
-      </main>
 
       {/* Notification Toast */}
       {notification && (
@@ -318,8 +266,8 @@ export default function TransactionsPage() {
       {/* Flag Transaction Modal */}
       {flagModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Signaler la transaction</h3>
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="flag-transaction-title">
+            <h3 id="flag-transaction-title" className="text-lg font-semibold text-gray-900 mb-2">Signaler la transaction</h3>
             <p className="text-gray-600 mb-4">Veuillez indiquer la raison du signalement :</p>
             <input
               type="text"
@@ -347,6 +295,6 @@ export default function TransactionsPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }

@@ -4,6 +4,15 @@ import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
 
+const isUserGroupAdmin = async (groupId: mongoose.Types.ObjectId, userId: string): Promise<boolean> => {
+  const group = await Group.findById(groupId);
+  if (!group) return false;
+  const member = group.members.find(
+    (m) => m.userId.toString() === userId
+  );
+  return member?.role === 'admin';
+};
+
 // Create a new vote in a group
 export const createVote = async (
   req: Request,
@@ -350,12 +359,14 @@ export const closeVote = async (
       return;
     }
 
-    // Verify user is the creator or an admin
-    if (vote.createdBy.toString() !== authReq.user.id) {
-      // TODO: Also check if user is group admin
+    // Verify user is the creator or a group admin
+    const isCreator = vote.createdBy.toString() === authReq.user.id;
+    const hasAdminAccess = isCreator || await isUserGroupAdmin(vote.groupId, authReq.user.id);
+
+    if (!hasAdminAccess) {
       res.status(403).json({
         status: 'error',
-        message: 'Only the vote creator can close this vote',
+        message: 'Only the vote creator or a group admin can close this vote',
       });
       return;
     }
@@ -397,12 +408,14 @@ export const deleteVote = async (
       return;
     }
 
-    // Verify user is the creator or an admin
-    if (vote.createdBy.toString() !== authReq.user.id) {
-      // TODO: Also check if user is group admin
+    // Verify user is the creator or a group admin
+    const isCreator = vote.createdBy.toString() === authReq.user.id;
+    const hasAdminAccess = isCreator || await isUserGroupAdmin(vote.groupId, authReq.user.id);
+
+    if (!hasAdminAccess) {
       res.status(403).json({
         status: 'error',
-        message: 'Only the vote creator can delete this vote',
+        message: 'Only the vote creator or a group admin can delete this vote',
       });
       return;
     }
