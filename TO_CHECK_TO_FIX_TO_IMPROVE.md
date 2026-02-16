@@ -16,9 +16,9 @@
 | Module | Pages/Fichiers | Bugs critiques | Sécurité | UI/UX | Statut |
 |--------|---------------|----------------|----------|-------|--------|
 | **Backend** | 25+ fichiers | ✅ 3/3 corrigés | 5/5 corrigés | N/A | ✅ Tests OK (80/80) — reste 6 TODOs, logging |
-| **Admin** | 7 pages | ✅ 2/2 corrigés | 2/3 corrigés | ⚠️ 6 alert/confirm restants, accessibilité | ⚠️ Passe 2 en cours |
+| **Admin** | 7 pages | ✅ 2/2 corrigés | 2/3 corrigés | ✅ 6/6 alert/confirm → modales custom | ⚠️ Passe 2 en cours |
 | **Landing Page** | 3 pages + composants | ✅ 1/1 corrigé | 0/1 | ⚠️ 14+ liens morts, favicon | ⚠️ Passe 2 en cours |
-| **Mobile** | 20+ écrans | ⚠️ 1 bug runtime (error undefined) | ✅ Validation renforcée | ✅ fullName fixé | ⚠️ Passe 2 en cours |
+| **Mobile** | 20+ écrans | ✅ Bug runtime corrigé | ✅ Validation renforcée | ✅ fullName fixé, stores harmonisés | ⚠️ Passe 2 en cours |
 | **API Mobile** | 19 fichiers vérifiés | ✅ 3 mocks → API réelle | ✅ Types corrigés | N/A | ✅ Corrigé |
 
 ---
@@ -164,7 +164,7 @@
 
 #### Validation
 
-- [ ] `vote.controller.ts` — `endDate` validé ISO 8601 côté route mais pas vérifié `> Date.now()` côté contrôleur (date dans le passé acceptée)
+- [x] `vote.controller.ts` — `endDate` validé ISO 8601 côté route mais pas vérifié `> Date.now()` côté contrôleur (date dans le passé acceptée) — **corrigé : validation ajoutée**
 - [ ] `vote.controller.ts` — `quorumPercentage` validé `0-100` côté route mais pas re-vérifié côté contrôleur
 - [ ] Routes de transactions — pas de validation `isMongoId()` sur `param('groupId')` (contrairement aux votes)
 
@@ -178,16 +178,16 @@
 
 ### 🟠 ADMIN — Passe 2
 
-> 3 pages utilisent encore `alert()`/`confirm()`/`prompt()` natifs, 9 `console.error()`, composants dupliqués, accessibilité incomplète.
+> ~~3 pages utilisent encore `alert()`/`confirm()`/`prompt()` natifs~~ ✅ Corrigé — modales React custom + notifications toast ajoutées. 9 `console.error()`, composants dupliqués, accessibilité incomplète.
 
 #### `alert()`/`confirm()`/`prompt()` restants
 
-- [ ] `UserDetailsPage.tsx:41` — `confirm()` natif pour suspension utilisateur → modale React custom
-- [ ] `UserDetailsPage.tsx:48,58` — `alert()` natif pour erreurs/succès → notification toast
-- [ ] `GroupDetailsPage.tsx:41` — `confirm()` natif pour archivage groupe → modale React custom
-- [ ] `GroupDetailsPage.tsx:48` — `alert()` natif pour erreur → notification toast
-- [ ] `TransactionsPage.tsx:50` — `prompt()` natif pour raison de signalement → modale avec input
-- [ ] `TransactionsPage.tsx:56,58` — `alert()` natif pour succès/erreur → notification toast
+- [x] `UserDetailsPage.tsx:41` — `confirm()` natif pour suspension utilisateur → modale React custom
+- [x] `UserDetailsPage.tsx:48,58` — `alert()` natif pour erreurs/succès → notification toast
+- [x] `GroupDetailsPage.tsx:41` — `confirm()` natif pour archivage groupe → modale React custom
+- [x] `GroupDetailsPage.tsx:48` — `alert()` natif pour erreur → notification toast
+- [x] `TransactionsPage.tsx:50` — `prompt()` natif pour raison de signalement → modale avec input
+- [x] `TransactionsPage.tsx:56,58` — `alert()` natif pour succès/erreur → notification toast
 
 #### Logging
 
@@ -248,19 +248,17 @@
 
 - [ ] `favicon` = `vite.svg` par défaut — remplacer par un favicon Badenya dédié
 - [ ] Pas d'error boundary React
-- [ ] `sitemap.xml` — `lastmod` dates (2025-10-10) périmées, inclut `/features` et `/pricing` qui n'existent pas (seules routes : `/`, `/about`, `/contact`)
+- [x] `sitemap.xml` — ~~`lastmod` dates (2025-10-10) périmées, inclut `/features` et `/pricing` qui n'existent pas~~ — **corrigé : routes inexistantes supprimées, dates mises à jour (2026-02-16)**
 
 ---
 
 ### 🟢 MOBILE — Passe 2
 
-> 1 bug runtime (variable `error` non destructurée), 3 TODOs, incohérence `loading`/`isLoading`, 31 `console.error()`, pas de gestion offline.
+> ~~1 bug runtime (variable `error` non destructurée)~~ ✅ Corrigé. 3 TODOs, ~~incohérence `loading`/`isLoading`~~ ✅ Harmonisé, 31 `console.error()`, pas de gestion offline.
 
 #### Bugs
 
-- [ ] `group-insights.tsx:12,26` — `error` non destructuré du `useAIStore()` mais utilisé dans le `useEffect` → **variable undefined, crash runtime potentiel**
-  - Ligne 12 : `const { insights, isLoading, generateInsights, fetchGroupInsights, clearError } = useAIStore();` — manque `error`
-  - Ligne 26 : `if (error) { Alert.alert('Erreur', error); }` — `error` est `undefined`
+- [x] `group-insights.tsx:12,26` — `error` non destructuré du `useAIStore()` mais utilisé dans le `useEffect` → **corrigé : `error` ajouté à la destructuration**
 
 #### TODOs dans le code
 
@@ -269,14 +267,14 @@
 
 #### Cohérence des stores
 
-- [ ] `transactionStore.ts` utilise `loading` (6 stores utilisent `isLoading`, 1 utilise `loading`) — harmoniser vers `isLoading`
+- [x] `transactionStore.ts` utilise `loading` (6 stores utilisent `isLoading`, 1 utilise `loading`) — **harmonisé vers `isLoading`**
   - `authStore.ts` → `isLoading` ✅
   - `groupStore.ts` → `isLoading` ✅
   - `proposalStore.ts` → `isLoading` ✅
   - `voteStore.ts` → `isLoading` ✅
   - `aiStore.ts` → `isLoading` ✅
   - `notificationStore.ts` → `isLoading` ✅
-  - `transactionStore.ts` → `loading` ❌
+  - `transactionStore.ts` → `isLoading` ✅
 
 #### Logging
 
@@ -301,24 +299,24 @@
 
 ## 📊 PROGRESSION — Résumé (mise à jour passe 2)
 
-| Module | Corrigé (passe 1) | Identifié (passe 2) | Total reste à faire |
+| Module | Corrigé (passe 1 + 2) | Identifié (passe 2) | Total reste à faire |
 |--------|-------------------|---------------------|---------------------|
-| **Backend** | 27 corrections · 0 erreur TS · 80/80 tests | 6 TODOs, 60+ console.*, validations, fonctionnalités incomplètes | ~10 items |
-| **Admin** | 15 corrections (fullName, clés, debounce, modales UsersPage/GroupsPage) | 6 alert/confirm/prompt restants, 9 console.error, duplication code, accessibilité | ~13 items |
-| **Landing Page** | 13 corrections (SVG, accessibilité, formulaires, OG) | 2 TODOs backend, 14+ liens morts, hardcoded values, animations, favicon | ~12 items |
-| **Mobile** | 30+ corrections (fullName, mocks→API, bugs, regex, validation) | 1 bug runtime, 3 TODOs, incohérence stores, 31 console.error, pas d'offline | ~9 items |
+| **Backend** | 28 corrections · 0 erreur TS · 80/80 tests | 6 TODOs, 60+ console.*, validations, fonctionnalités incomplètes | ~9 items |
+| **Admin** | 21 corrections (fullName, clés, debounce, modales 5 pages, toasts) | ~~6 alert/confirm/prompt~~ ✅, 9 console.error, duplication code, accessibilité | ~7 items |
+| **Landing Page** | 14 corrections (SVG, accessibilité, formulaires, OG, sitemap) | 2 TODOs backend, 14+ liens morts, hardcoded values, animations, favicon | ~11 items |
+| **Mobile** | 32+ corrections (fullName, mocks→API, bugs, regex, validation, stores harmonisés) | ~~1 bug runtime~~ ✅, 3 TODOs, ~~incohérence stores~~ ✅, 31 console.error, pas d'offline | ~7 items |
 
 ---
 
 ## 🔮 AMÉLIORATIONS FUTURES RECOMMANDÉES (mise à jour)
 
 ### Critique (bugs / crashes)
-- [ ] **Mobile** : `group-insights.tsx` — ajouter `error` dans la destructuration de `useAIStore()`
+- [x] **Mobile** : `group-insights.tsx` — ajouter `error` dans la destructuration de `useAIStore()` — **corrigé**
 - [ ] **Backend** : implémenter l'envoi d'email pour `forgotPassword` (actuellement TODO)
 
 ### Haute priorité
 - [ ] Remplacer 60+ `console.*` backend par Winston ou Pino (logging structuré)
-- [ ] Migrer les `alert()`/`confirm()`/`prompt()` restants vers des modales React (admin: 3 pages)
+- [x] Migrer les `alert()`/`confirm()`/`prompt()` restants vers des modales React (admin: 5 pages) — **corrigé**
 - [ ] Ajouter un token refresh automatique dans `admin/src/services/api.ts` au lieu de déconnexion sur 401
 - [ ] Migrer le stockage des tokens admin de `localStorage` vers `httpOnly` cookies
 - [ ] Ajouter des error boundaries React dans admin, landing page et mobile
@@ -328,7 +326,7 @@
 
 ### Moyenne priorité
 - [ ] Extraire les composants dupliqués admin : `<Layout>`, `<Sidebar>`, `<Header>`
-- [ ] Harmoniser `loading` → `isLoading` dans `transactionStore.ts` (mobile)
+- [x] Harmoniser `loading` → `isLoading` dans `transactionStore.ts` (mobile) — **corrigé**
 - [ ] Ajouter un `package.json` racine pour la gestion monorepo
 - [ ] Connecter les formulaires de la landing page (newsletter, contact) au backend
 - [ ] Ajouter des tests d'intégration avec `mongodb-memory-server` configuré
@@ -343,6 +341,6 @@
 - [ ] Remplacer les 14+ liens `href="#"` du footer/pages par de vrais URLs
 - [ ] Ajouter le fichier `og-image.png` (1200×630px) pour le SEO de la landing page
 - [ ] Remplacer le favicon `vite.svg` par un favicon Badenya
-- [ ] Mettre à jour `sitemap.xml` (dates `lastmod` périmées, routes inexistantes)
+- [x] Mettre à jour `sitemap.xml` (dates `lastmod` périmées, routes inexistantes) — **corrigé**
 - [ ] Implémenter la suppression de compte mobile (`settings.tsx`)
-- [ ] Ajouter la validation `endDate > now` côté contrôleur de votes
+- [x] Ajouter la validation `endDate > now` côté contrôleur de votes — **corrigé**
