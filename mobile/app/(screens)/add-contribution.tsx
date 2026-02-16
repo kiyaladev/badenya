@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image, Keyboard } from 'react-native';
 import { useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTransactionStore } from '@/store/transactionStore';
@@ -92,6 +92,7 @@ export default function AddContributionScreen() {
   };
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
     if (!validateForm() || !groupId) {
       return;
     }

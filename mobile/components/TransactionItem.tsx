@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Transaction } from '@/services/transaction.service';
@@ -6,7 +7,7 @@ interface TransactionItemProps {
   transaction: Transaction;
 }
 
-export default function TransactionItem({ transaction }: TransactionItemProps) {
+function TransactionItem({ transaction }: TransactionItemProps) {
   const router = useRouter();
 
   const getTypeIcon = () => {
@@ -144,3 +145,5 @@ export default function TransactionItem({ transaction }: TransactionItemProps) {
     </TouchableOpacity>
   );
 }
+
+export default React.memo(TransactionItem);

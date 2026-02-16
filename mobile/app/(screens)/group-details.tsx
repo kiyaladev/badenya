@@ -70,7 +70,7 @@ export default function GroupDetailsScreen() {
   };
 
   // Check if current user is admin or treasurer
-  const userMember = user?.id ? group?.members.find(m => m.userId === user.id) : undefined;
+  const userMember = user?._id ? group?.members.find(m => m.userId === user._id) : undefined;
   const isAdmin = userMember?.role === 'admin';
   const canAddMembers = userMember?.role === 'admin' || userMember?.role === 'treasurer';
 
