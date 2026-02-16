@@ -9,6 +9,7 @@ import {
   deleteImageLocally,
   ImageInfo,
 } from '@/services/upload.service';
+import logger from '@/services/logger';
 
 type PaymentMethodType = 'cash' | 'mobile_money' | 'bank_transfer' | 'card';
 
@@ -70,7 +71,7 @@ export default function AddContributionScreen() {
         setAttachments([...attachments, ...savedImages]);
       }
     } catch (error) {
-      console.error('Error adding attachment:', error);
+      logger.error('AddContribution', 'Error adding attachment', error);
       Alert.alert('Erreur', "Impossible d'ajouter la pièce jointe");
     }
   };
@@ -86,7 +87,7 @@ export default function AddContributionScreen() {
       const newAttachments = attachments.filter((_, i) => i !== index);
       setAttachments(newAttachments);
     } catch (error) {
-      console.error('Error removing attachment:', error);
+      logger.error('AddContribution', 'Error removing attachment', error);
       Alert.alert('Erreur', 'Impossible de supprimer la pièce jointe');
     }
   };

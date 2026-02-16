@@ -2,6 +2,7 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import logger from '@/services/logger';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function SplashScreen() {
           router.replace('/(auth)/onboarding');
         }
       } catch (error) {
-        console.error('Error initializing app:', error);
+        logger.error('Splash', 'Error initializing app', error);
         // On error, go to onboarding
         router.replace('/(auth)/onboarding');
       }

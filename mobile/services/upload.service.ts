@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Alert } from 'react-native';
+import logger from './logger';
 
 export interface ImageInfo {
   uri: string;
@@ -27,7 +28,7 @@ export const requestCameraPermissions = async (): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error('Error requesting camera permissions:', error);
+    logger.error('Upload', 'Error requesting camera permissions', error);
     return false;
   }
 };
@@ -50,7 +51,7 @@ export const requestMediaLibraryPermissions = async (): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error('Error requesting media library permissions:', error);
+    logger.error('Upload', 'Error requesting media library permissions', error);
     return false;
   }
 };
@@ -94,7 +95,7 @@ export const pickImage = async (options?: {
 
     return images;
   } catch (error) {
-    console.error('Error picking image:', error);
+    logger.error('Upload', 'Error picking image', error);
     Alert.alert('Erreur', "Impossible de sélectionner l'image");
     return null;
   }
@@ -132,7 +133,7 @@ export const takePhoto = async (options?: {
       size: (fileInfo as { size?: number }).size,
     };
   } catch (error) {
-    console.error('Error taking photo:', error);
+    logger.error('Upload', 'Error taking photo', error);
     Alert.alert('Erreur', 'Impossible de prendre la photo');
     return null;
   }
@@ -203,7 +204,7 @@ export const saveImageLocally = async (
 
     return newPath;
   } catch (error) {
-    console.error('Error saving image locally:', error);
+    logger.error('Upload', 'Error saving image locally', error);
     return null;
   }
 };
@@ -216,7 +217,7 @@ export const deleteImageLocally = async (imageUri: string): Promise<boolean> => 
     await FileSystem.deleteAsync(imageUri, { idempotent: true });
     return true;
   } catch (error) {
-    console.error('Error deleting image:', error);
+    logger.error('Upload', 'Error deleting image', error);
     return false;
   }
 };
@@ -229,7 +230,7 @@ export const getImageSize = async (uri: string): Promise<number | null> => {
     const fileInfo = await FileSystem.getInfoAsync(uri);
     return (fileInfo as { size?: number }).size || null;
   } catch (error) {
-    console.error('Error getting image size:', error);
+    logger.error('Upload', 'Error getting image size', error);
     return null;
   }
 };
@@ -244,7 +245,7 @@ export const imageToBase64 = async (uri: string): Promise<string | null> => {
     });
     return base64;
   } catch (error) {
-    console.error('Error converting image to base64:', error);
+    logger.error('Upload', 'Error converting image to base64', error);
     return null;
   }
 };

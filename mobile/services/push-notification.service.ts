@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform, Alert } from 'react-native';
 import Constants from 'expo-constants';
 import notificationService from './notification.service';
+import logger from './logger';
 
 /**
  * Configure notification handler
@@ -42,7 +43,7 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error('Error requesting notification permissions:', error);
+    logger.error('PushNotification', 'Error requesting notification permissions', error);
     return false;
   }
 };
@@ -72,7 +73,7 @@ export const getPushNotificationToken = async (): Promise<string | null> => {
     // Token registered successfully
     return token.data;
   } catch (error) {
-    console.error('Error getting push notification token:', error);
+    logger.error('PushNotification', 'Error getting push notification token', error);
     return null;
   }
 };
@@ -92,7 +93,7 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
 
     return token;
   } catch (error) {
-    console.error('Error registering for push notifications:', error);
+    logger.error('PushNotification', 'Error registering for push notifications', error);
     return null;
   }
 };
@@ -109,7 +110,7 @@ export const unregisterFromPushNotifications = async (): Promise<void> => {
       // Device unregistered successfully
     }
   } catch (error) {
-    console.error('Error unregistering from push notifications:', error);
+    logger.error('PushNotification', 'Error unregistering from push notifications', error);
   }
 };
 
@@ -136,7 +137,7 @@ export const scheduleLocalNotification = async (
 
     return id;
   } catch (error) {
-    console.error('Error scheduling local notification:', error);
+    logger.error('PushNotification', 'Error scheduling local notification', error);
     throw error;
   }
 };
@@ -148,7 +149,7 @@ export const cancelNotification = async (notificationId: string): Promise<void> 
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch (error) {
-    console.error('Error canceling notification:', error);
+    logger.error('PushNotification', 'Error canceling notification', error);
   }
 };
 
@@ -159,7 +160,7 @@ export const cancelAllNotifications = async (): Promise<void> => {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (error) {
-    console.error('Error canceling all notifications:', error);
+    logger.error('PushNotification', 'Error canceling all notifications', error);
   }
 };
 
@@ -170,7 +171,7 @@ export const getBadgeCount = async (): Promise<number> => {
   try {
     return await Notifications.getBadgeCountAsync();
   } catch (error) {
-    console.error('Error getting badge count:', error);
+    logger.error('PushNotification', 'Error getting badge count', error);
     return 0;
   }
 };
@@ -182,7 +183,7 @@ export const setBadgeCount = async (count: number): Promise<void> => {
   try {
     await Notifications.setBadgeCountAsync(count);
   } catch (error) {
-    console.error('Error setting badge count:', error);
+    logger.error('PushNotification', 'Error setting badge count', error);
   }
 };
 
@@ -193,7 +194,7 @@ export const clearBadge = async (): Promise<void> => {
   try {
     await Notifications.setBadgeCountAsync(0);
   } catch (error) {
-    console.error('Error clearing badge:', error);
+    logger.error('PushNotification', 'Error clearing badge', error);
   }
 };
 
@@ -222,7 +223,7 @@ export const getScheduledNotifications = async (): Promise<Notifications.Notific
   try {
     return await Notifications.getAllScheduledNotificationsAsync();
   } catch (error) {
-    console.error('Error getting scheduled notifications:', error);
+    logger.error('PushNotification', 'Error getting scheduled notifications', error);
     return [];
   }
 };

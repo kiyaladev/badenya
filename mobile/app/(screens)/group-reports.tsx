@@ -12,6 +12,7 @@ import { useLocalSearchParams } from 'expo-router';
 import reportService, { ReportSummary } from '@/services/report.service';
 import { Button } from '@/components/ui';
 import { useGroupStore } from '@/store/groupStore';
+import logger from '@/services/logger';
 
 export default function GroupReportsScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -53,7 +54,7 @@ export default function GroupReportsScreen() {
       setSummary(data);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      console.error('Error loading summary:', error);
+      logger.error('GroupReports', 'Error loading summary', error);
       Alert.alert('Erreur', 'Impossible de charger le rapport');
     } finally {
       setLoading(false);
@@ -77,7 +78,7 @@ export default function GroupReportsScreen() {
       }
     } catch (err: unknown) {
       const error = err as { message?: string };
-      console.error('Error downloading PDF:', error);
+      logger.error('GroupReports', 'Error downloading PDF', error);
       Alert.alert('Erreur', "Impossible d'ouvrir le rapport PDF");
     } finally {
       setDownloading(false);
@@ -101,7 +102,7 @@ export default function GroupReportsScreen() {
       }
     } catch (err: unknown) {
       const error = err as { message?: string };
-      console.error('Error downloading Excel:', error);
+      logger.error('GroupReports', 'Error downloading Excel', error);
       Alert.alert('Erreur', "Impossible d'ouvrir l'export Excel");
     } finally {
       setDownloading(false);

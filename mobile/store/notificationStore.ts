@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getErrorMessage } from '../utils/errorHandler';
 import notificationService, { Notification } from '@/services/notification.service';
+import logger from '@/services/logger';
 
 interface NotificationState {
   notifications: Notification[];
@@ -104,7 +105,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       await notificationService.updateDeviceToken(token, platform);
     } catch (error) {
-      console.error('Failed to update device token:', error);
+      logger.error('NotificationStore', 'Failed to update device token', error);
     }
   },
 
@@ -112,7 +113,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       await notificationService.removeDeviceToken(token);
     } catch (error) {
-      console.error('Failed to remove device token:', error);
+      logger.error('NotificationStore', 'Failed to remove device token', error);
     }
   },
 

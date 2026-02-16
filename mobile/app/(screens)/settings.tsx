@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import pushNotificationService from '@/services/push-notification.service';
+import logger from '@/services/logger';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function SettingsScreen() {
         setPushNotifications(false);
       }
     } catch (error) {
-      console.error('Error toggling push notifications:', error);
+      logger.error('Settings', 'Error toggling push notifications', error);
       Alert.alert('Erreur', 'Impossible de modifier les paramètres de notification');
     }
   };

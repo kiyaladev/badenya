@@ -1,5 +1,6 @@
 import api from './api';
 import * as SecureStore from 'expo-secure-store';
+import logger from './logger';
 
 export interface RegisterData {
   fullName: string;
@@ -73,7 +74,7 @@ class AuthService {
       // Call logout endpoint (optional, if backend needs to invalidate tokens)
       await api.post('/auth/logout');
     } catch (error) {
-      console.error('Logout API error:', error);
+      logger.error('Auth', 'Logout API error', error);
     } finally {
       // Clear tokens from secure storage
       await SecureStore.deleteItemAsync('accessToken');
