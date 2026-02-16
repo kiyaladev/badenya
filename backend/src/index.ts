@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 import { connectDatabase } from './config/database';
 import swaggerSpec from './config/swagger';
 import routes from './routes';
+import { correlationId } from './middleware/correlationId';
 import logger from './utils/logger';
 
 // Load environment variables
@@ -28,6 +29,7 @@ const PORT = process.env.PORT || 5000;
 
 // Security Middleware
 app.use(helmet()); // Set security headers
+app.use(correlationId); // Assign correlation ID to each request
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true,

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
+import userRoutes from './user.routes';
 import groupRoutes from './group.routes';
 import transactionRoutes from './transaction.routes';
 import proposalRoutes from './proposal.routes';
@@ -12,6 +13,7 @@ const router = Router();
 
 // API routes
 router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
 router.use('/groups', groupRoutes);
 router.use('/', transactionRoutes); // Transaction routes include /groups/:groupId/transactions
 router.use('/', proposalRoutes); // Proposal routes include /groups/:groupId/proposals

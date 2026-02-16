@@ -3,10 +3,9 @@ import axios from 'axios';
 // Get API URL - handle both Vite and test environments
 let apiUrl = 'http://localhost:5000/api';
 try {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((import.meta as any) && (import.meta as any).env && (import.meta as any).env.VITE_API_URL) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    apiUrl = (import.meta as any).env.VITE_API_URL;
+  const meta: ImportMeta | undefined = import.meta;
+  if (meta?.env?.VITE_API_URL) {
+    apiUrl = meta.env.VITE_API_URL;
   }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 } catch (_error) {
