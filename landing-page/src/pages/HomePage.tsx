@@ -117,16 +117,54 @@ function StatItem({ end, suffix, label, index }: {
   );
 }
 
+// Demo statistics — will be replaced with real data from backend API
+const DEMO_STATS = [
+  { id: 'stat-users', end: 10000, suffix: '+', label: 'Utilisateurs actifs' },
+  { id: 'stat-groups', end: 500, suffix: '+', label: 'Groupes créés' },
+  { id: 'stat-savings', end: 50, suffix: 'M+', label: 'XOF épargnés' },
+  { id: 'stat-satisfaction', end: 98, suffix: '%', label: 'Satisfaction' },
+];
+
+// Demo balance showcase — illustrative data for hero section
+const DEMO_GROUPS = [
+  { emoji: '👥', name: 'Groupe Famille', amount: '850,000 XOF', progress: 85, gradient: 'from-blue-500 to-blue-600' },
+  { emoji: '💼', name: 'Investissement Pro', amount: '1,200,000 XOF', progress: 60, gradient: 'from-purple-500 to-purple-600' },
+  { emoji: '🎯', name: 'Projet Immo', amount: '400,000 XOF', progress: 40, gradient: 'from-green-500 to-green-600' },
+];
+const DEMO_TOTAL = '2,450,000 XOF';
+
 export default function HomePage() {
   const [email, setEmail] = useState('');
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterError, setNewsletterError] = useState<string | null>(null);
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to backend newsletter API when available
-    setNewsletterSubmitted(true);
-    setEmail('');
+    setNewsletterSubmitting(true);
+    setNewsletterError(null);
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+      const response = await fetch(`${apiUrl}/contact/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to subscribe');
+      }
+
+      setNewsletterSubmitted(true);
+      setEmail('');
+    } catch (error) {
+      console.error('Newsletter subscription failed:', error);
+      setNewsletterError('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setNewsletterSubmitting(false);
+    }
   };
 
   const fadeInUp = {
@@ -184,36 +222,20 @@ export default function HomePage() {
                 <div className="bg-white rounded-xl p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Solde total</span>
-                    <span className="text-2xl font-bold text-gray-900 animate-pulse">2,450,000 XOF</span>
+                    <span className="text-2xl font-bold text-gray-900 animate-pulse">{DEMO_TOTAL}</span>
                   </div>
                   <div className="space-y-3">
-                    <div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">👥 Groupe Famille</span>
-                        <span className="font-medium">850,000 XOF</span>
+                    {DEMO_GROUPS.map((group) => (
+                      <div key={group.name}>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">{group.emoji} {group.name}</span>
+                          <span className="font-medium">{group.amount}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                          <div className={`bg-gradient-to-r ${group.gradient} h-1.5 rounded-full`} style={{ width: `${group.progress}%` }}></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full" style={{ width: '85%' }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">💼 Investissement Pro</span>
-                        <span className="font-medium">1,200,000 XOF</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                        <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-1.5 rounded-full" style={{ width: '60%' }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">🎯 Projet Immo</span>
-                        <span className="font-medium">400,000 XOF</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                        <div className="bg-gradient-to-r from-green-500 to-green-600 h-1.5 rounded-full" style={{ width: '40%' }}></div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -322,12 +344,7 @@ export default function HomePage() {
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { id: 'stat-users', end: 10000, suffix: '+', label: 'Utilisateurs actifs' },
-              { id: 'stat-groups', end: 500, suffix: '+', label: 'Groupes créés' },
-              { id: 'stat-savings', end: 50, suffix: 'M+', label: 'XOF épargnés' },
-              { id: 'stat-satisfaction', end: 98, suffix: '%', label: 'Satisfaction' },
-            ].map((stat, index) => (
+            {DEMO_STATS.map((stat, index) => (
               <StatItem key={stat.id} {...stat} index={index} />
             ))}
           </div>
@@ -606,11 +623,15 @@ export default function HomePage() {
                     </div>
                     <button
                       type="submit"
-                      className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition self-end"
+                      disabled={newsletterSubmitting}
+                      className="bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition self-end disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      S'inscrire
+                      {newsletterSubmitting ? '…' : 'S\'inscrire'}
                     </button>
                   </>
+                )}
+                {newsletterError && (
+                  <p className="text-white/80 text-sm mt-2" role="alert">{newsletterError}</p>
                 )}
               </form>
             </div>

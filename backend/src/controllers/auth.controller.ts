@@ -7,6 +7,7 @@ import { generateToken } from '../utils/crypto';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import logger from '../utils/logger';
+import { sendPasswordResetEmail } from '../services/email.service';
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -305,8 +306,11 @@ export const forgotPassword = async (
     user.passwordResetExpires = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    // TODO: Send email with reset token
-    // In production, send email instead of returning token
+    // Send password reset email (non-blocking — failure is logged, not thrown)
+    sendPasswordResetEmail(user.email, resetToken, user.fullName).catch((err) => {
+      logger.error('Failed to send password reset email:', err);
+    });
+
     res.status(200).json({
       status: 'success',
       message: 'If the email exists, a password reset link has been sent',
