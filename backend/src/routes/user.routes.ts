@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query } from 'express-validator';
-import { searchUsers } from '../controllers/user.controller';
+import { searchUsers, getUserStats } from '../controllers/user.controller';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 
@@ -54,5 +54,36 @@ const searchValidation = [
 ];
 
 router.get('/search', authenticate, searchValidation, validate, searchUsers);
+
+/**
+ * @swagger
+ * /api/v1/users/stats:
+ *   get:
+ *     summary: Get current user stats (contributions, votes)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalContributions:
+ *                       type: number
+ *                     totalVotes:
+ *                       type: number
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/stats', authenticate, getUserStats);
 
 export default router;

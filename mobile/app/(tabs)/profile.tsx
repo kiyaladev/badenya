@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { useGroupStore } from '@/store/groupStore';
 import { Avatar, Card, StatItem } from '@/components/ui';
+import userService from '@/services/user.service';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -108,8 +109,15 @@ export default function ProfileScreen() {
 
   // Calculate user stats
   const totalGroups = groups.length;
-  const totalContributions = 0; // TODO: Calculate from transactions
-  const totalVotes = 0; // TODO: Calculate from votes
+  const [totalContributions, setTotalContributions] = useState(0);
+  const [totalVotes, setTotalVotes] = useState(0);
+
+  useEffect(() => {
+    userService.getUserStats().then((stats) => {
+      setTotalContributions(stats.totalContributions);
+      setTotalVotes(stats.totalVotes);
+    });
+  }, []);
 
   const fullName = user?.fullName || 'Utilisateur';
 
