@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import adminService, { type Transaction } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import AdminLayout from '../components/AdminLayout';
 
 export default function TransactionsPage() {
@@ -21,6 +22,7 @@ export default function TransactionsPage() {
   const [flagModal, setFlagModal] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState('');
   const [flagLoading, setFlagLoading] = useState(false);
+  const flagModalRef = useFocusTrap<HTMLDivElement>(!!flagModal);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const limit = 10;
 
@@ -278,7 +280,7 @@ export default function TransactionsPage() {
       {/* Flag Transaction Modal */}
       {flagModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="flag-transaction-title">
+          <div ref={flagModalRef} className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="flag-transaction-title">
             <h3 id="flag-transaction-title" className="text-lg font-semibold text-gray-900 mb-2">Signaler la transaction</h3>
             <p className="text-gray-600 mb-4">Veuillez indiquer la raison du signalement :</p>
             <input

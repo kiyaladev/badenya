@@ -255,7 +255,9 @@ export default function ContactPage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Suivez-nous</h3>
                 <div className="flex space-x-4">
                   <a
-                    href="#"
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="bg-white p-3 rounded-lg hover:bg-blue-50 transition shadow-md"
                   >
                     <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
@@ -263,7 +265,9 @@ export default function ContactPage() {
                     </svg>
                   </a>
                   <a
-                    href="#"
+                    href="https://twitter.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="bg-white p-3 rounded-lg hover:bg-blue-50 transition shadow-md"
                   >
                     <svg className="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
@@ -271,7 +275,9 @@ export default function ContactPage() {
                     </svg>
                   </a>
                   <a
-                    href="#"
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="bg-white p-3 rounded-lg hover:bg-blue-50 transition shadow-md"
                   >
                     <svg className="w-6 h-6 text-blue-700" fill="currentColor" viewBox="0 0 24 24">

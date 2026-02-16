@@ -551,7 +551,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a
-                href="#"
+                href="/#download"
                 className="group bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center space-x-3"
               >
                 <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
@@ -563,7 +563,7 @@ export default function HomePage() {
                 </div>
               </a>
               <a
-                href="#"
+                href="/#download"
                 className="group bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center space-x-3"
               >
                 <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
