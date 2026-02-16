@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Proposal } from '@/services/proposal.service';
@@ -6,7 +7,7 @@ interface VoteCardProps {
   proposal: Proposal;
 }
 
-export default function VoteCard({ proposal }: VoteCardProps) {
+function VoteCard({ proposal }: VoteCardProps) {
   const router = useRouter();
 
   const getStatusColor = (status: string) => {
@@ -164,3 +165,5 @@ export default function VoteCard({ proposal }: VoteCardProps) {
     </TouchableOpacity>
   );
 }
+
+export default React.memo(VoteCard);

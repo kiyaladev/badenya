@@ -41,7 +41,7 @@ const groupTypeConfig = {
   },
 };
 
-export default function GroupCard({ group, variant = 'default' }: GroupCardProps) {
+function GroupCard({ group, variant = 'default' }: GroupCardProps) {
   const router = useRouter();
   const isCompact = variant === 'compact';
 
@@ -189,3 +189,5 @@ export default function GroupCard({ group, variant = 'default' }: GroupCardProps
     </TouchableOpacity>
   );
 }
+
+export default React.memo(GroupCard);

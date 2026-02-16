@@ -78,6 +78,7 @@ export default function UsersPage() {
           <input
             type="text"
             placeholder="Rechercher par nom, email..."
+            aria-label="Rechercher des utilisateurs"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);

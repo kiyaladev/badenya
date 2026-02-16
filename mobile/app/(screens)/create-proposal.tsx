@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Keyboard } from 'react-native';
 import { useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -87,6 +87,7 @@ export default function CreateProposalScreen() {
   };
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
     if (!validateForm()) {
       Alert.alert('Erreur', 'Veuillez corriger les erreurs dans le formulaire');
       return;

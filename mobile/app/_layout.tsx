@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 import type { Subscription } from 'expo-modules-core';
@@ -52,10 +53,22 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, checkAuth } = useAuthStore();
 
   const notificationListener = useRef<Subscription | null>(null);
   const responseListener = useRef<Subscription | null>(null);
+
+  // Check auth status when app returns to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && isAuthenticated) {
+        checkAuth().catch(() => {
+          // Token expired or invalid — user will be logged out by checkAuth
+        });
+      }
+    });
+    return () => subscription.remove();
+  }, [isAuthenticated, checkAuth]);
 
   useEffect(() => {
     // Register for push notifications when user is authenticated

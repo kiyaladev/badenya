@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import dotenv from 'dotenv';
@@ -11,6 +12,15 @@ import routes from './routes';
 
 // Load environment variables
 dotenv.config();
+
+// Validate required secrets at startup (fail-fast)
+const requiredSecrets = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+for (const secret of requiredSecrets) {
+  if (!process.env[secret]) {
+    console.error(`❌ Missing required environment variable: ${secret}`);
+    process.exit(1);
+  }
+}
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +35,9 @@ app.use(cors({
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
+
+// Response compression (gzip)
+app.use(compression());
 
 // General rate limiting
 const limiter = rateLimit({

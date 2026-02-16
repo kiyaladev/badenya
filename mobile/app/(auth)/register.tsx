@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, Keyboard } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Button, Input } from '@/components/ui';
@@ -67,6 +67,7 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    Keyboard.dismiss();
     clearError();
 
     if (!validateForm()) {

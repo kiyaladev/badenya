@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type Transaction } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
+import { useDebounce } from '../hooks/useDebounce';
 import AdminLayout from '../components/AdminLayout';
 
 export default function TransactionsPage() {
@@ -12,14 +13,21 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [flagModal, setFlagModal] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState('');
+  const [flagLoading, setFlagLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const limit = 10;
+
+  const showNotification = useCallback((notif: { type: 'success' | 'error'; message: string }) => {
+    setNotification(notif);
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -28,7 +36,7 @@ export default function TransactionsPage() {
       const data = await adminService.getAllTransactions({
         page: currentPage,
         limit,
-        search: searchQuery || undefined,
+        search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         type: typeFilter || undefined,
       });
@@ -40,7 +48,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, statusFilter, typeFilter]);
+  }, [currentPage, debouncedSearch, statusFilter, typeFilter]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -55,15 +63,18 @@ export default function TransactionsPage() {
     if (!reason) return;
 
     try {
+      setFlagLoading(true);
       await adminService.flagTransaction(transactionId, reason);
       setFlagModal(null);
       setFlagReason('');
-      setNotification({ type: 'success', message: 'Transaction signalée avec succès' });
+      showNotification({ type: 'success', message: 'Transaction signalée avec succès' });
       await loadTransactions();
     } catch (err) {
       setFlagModal(null);
       setFlagReason('');
-      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors du signalement' });
+      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors du signalement' });
+    } finally {
+      setFlagLoading(false);
     }
   };
 
@@ -94,6 +105,7 @@ export default function TransactionsPage() {
           <input
             type="text"
             placeholder="Rechercher..."
+            aria-label="Rechercher des transactions"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -253,7 +265,7 @@ export default function TransactionsPage() {
 
       {/* Notification Toast */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+        <div role="status" aria-live="polite" className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
           notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
         }`}>
           <div className="flex items-center justify-between">
@@ -286,10 +298,10 @@ export default function TransactionsPage() {
               </button>
               <button
                 onClick={() => handleFlagTransaction(flagModal)}
-                disabled={!flagReason.trim()}
+                disabled={!flagReason.trim() || flagLoading}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Signaler
+                {flagLoading ? 'Signalement...' : 'Signaler'}
               </button>
             </div>
           </div>

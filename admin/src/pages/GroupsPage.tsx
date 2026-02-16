@@ -80,6 +80,7 @@ export default function GroupsPage() {
           <input
             type="text"
             placeholder="Rechercher par nom..."
+            aria-label="Rechercher des groupes"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);

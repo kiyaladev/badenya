@@ -294,7 +294,7 @@ router.post('/reset-password', passwordResetLimiter, resetPasswordValidation, va
 // Protected routes
 router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, getCurrentUser);
-router.put('/profile', authenticate, updateProfileValidation, validate, updateProfile);
-router.put('/change-password', authenticate, changePasswordValidation, validate, changePassword);
+router.put('/profile', authenticate, authLimiter, updateProfileValidation, validate, updateProfile);
+router.put('/change-password', authenticate, authLimiter, changePasswordValidation, validate, changePassword);
 
 export default router;

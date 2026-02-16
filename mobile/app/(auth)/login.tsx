@@ -6,6 +6,7 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
+  Keyboard,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -50,6 +51,7 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    Keyboard.dismiss();
     clearError();
 
     if (!validateForm()) {

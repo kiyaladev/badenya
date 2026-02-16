@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import { User } from '../models';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
@@ -197,7 +198,15 @@ export const refreshToken = async (
       return;
     }
 
-    const tokenExists = user.refreshTokens.some((t) => t.token === refreshToken);
+    const tokenExists = user.refreshTokens.some((t) => {
+      try {
+        const a = Buffer.from(t.token);
+        const b = Buffer.from(refreshToken);
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+      } catch {
+        return false;
+      }
+    });
 
     if (!tokenExists) {
       res.status(401).json({

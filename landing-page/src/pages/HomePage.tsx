@@ -600,6 +600,7 @@ export default function HomePage() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Votre email"
                         required
+                        pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
                         className="w-full px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-white focus:outline-none"
                       />
                     </div>
