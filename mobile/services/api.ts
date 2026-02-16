@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import offlineService from './offline.service';
 
 // Base URL for the API - in development, this should point to your local backend
 const API_BASE_URL = __DEV__ ? 'http://localhost:5000/api' : 'https://api.badenya.app/api'; // Update with production URL
@@ -101,9 +102,42 @@ api.interceptors.request.use(
 
 // Response interceptor to handle token refresh (fallback for unexpected 401)
 api.interceptors.response.use(
-  response => response,
+  async response => {
+    // Cache successful GET responses
+    if (response.config.method === 'get' && response.config.url) {
+      offlineService.cacheResponse(response.config.url, response.data).catch(() => {});
+    }
+    return response;
+  },
   async error => {
     const originalRequest = error.config;
+
+    // If network error and it's a mutation, queue for later
+    if (!error.response && originalRequest && !originalRequest._retry) {
+      const method = (originalRequest.method || '').toUpperCase();
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        const online = await offlineService.isOnline();
+        if (!online) {
+          await offlineService.enqueueRequest({
+            method: method as 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+            url: originalRequest.url || '',
+            data: originalRequest.data ? JSON.parse(originalRequest.data) : undefined,
+          });
+          return Promise.reject(new Error('Request queued for offline sync'));
+        }
+      }
+
+      // If GET request fails and we're offline, try cache
+      if (method === 'GET' && originalRequest.url) {
+        const online = await offlineService.isOnline();
+        if (!online) {
+          const cached = await offlineService.getCachedResponse(originalRequest.url);
+          if (cached) {
+            return { data: cached, status: 200, config: originalRequest, headers: {}, statusText: 'OK (cached)' };
+          }
+        }
+      }
+    }
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
