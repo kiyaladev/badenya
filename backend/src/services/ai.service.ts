@@ -4,6 +4,7 @@ import Transaction from '../models/Transaction';
 import Group from '../models/Group';
 import reportService from './report.service';
 import { IGroup, ITransaction } from '../models';
+import logger from '../utils/logger';
 
 interface PopulatedUser {
   _id: string;
@@ -60,7 +61,7 @@ class AIService {
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
     } else {
-      console.warn('⚠️  Gemini API key not configured. AI features will be disabled.');
+      logger.warn('⚠️  Gemini API key not configured. AI features will be disabled.');
     }
   }
 
@@ -389,7 +390,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
         predictions: parsed.predictions || [],
       };
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
+      logger.error('Failed to parse AI response:', error);
       // Return fallback insights based on data
       return this.generateFallbackInsights(summary);
     }
@@ -407,7 +408,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
 
       return JSON.parse(cleanText);
     } catch (error) {
-      console.error('Failed to parse anomaly response:', error);
+      logger.error('Failed to parse anomaly response:', error);
       return {
         anomalies: [],
         summary: 'Analyse des anomalies terminée. Aucune anomalie critique détectée.',
@@ -427,7 +428,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
 
       return JSON.parse(cleanText);
     } catch (error) {
-      console.error('Failed to parse recommendations response:', error);
+      logger.error('Failed to parse recommendations response:', error);
       return {
         recommendations: [
           {

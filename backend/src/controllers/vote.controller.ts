@@ -3,6 +3,7 @@ import { Vote, Group } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
+import logger from '../utils/logger';
 
 const isUserGroupAdmin = async (groupId: mongoose.Types.ObjectId, userId: string): Promise<boolean> => {
   const group = await Group.findById(groupId);
@@ -115,7 +116,7 @@ export const createVote = async (
       data: { vote },
     });
   } catch (error) {
-    console.error('Create vote error:', error);
+    logger.error('Create vote error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to create vote',
@@ -181,7 +182,7 @@ export const getGroupVotes = async (
       },
     });
   } catch (error) {
-    console.error('Get group votes error:', error);
+    logger.error('Get group votes error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get votes',
@@ -247,7 +248,7 @@ export const getVote = async (req: Request, res: Response): Promise<void> => {
       data: { vote: voteData },
     });
   } catch (error) {
-    console.error('Get vote error:', error);
+    logger.error('Get vote error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to get vote',
@@ -343,7 +344,7 @@ export const castVote = async (req: Request, res: Response): Promise<void> => {
       data: { vote },
     });
   } catch (error) {
-    console.error('Cast vote error:', error);
+    logger.error('Cast vote error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to cast vote',
@@ -392,7 +393,7 @@ export const closeVote = async (
       data: { vote },
     });
   } catch (error) {
-    console.error('Close vote error:', error);
+    logger.error('Close vote error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to close vote',
@@ -448,7 +449,7 @@ export const deleteVote = async (
       message: 'Vote deleted successfully',
     });
   } catch (error) {
-    console.error('Delete vote error:', error);
+    logger.error('Delete vote error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to delete vote',
