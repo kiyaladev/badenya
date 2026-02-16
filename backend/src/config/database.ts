@@ -14,8 +14,8 @@ export const connectDatabase = async (): Promise<void> => {
     
     await mongoose.connect(mongoUri || 'mongodb://localhost:27017/badenya');
     
-    logger.warn('✅ MongoDB connected successfully');
-    logger.warn(`📊 Database: ${mongoose.connection.name}`);
+    logger.info('✅ MongoDB connected successfully');
+    logger.info(`📊 Database: ${mongoose.connection.name}`);
   } catch (error) {
     logger.error('❌ MongoDB connection error:', error);
     throw error;

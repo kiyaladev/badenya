@@ -113,10 +113,14 @@ export default function ProfileScreen() {
   const [totalVotes, setTotalVotes] = useState(0);
 
   useEffect(() => {
+    let mounted = true;
     userService.getUserStats().then((stats) => {
-      setTotalContributions(stats.totalContributions);
-      setTotalVotes(stats.totalVotes);
+      if (mounted) {
+        setTotalContributions(stats.totalContributions);
+        setTotalVotes(stats.totalVotes);
+      }
     });
+    return () => { mounted = false; };
   }, []);
 
   const fullName = user?.fullName || 'Utilisateur';

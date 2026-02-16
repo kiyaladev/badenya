@@ -3,13 +3,12 @@ import axios from 'axios';
 // Get API URL - handle both Vite and test environments
 let apiUrl = 'http://localhost:5000/api';
 try {
-  const meta: ImportMeta | undefined = import.meta;
-  if (meta?.env?.VITE_API_URL) {
-    apiUrl = meta.env.VITE_API_URL;
+  if (import.meta.env?.VITE_API_URL) {
+    apiUrl = import.meta.env.VITE_API_URL;
   }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 } catch (_error) {
-  // import.meta doesn't exist (Jest environment)
+  // import.meta throws in Jest environment
 }
 
 const api = axios.create({
