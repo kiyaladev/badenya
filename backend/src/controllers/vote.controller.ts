@@ -66,7 +66,7 @@ export const createVote = async (
       return;
     }
 
-    // Validate quorumPercentage range
+    // Validate quorumPercentage range (defense-in-depth, also validated at route level)
     if (quorumPercentage !== undefined && quorumPercentage !== null) {
       const qp = Number(quorumPercentage);
       if (isNaN(qp) || qp < 0 || qp > 100) {

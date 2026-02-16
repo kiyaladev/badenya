@@ -91,6 +91,7 @@ api.interceptors.response.use(
       }
 
       try {
+        // Use raw axios to avoid triggering the 401 interceptor on the refresh request itself
         const response = await axios.post(`${apiUrl}/auth/refresh-token`, {
           refreshToken,
         });
