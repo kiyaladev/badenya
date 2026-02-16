@@ -40,16 +40,21 @@ export default function UserDetailsPage() {
     }
   }, [isAuthenticated, navigate, id, loadUser]);
 
+  const showNotification = useCallback((notif: { type: 'success' | 'error'; message: string }) => {
+    setNotification(notif);
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
   const handleSuspendUser = async () => {
     if (!id) return;
     try {
       await adminService.suspendUser(id);
       setConfirmSuspend(false);
-      setNotification({ type: 'success', message: 'Utilisateur suspendu avec succès' });
+      showNotification({ type: 'success', message: 'Utilisateur suspendu avec succès' });
       await loadUser();
     } catch (err) {
       setConfirmSuspend(false);
-      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de la suspension' });
+      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de la suspension' });
     }
   };
 
@@ -57,10 +62,10 @@ export default function UserDetailsPage() {
     if (!id) return;
     try {
       await adminService.activateUser(id);
-      setNotification({ type: 'success', message: 'Utilisateur activé avec succès' });
+      showNotification({ type: 'success', message: 'Utilisateur activé avec succès' });
       await loadUser();
     } catch (err) {
-      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'activation' });
+      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'activation' });
     }
   };
 
@@ -192,7 +197,7 @@ export default function UserDetailsPage() {
 
       {/* Notification Toast */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+        <div role="status" aria-live="polite" className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
           notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
         }`}>
           <div className="flex items-center justify-between">

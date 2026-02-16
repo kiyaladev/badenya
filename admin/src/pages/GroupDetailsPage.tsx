@@ -40,16 +40,21 @@ export default function GroupDetailsPage() {
     }
   }, [isAuthenticated, navigate, id, loadGroup]);
 
+  const showNotification = useCallback((notif: { type: 'success' | 'error'; message: string }) => {
+    setNotification(notif);
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
   const handleArchiveGroup = async () => {
     if (!id) return;
     try {
       await adminService.archiveGroup(id);
       setConfirmArchive(false);
-      setNotification({ type: 'success', message: 'Groupe archivé avec succès' });
+      showNotification({ type: 'success', message: 'Groupe archivé avec succès' });
       await loadGroup();
     } catch (err) {
       setConfirmArchive(false);
-      setNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'archivage' });
+      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'archivage' });
     }
   };
 
@@ -196,7 +201,7 @@ export default function GroupDetailsPage() {
 
       {/* Notification Toast */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+        <div role="status" aria-live="polite" className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
           notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
         }`}>
           <div className="flex items-center justify-between">

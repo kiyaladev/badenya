@@ -36,7 +36,13 @@ export default function AdminLayout({ subtitle, children }: AdminLayoutProps) {
               <p className="text-sm text-gray-600">{subtitle}</p>
             </div>
             <button
-              onClick={logout}
+              onClick={() => {
+                try {
+                  logout();
+                } catch {
+                  navigate('/login');
+                }
+              }}
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
             >
               Déconnexion
