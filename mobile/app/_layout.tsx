@@ -11,7 +11,9 @@ import type { Subscription } from 'expo-modules-core';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/store/authStore';
+import { useOfflineStore } from '@/store/offlineStore';
 import pushNotificationService from '@/services/push-notification.service';
+import offlineService from '@/services/offline.service';
 import logger from '@/services/logger';
 
 export {
@@ -55,9 +57,19 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
+  const { setConnected } = useOfflineStore();
 
   const notificationListener = useRef<Subscription | null>(null);
   const responseListener = useRef<Subscription | null>(null);
+
+  // Monitor network connectivity
+  useEffect(() => {
+    const unsubscribe = offlineService.onConnectivityChange((connected) => {
+      setConnected(connected);
+      logger.info('Layout', `Network ${connected ? 'online' : 'offline'}`);
+    });
+    return unsubscribe;
+  }, [setConnected]);
 
   // Check auth status when app returns to foreground
   useEffect(() => {

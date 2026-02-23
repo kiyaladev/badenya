@@ -68,13 +68,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   loadUser: async () => {
-    if (!authService.isAuthenticated()) {
-      set({ isAuthenticated: false, user: null });
-      return;
-    }
-
     set({ isLoading: true });
     try {
+      // On page refresh, try to fetch user using httpOnly cookie
       const user = await authService.getCurrentUser();
       
       // Check if user has admin role
@@ -97,9 +93,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null
       });
       
-      // Clear invalid token
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_refresh_token');
+      // Mark as unauthenticated
+      authService.setAuthenticated(false);
     }
   },
 
