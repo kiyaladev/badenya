@@ -25,8 +25,8 @@ export default function ChangePasswordScreen() {
 
     if (!formData.newPassword.trim()) {
       newErrors.newPassword = 'Le nouveau mot de passe est requis';
-    } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'Le mot de passe doit contenir au moins 6 caractères';
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = 'Le mot de passe doit contenir au moins 8 caractères';
     }
 
     if (!formData.confirmPassword.trim()) {

@@ -11,6 +11,11 @@ export default function LoginPage() {
     password: '',
   });
 
+  const [formErrors, setFormErrors] = useState({
+    email: '',
+    password: '',
+  });
+
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
@@ -23,8 +28,36 @@ export default function LoginPage() {
     };
   }, [clearError]);
 
+  const validateForm = (): boolean => {
+    const newErrors = { email: '', password: '' };
+    let valid = true;
+
+    if (!formData.email) {
+      newErrors.email = 'L\'email est requis';
+      valid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Veuillez entrer une adresse email valide';
+      valid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Le mot de passe est requis';
+      valid = false;
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+      valid = false;
+    }
+
+    setFormErrors(newErrors);
+    return valid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
     
     try {
       await login(formData);
@@ -79,15 +112,19 @@ export default function LoginPage() {
                 type="email"
                 id="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
+                }}
+                className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 ${formErrors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                 placeholder="admin@badenya.com"
-                pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]+"
-                title="Veuillez entrer une adresse email valide"
-                required
-                aria-describedby={error ? 'login-error' : undefined}
+                autoComplete="email"
+                aria-describedby={formErrors.email ? 'email-error' : error ? 'login-error' : undefined}
               />
             </div>
+            {formErrors.email && (
+              <p id="email-error" className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -104,13 +141,19 @@ export default function LoginPage() {
                 type="password"
                 id="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
+                onChange={(e) => {
+                  setFormData({ ...formData, password: e.target.value });
+                  if (formErrors.password) setFormErrors({ ...formErrors, password: '' });
+                }}
+                className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 ${formErrors.password ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                 placeholder="••••••••"
-                required
-                aria-describedby={error ? 'login-error' : undefined}
+                autoComplete="current-password"
+                aria-describedby={formErrors.password ? 'password-error' : error ? 'login-error' : undefined}
               />
             </div>
+            {formErrors.password && (
+              <p id="password-error" className="mt-1 text-sm text-red-600">{formErrors.password}</p>
+            )}
           </div>
 
           <button
