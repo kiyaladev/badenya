@@ -52,8 +52,8 @@ export default function RegisterScreen() {
     if (!password) {
       newErrors.password = 'Mot de passe requis';
       valid = false;
-    } else if (password.length < 6) {
-      newErrors.password = 'Minimum 6 caractères';
+    } else if (password.length < 8) {
+      newErrors.password = 'Minimum 8 caractères';
       valid = false;
     }
 
