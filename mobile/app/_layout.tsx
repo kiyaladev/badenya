@@ -15,6 +15,9 @@ import { useOfflineStore } from '@/store/offlineStore';
 import pushNotificationService from '@/services/push-notification.service';
 import offlineService from '@/services/offline.service';
 import logger from '@/services/logger';
+import { validateEnv } from '@/utils/validateEnv';
+
+validateEnv();
 
 export {
   // Catch any errors thrown by the Layout component.

@@ -1,49 +1,243 @@
 import express from 'express';
+import { param } from 'express-validator';
 import * as aiController from '../controllers/ai.controller';
 import { authenticate } from '../middleware/auth';
+import { validate } from '../middleware/validation';
 
 const router = express.Router();
 
-/**
- * @route POST /api/v1/groups/:groupId/insights
- * @desc Generate AI insights for a group
- * @access Private
- */
-router.post('/groups/:groupId/insights', authenticate, aiController.generateInsights);
+const groupIdValidation = [
+  param('groupId').isMongoId().withMessage('Valid group ID is required'),
+];
+
+const reportIdValidation = [
+  param('reportId').isMongoId().withMessage('Valid report ID is required'),
+];
 
 /**
- * @route GET /api/v1/groups/:groupId/insights
- * @desc Get insights history for a group
- * @access Private
+ * @swagger
+ * tags:
+ *   name: AI Insights
+ *   description: AI-powered financial analysis and recommendations
  */
-router.get('/groups/:groupId/insights', authenticate, aiController.getGroupInsights);
 
 /**
- * @route GET /api/v1/insights/:reportId
- * @desc Get a specific insight report
- * @access Private
+ * @swagger
+ * /api/v1/groups/{groupId}/insights:
+ *   post:
+ *     summary: Generate AI insights for a group
+ *     tags: [AI Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ID
+ *     responses:
+ *       201:
+ *         description: Insights generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     report:
+ *                       $ref: '#/components/schemas/AIReport'
+ *       404:
+ *         description: Group not found
+ *       500:
+ *         description: AI service error
  */
-router.get('/insights/:reportId', authenticate, aiController.getInsightById);
+router.post('/groups/:groupId/insights', authenticate, groupIdValidation, validate, aiController.generateInsights);
 
 /**
- * @route POST /api/v1/groups/:groupId/anomalies
- * @desc Detect anomalies in group transactions
- * @access Private
+ * @swagger
+ * /api/v1/groups/{groupId}/insights:
+ *   get:
+ *     summary: Get insights history for a group
+ *     tags: [AI Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of reports to return
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of reports to skip
+ *     responses:
+ *       200:
+ *         description: Insights history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     reports:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AIReport'
+ *                     total:
+ *                       type: integer
  */
-router.post('/groups/:groupId/anomalies', authenticate, aiController.detectAnomalies);
+router.get('/groups/:groupId/insights', authenticate, groupIdValidation, validate, aiController.getGroupInsights);
 
 /**
- * @route POST /api/v1/groups/:groupId/recommendations
- * @desc Generate personalized recommendations for a group
- * @access Private
+ * @swagger
+ * /api/v1/insights/{reportId}:
+ *   get:
+ *     summary: Get a specific insight report
+ *     tags: [AI Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reportId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Report ID
+ *     responses:
+ *       200:
+ *         description: Insight report details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     report:
+ *                       $ref: '#/components/schemas/AIReport'
+ *       404:
+ *         description: Report not found
  */
-router.post('/groups/:groupId/recommendations', authenticate, aiController.generateRecommendations);
+router.get('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.getInsightById);
 
 /**
- * @route DELETE /api/v1/insights/:reportId
- * @desc Delete an insight report
- * @access Private
+ * @swagger
+ * /api/v1/groups/{groupId}/anomalies:
+ *   post:
+ *     summary: Detect anomalies in group transactions
+ *     tags: [AI Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ID
+ *     responses:
+ *       201:
+ *         description: Anomaly detection results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     report:
+ *                       $ref: '#/components/schemas/AIReport'
+ *       404:
+ *         description: Group not found
  */
-router.delete('/insights/:reportId', authenticate, aiController.deleteInsight);
+router.post('/groups/:groupId/anomalies', authenticate, groupIdValidation, validate, aiController.detectAnomalies);
+
+/**
+ * @swagger
+ * /api/v1/groups/{groupId}/recommendations:
+ *   post:
+ *     summary: Generate personalized recommendations for a group
+ *     tags: [AI Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ID
+ *     responses:
+ *       201:
+ *         description: Recommendations generated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     report:
+ *                       $ref: '#/components/schemas/AIReport'
+ *       404:
+ *         description: Group not found
+ */
+router.post('/groups/:groupId/recommendations', authenticate, groupIdValidation, validate, aiController.generateRecommendations);
+
+/**
+ * @swagger
+ * /api/v1/insights/{reportId}:
+ *   delete:
+ *     summary: Delete an insight report
+ *     tags: [AI Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reportId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Report ID
+ *     responses:
+ *       200:
+ *         description: Report deleted successfully
+ *       404:
+ *         description: Report not found
+ */
+router.delete('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.deleteInsight);
 
 export default router;

@@ -8,22 +8,18 @@ import mongoSanitize from 'express-mongo-sanitize';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { connectDatabase } from './config/database';
+import { initializeFirebase } from './config/firebase';
 import swaggerSpec from './config/swagger';
 import routes from './routes';
 import { correlationId } from './middleware/correlationId';
+import { validateEnv } from './utils/validateEnv';
 import logger from './utils/logger';
 
 // Load environment variables
 dotenv.config();
 
-// Validate required secrets at startup (fail-fast)
-const requiredSecrets = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
-for (const secret of requiredSecrets) {
-  if (!process.env[secret]) {
-    logger.error(`❌ Missing required environment variable: ${secret}`);
-    process.exit(1);
-  }
-}
+// Validate all required env vars at startup (fail-fast)
+validateEnv();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -112,6 +108,9 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDatabase();
+
+    // Initialize Firebase (non-blocking — app works without it)
+    initializeFirebase();
     
     app.listen(PORT, () => {
       logger.info(`🚀 Server is running on port ${PORT}`);

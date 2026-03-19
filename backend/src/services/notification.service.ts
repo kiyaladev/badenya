@@ -2,6 +2,7 @@ import { Notification, User, Group } from '../models';
 import { NotificationType, INotification } from '../models/Notification';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
+import { getMessaging, isFirebaseReady } from '../config/firebase';
 
 interface NotificationData {
   groupId?: mongoose.Types.ObjectId | string;
@@ -114,38 +115,85 @@ export const createNotification = async (
 
 /**
  * Send push notification via Firebase Cloud Messaging
- * This is a placeholder - will be implemented when Firebase is configured
  */
 const sendPushNotification = async (
   userId: mongoose.Types.ObjectId | string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _notification: any
+  notification: INotification
 ): Promise<void> => {
   try {
-    // Get user's device tokens
-    const user = await User.findById(userId).select('deviceTokens');
-    
-    if (!user || !user.deviceTokens || user.deviceTokens.length === 0) {
-      logger.warn('No device tokens found for user:', userId);
+    if (!isFirebaseReady()) {
+      logger.debug('Firebase not configured — skipping push notification');
       return;
     }
 
-    // TODO: Implement Firebase Cloud Messaging integration
-    // const admin = require('firebase-admin');
-    // const message = {
-    //   notification: {
-    //     title: _notification.title,
-    //     body: _notification.message,
-    //   },
-    //   data: _notification.data,
-    //   tokens: user.deviceTokens.map((t) => t.token),
-    // };
-    // await admin.messaging().sendMulticast(message);
+    const user = await User.findById(userId).select('deviceTokens preferences');
 
-    logger.warn('Push notification would be sent to:', user.deviceTokens.length, 'devices');
+    if (!user || !user.deviceTokens || user.deviceTokens.length === 0) {
+      return;
+    }
+
+    // Respect user notification preferences
+    if (user.preferences?.notifications?.push === false) {
+      return;
+    }
+
+    const messaging = getMessaging();
+    if (!messaging) return;
+
+    const tokens = user.deviceTokens.filter(Boolean);
+    if (tokens.length === 0) return;
+
+    // Convert data values to strings (FCM requirement)
+    const stringData: Record<string, string> = {};
+    if (notification.data) {
+      for (const [key, value] of Object.entries(notification.data as Record<string, unknown>)) {
+        if (value !== undefined && value !== null) {
+          stringData[key] = String(value);
+        }
+      }
+    }
+    stringData.notificationId = notification._id?.toString() ?? '';
+    stringData.type = notification.type;
+
+    const message = {
+      notification: {
+        title: notification.title,
+        body: notification.message,
+      },
+      data: stringData,
+      tokens,
+    };
+
+    const response = await messaging.sendEachForMulticast(message);
+
+    // Clean up invalid tokens
+    if (response.failureCount > 0) {
+      const invalidTokens: string[] = [];
+      response.responses.forEach((resp, idx) => {
+        if (
+          !resp.success &&
+          resp.error?.code &&
+          [
+            'messaging/invalid-registration-token',
+            'messaging/registration-token-not-registered',
+          ].includes(resp.error.code)
+        ) {
+          invalidTokens.push(tokens[idx]);
+        }
+      });
+
+      if (invalidTokens.length > 0) {
+        await User.findByIdAndUpdate(userId, {
+          $pull: { deviceTokens: { $in: invalidTokens } },
+        });
+        logger.info(`Removed ${invalidTokens.length} invalid device tokens for user ${userId}`);
+      }
+    }
+
+    logger.info(`Push notification sent: ${response.successCount}/${tokens.length} succeeded`);
   } catch (error) {
     logger.error('Send push notification error:', error);
-    // Don't throw error - notification is still created in DB
+    // Don't throw — notification is still persisted in DB
   }
 };
 

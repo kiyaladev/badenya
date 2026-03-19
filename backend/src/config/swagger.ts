@@ -331,6 +331,100 @@ const swaggerDefinition = {
           },
         },
       },
+      AIReport: {
+        type: 'object',
+        properties: {
+          _id: {
+            type: 'string',
+            example: '507f1f77bcf86cd799439011',
+          },
+          groupId: {
+            type: 'string',
+          },
+          generatedBy: {
+            type: 'string',
+          },
+          periodStart: {
+            type: 'string',
+            format: 'date-time',
+          },
+          periodEnd: {
+            type: 'string',
+            format: 'date-time',
+          },
+          transactionsAnalyzed: {
+            type: 'integer',
+            example: 42,
+          },
+          report: {
+            type: 'object',
+            properties: {
+              summary: {
+                type: 'string',
+                example: 'Group financial performance analysis for Q1',
+              },
+              totalContributions: {
+                type: 'number',
+                example: 500000,
+              },
+              totalExpenses: {
+                type: 'number',
+                example: 300000,
+              },
+              netBalance: {
+                type: 'number',
+                example: 200000,
+              },
+              insights: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    category: { type: 'string' },
+                    observation: { type: 'string' },
+                    recommendation: { type: 'string' },
+                  },
+                },
+              },
+              trends: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    metric: { type: 'string' },
+                    value: { type: 'number' },
+                    change: { type: 'number' },
+                    direction: {
+                      type: 'string',
+                      enum: ['up', 'down', 'stable'],
+                    },
+                  },
+                },
+              },
+              predictions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    timeframe: { type: 'string' },
+                    metric: { type: 'string' },
+                    predictedValue: { type: 'number' },
+                    confidence: { type: 'number' },
+                  },
+                },
+              },
+            },
+          },
+          modelUsed: {
+            type: 'string',
+            example: 'gemini-pro',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+          },
+        },
+      },
     },
   },
   tags: [
@@ -365,6 +459,14 @@ const swaggerDefinition = {
     {
       name: 'Reports',
       description: 'Reporting and analytics endpoints',
+    },
+    {
+      name: 'AI Insights',
+      description: 'AI-powered financial analysis and recommendations',
+    },
+    {
+      name: 'Contact',
+      description: 'Contact form endpoints',
     },
   ],
 };

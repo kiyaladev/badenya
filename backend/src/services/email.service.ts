@@ -8,24 +8,48 @@ interface EmailOptions {
   text?: string;
 }
 
+type EmailProvider = 'smtp' | 'sendgrid';
+
+/**
+ * Detect which email provider is configured.
+ */
+const detectProvider = (): EmailProvider | null => {
+  if (process.env.SENDGRID_API_KEY) return 'sendgrid';
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) return 'smtp';
+  return null;
+};
+
 // Create reusable transporter
 const createTransporter = () => {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD;
+  const provider = detectProvider();
 
-  if (!host || !user || !pass) {
-    logger.warn('SMTP not configured — emails will be logged but not sent');
-    return null;
+  if (provider === 'sendgrid') {
+    return nodemailer.createTransport({
+      host: 'smtp.sendgrid.net',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'apikey',
+        pass: process.env.SENDGRID_API_KEY,
+      },
+    });
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
+  if (provider === 'smtp') {
+    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port,
+      secure: port === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+  }
+
+  logger.warn('No email provider configured — emails will be logged but not sent');
+  return null;
 };
 
 let transporter: nodemailer.Transporter | null = null;
@@ -38,11 +62,11 @@ const getTransporter = () => {
 };
 
 /**
- * Send an email. Falls back to logging when SMTP is not configured.
+ * Send an email. Falls back to logging when no provider is configured.
  */
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   const transport = getTransporter();
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@badenya.app';
+  const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@badenya.app';
 
   if (!transport) {
     logger.info(`[Email stub] To: ${options.to} | Subject: ${options.subject}`);
@@ -57,7 +81,7 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
       html: options.html,
       text: options.text,
     });
-    logger.info(`Email sent to ${options.to}`);
+    logger.info(`Email sent to ${options.to} via ${detectProvider()}`);
     return true;
   } catch (error) {
     logger.error('Failed to send email:', error);

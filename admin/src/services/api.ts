@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Get API URL - handle both Vite and test environments
-let apiUrl = 'http://localhost:5000/api';
+let apiUrl = 'http://localhost:5000/api/v1';
 try {
   if (import.meta.env?.VITE_API_URL) {
     apiUrl = import.meta.env.VITE_API_URL;

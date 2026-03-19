@@ -498,3 +498,61 @@ export const executeProposal = async (
     });
   }
 };
+
+/**
+ * Delete/cancel a proposal (only creator or group admin)
+ */
+export const deleteProposal = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!requireAuth(authReq, res)) return;
+    const userId = authReq.user!.id;
+    const proposal = await Proposal.findById(req.params.id);
+
+    if (!proposal) {
+      res.status(404).json({ status: 'error', message: 'Proposal not found' });
+      return;
+    }
+
+    // Only the creator or a group admin can delete
+    const group = await Group.findById(proposal.groupId);
+    const member = group?.members?.find(
+      (m: { userId: mongoose.Types.ObjectId; role: string }) =>
+        m.userId.toString() === userId
+    );
+    const isCreator = proposal.proposedBy.toString() === userId;
+    const isGroupAdmin = member?.role === 'admin';
+
+    if (!isCreator && !isGroupAdmin) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Only the proposal creator or group admin can delete this proposal',
+      });
+      return;
+    }
+
+    if (proposal.status === 'executed') {
+      res.status(400).json({
+        status: 'error',
+        message: 'Cannot delete an executed proposal',
+      });
+      return;
+    }
+
+    await Proposal.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Proposal deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Delete proposal error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete proposal',
+    });
+  }
+};

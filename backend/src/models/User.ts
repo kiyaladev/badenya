@@ -33,6 +33,7 @@ export interface IUser extends Document {
     };
     theme: 'light' | 'dark' | 'auto';
   };
+  isActive: boolean;
   lastLoginAt?: Date;
   lastActiveAt?: Date;
   deviceTokens: string[];
@@ -112,6 +113,11 @@ const UserSchema: Schema = new Schema(
         enum: ['light', 'dark', 'auto'],
         default: 'auto',
       },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
     },
     lastLoginAt: Date,
     lastActiveAt: Date,

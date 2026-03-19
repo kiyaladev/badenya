@@ -9,6 +9,7 @@ import notificationRoutes from './notification.routes';
 import reportRoutes from './report.routes';
 import contactRoutes from './contact.routes';
 import aiRoutes from './ai.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/groups', groupRoutes);
+router.use('/admin', adminRoutes);
 router.use('/', transactionRoutes); // Transaction routes include /groups/:groupId/transactions
 router.use('/', proposalRoutes); // Proposal routes include /groups/:groupId/proposals
 router.use('/', voteRoutes); // Vote routes include /groups/:groupId/votes and /votes/:id

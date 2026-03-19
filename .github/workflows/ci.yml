@@ -43,6 +43,9 @@ jobs:
           npm test -- --coverage
         env:
           CI: true
+          JWT_SECRET: ci-test-jwt-secret
+          JWT_REFRESH_SECRET: ci-test-jwt-refresh-secret
+          NODE_ENV: test
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -182,3 +185,31 @@ jobs:
           files: ./landing-page/coverage/lcov.info
           flags: landing
           name: landing-coverage
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Audit backend dependencies
+        run: |
+          cd backend
+          npm audit --audit-level=high || true
+      
+      - name: Audit admin dependencies
+        run: |
+          cd admin
+          npm audit --audit-level=high || true
+      
+      - name: Audit mobile dependencies
+        run: |
+          cd mobile
+          npm audit --audit-level=high || true

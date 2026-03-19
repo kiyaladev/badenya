@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import offlineService from './offline.service';
 
 // Base URL for the API - in development, this should point to your local backend
-const API_BASE_URL = __DEV__ ? 'http://localhost:5000/api' : 'https://api.badenya.app/api'; // Update with production URL
+const API_BASE_URL = __DEV__ ? 'http://localhost:5000/api/v1' : 'https://api.badenya.app/api/v1';
 
 /**
  * Decode JWT payload without external library (React Native compatible)

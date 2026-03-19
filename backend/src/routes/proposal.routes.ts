@@ -7,6 +7,7 @@ import {
   castVote,
   closeProposal,
   executeProposal,
+  deleteProposal,
 } from '../controllers/proposal.controller';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -295,5 +296,6 @@ router.get('/proposals/:id', getProposalById);
 router.post('/proposals/:id/vote', castVoteValidation, validate, castVote);
 router.put('/proposals/:id/close', closeProposalValidation, validate, closeProposal);
 router.post('/proposals/:id/execute', executeProposal);
+router.delete('/proposals/:id', deleteProposal);
 
 export default router;
