@@ -7,7 +7,7 @@
 - GitHub repository connected
 
 ### One-Click Deploy
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/bleoue488-ship-it/bade&project-name=badenya-admin&root-directory=admin)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kiyaladev/badenya&project-name=badenya-admin&root-directory=admin)
 
 ### Manual Vercel Deployment
 

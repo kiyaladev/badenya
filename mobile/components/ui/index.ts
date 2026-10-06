@@ -11,6 +11,8 @@ export { default as Avatar } from './Avatar';
 export { default as Badge, StatusDot } from './Badge';
 export { default as EmptyState } from './EmptyState';
 export { default as IconButton } from './IconButton';
+export { default as Icon } from './Icon';
+export type { IconName } from './Icon';
 export { default as Header } from './Header';
 export { default as StatsCard, StatItem } from './StatsCard';
 export * from './Typography';

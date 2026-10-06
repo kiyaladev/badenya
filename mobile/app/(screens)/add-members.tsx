@@ -1,11 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Alert } from '@/services/dialog.service';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Share } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGroupStore } from '@/store/groupStore';
 import { useAuthStore } from '@/store/authStore';
 import userService, { User } from '@/services/user.service';
 import groupService from '@/services/group.service';
-import { Button, Loading } from '@/components/ui';
+import { Button, Icon, Loading } from '@/components/ui';
 
 export default function AddMembersScreen() {
   const router = useRouter();
@@ -15,20 +16,58 @@ export default function AddMembersScreen() {
 
   const group = groups.find(g => g._id === groupId);
 
+  const [requests, setRequests] = useState<Awaited<ReturnType<typeof groupService.joinRequests>>>(
+    []
+  );
+  useEffect(() => {
+    if (groupId)
+      groupService
+        .joinRequests(groupId)
+        .then(setRequests)
+        .catch(() => {});
+  }, [groupId]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
+  const handleShareInvite = async () => {
+    if (!group) return;
+    let inviteCode = group.invitationCode;
+    try {
+      inviteCode = inviteCode || (await groupService.invitationCode(group._id));
+    } catch {
+      return Alert.alert(
+        'Invitation indisponible',
+        'Seul un administrateur peut obtenir le code du groupe.'
+      );
+    }
+    const message =
+      `Rejoignez mon groupe "${group.name}" sur l'application Badenya !\n\n` +
+      `Cotisation : ${group.contributionAmount.toLocaleString()} ${group.currency}\n` +
+      `Code du groupe : ${inviteCode}\n\n` +
+      `Téléchargez Badenya pour gérer vos tontines et épargnes solidaires.`;
+
+    try {
+      await Share.share({
+        message,
+        title: `Invitation au groupe ${group.name}`,
+      });
+    } catch {
+      // User cancelled
+    }
+  };
+
   useEffect(() => {
     if (!group) {
-      Alert.alert('Erreur', 'Groupe introuvable', [{ text: 'OK', onPress: () => router.back() }]);
+      if (groupId) fetchGroupById(groupId);
       return;
     }
 
     // Check if user has permission (admin or treasurer)
-    const currentMember = group.members.find(m => m.userId === currentUser?._id);
+    const currentUserId = currentUser?._id || currentUser?.id;
+    const currentMember = group.members.find(m => m.userId === currentUserId);
     if (!currentMember || (currentMember.role !== 'admin' && currentMember.role !== 'treasurer')) {
       Alert.alert(
         'Accès refusé',
@@ -117,22 +156,54 @@ export default function AddMembersScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
+        {requests
+          .filter(request => !request.status || request.status === 'pending')
+          .map(request => (
+            <View key={request._id} className="p-4 bg-white dark:bg-gray-800 mb-2">
+              <Text className="text-gray-800 dark:text-white font-bold">
+                Demande : {request.userId?.fullName || request.userId?.email || 'Membre'}
+              </Text>
+              <View className="flex-row mt-2">
+                {(['approve', 'reject'] as const).map(decision => (
+                  <TouchableOpacity
+                    key={decision}
+                    className="p-3 mr-3 bg-primary-600 rounded-lg"
+                    onPress={async () => {
+                      try {
+                        await groupService.reviewJoinRequest(groupId, request._id, decision);
+                        setRequests(await groupService.joinRequests(groupId));
+                        await fetchGroupById(groupId);
+                      } catch {
+                        Alert.alert('Erreur', 'La demande reste inchangée.');
+                      }
+                    }}
+                  >
+                    <Text className="text-white">
+                      {decision === 'approve' ? 'Approuver' : 'Refuser'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          ))}
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Ajouter des membres</Text>
-          <Text className="text-gray-600">
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+            Ajouter des membres
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-300">
             Recherchez et ajoutez des membres au groupe {group.name}
           </Text>
         </View>
 
         {/* Search Box */}
         <View className="mb-6">
-          <View className="flex-row items-center bg-white border border-gray-300 rounded-lg px-4 py-2 mb-2">
-            <Text className="text-2xl mr-2">🔍</Text>
+          <View className="flex-row items-center bg-white dark:bg-gray-800 border border-gray-300 rounded-lg px-4 py-2 mb-2">
+            <Icon name="search" size={18} color="#9ca3af" />
             <TextInput
-              className="flex-1 text-gray-800 py-2"
+              className="flex-1 text-gray-800 dark:text-gray-100 py-2"
               placeholder="Email ou téléphone..."
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -146,11 +217,33 @@ export default function AddMembersScreen() {
           </Button>
         </View>
 
+        {/* Share Invite Card */}
+        <TouchableOpacity
+          onPress={handleShareInvite}
+          className="flex-row items-center justify-between bg-primary-50 dark:bg-gray-800 border border-primary-200 rounded-xl p-4 mb-5 active:bg-primary-100"
+        >
+          <View className="flex-row items-center flex-1 mr-3">
+            <View className="w-10 h-10 bg-primary-600 rounded-full items-center justify-center mr-3">
+              <Icon name="share-alt" size={16} color="#ffffff" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-primary-900 font-bold text-sm">
+                Inviter via WhatsApp ou SMS
+              </Text>
+              <Text className="text-primary-700 text-xs">
+                Partagez directement le code et le lien d'invitation
+              </Text>
+            </View>
+          </View>
+          <Icon name="chevron-right" size={14} color="#0284c7" />
+        </TouchableOpacity>
+
         {/* Info */}
-        <View className="bg-blue-50 p-4 rounded-lg mb-4">
+        <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4">
           <Text className="text-blue-800 text-sm">
-            💡 <Text className="font-semibold">Astuce:</Text> Recherchez les utilisateurs par email
-            ou numéro de téléphone
+            <Icon name="lightbulb-o" size={14} color="#1d4ed8" />{' '}
+            <Text className="font-semibold">Astuce:</Text> Recherchez les utilisateurs par email ou
+            numéro de téléphone
           </Text>
         </View>
       </View>
@@ -165,7 +258,7 @@ export default function AddMembersScreen() {
 
         {!isSearching && searchResults.length > 0 && (
           <>
-            <Text className="text-gray-700 font-semibold mb-3">
+            <Text className="text-gray-700 dark:text-gray-200 font-semibold mb-3">
               {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} trouvé
               {searchResults.length > 1 ? 's' : ''}
             </Text>
@@ -174,23 +267,33 @@ export default function AddMembersScreen() {
               <TouchableOpacity
                 key={user._id}
                 onPress={() => toggleUserSelection(user._id)}
-                className={`bg-white p-4 rounded-lg mb-3 border-2 ${
+                className={`bg-white dark:bg-gray-800 p-4 rounded-lg mb-3 border-2 ${
                   selectedUsers.has(user._id)
-                    ? 'border-primary-600 bg-primary-50'
-                    : 'border-gray-200'
+                    ? 'border-primary-600 bg-primary-50 dark:bg-gray-800'
+                    : 'border-gray-200 dark:border-gray-600'
                 }`}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Text className="text-gray-800 font-semibold text-base mb-1">
+                    <Text className="text-gray-800 dark:text-gray-100 font-semibold text-base mb-1">
                       {user.fullName}
                     </Text>
-                    <Text className="text-gray-600 text-sm mb-1">📧 {user.email}</Text>
-                    <Text className="text-gray-600 text-sm">📱 {user.phone}</Text>
+                    <View className="flex-row items-center mb-1">
+                      <Icon name="envelope" size={13} color="#6b7280" />
+                      <Text className="text-gray-600 dark:text-gray-300 text-sm ml-2">
+                        {user.email}
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center">
+                      <Icon name="mobile" size={13} color="#6b7280" />
+                      <Text className="text-gray-600 dark:text-gray-300 text-sm ml-2">
+                        {user.phone}
+                      </Text>
+                    </View>
                   </View>
                   {selectedUsers.has(user._id) && (
                     <View className="bg-primary-600 w-8 h-8 rounded-full items-center justify-center">
-                      <Text className="text-white text-lg">✓</Text>
+                      <Icon name="check" size={16} color="#ffffff" />
                     </View>
                   )}
                 </View>
@@ -201,9 +304,11 @@ export default function AddMembersScreen() {
 
         {!isSearching && searchQuery && searchResults.length === 0 && (
           <View className="py-12 items-center">
-            <Text className="text-6xl mb-4">🔍</Text>
-            <Text className="text-gray-800 text-lg font-bold mb-2">Aucun utilisateur trouvé</Text>
-            <Text className="text-gray-600 text-sm text-center">
+            <Icon name="search" size={48} color="#0284c7" />
+            <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-2">
+              Aucun utilisateur trouvé
+            </Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm text-center">
               Essayez avec un autre email ou numéro
             </Text>
           </View>
@@ -212,7 +317,7 @@ export default function AddMembersScreen() {
 
       {/* Add Button */}
       {selectedUsers.size > 0 && (
-        <View className="px-6 py-4 bg-white border-t border-gray-200">
+        <View className="px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600">
           <Button onPress={handleAddMembers} disabled={isAdding}>
             {isAdding
               ? 'Ajout en cours...'

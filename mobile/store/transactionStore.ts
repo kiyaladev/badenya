@@ -31,7 +31,13 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const transactions = await transactionService.getGroupTransactions(groupId);
-      set({ transactions, isLoading: false });
+      set(state => ({
+        transactions: [
+          ...state.transactions.filter(transaction => transaction.groupId !== groupId),
+          ...transactions,
+        ],
+        isLoading: false,
+      }));
     } catch (error) {
       set({
         error: getErrorMessage(error, 'Failed to fetch transactions'),
@@ -41,7 +47,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   },
 
   fetchTransactionById: async (transactionId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, currentTransaction: null });
     try {
       const transaction = await transactionService.getTransactionById(transactionId);
       set({ currentTransaction: transaction, isLoading: false });

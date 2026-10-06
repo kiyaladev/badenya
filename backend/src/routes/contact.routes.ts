@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { submitContactForm, subscribeNewsletter } from '../controllers/contact.controller';
+import { submitContactForm, subscribeNewsletter, unsubscribeNewsletter } from '../controllers/contact.controller';
 import { validate } from '../middleware/validation';
 import rateLimit from 'express-rate-limit';
 
@@ -95,5 +95,7 @@ router.post('/', contactLimiter, contactValidation, validate, submitContactForm)
  *         description: Rate limit exceeded
  */
 router.post('/newsletter', contactLimiter, newsletterValidation, validate, subscribeNewsletter);
+
+router.post('/newsletter/unsubscribe', contactLimiter, [body('token').isString().matches(/^[a-f0-9]{64}$/).withMessage('Valid unsubscribe token required')], validate, unsubscribeNewsletter);
 
 export default router;

@@ -1,9 +1,23 @@
+import { groupEvent } from '../utils/groupEvents';
+import { entityId } from '../utils/membership';
 import { Request, Response } from 'express';
-import { Group } from '../models';
+import { Group, User } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
+
+function safeGroup(group: import('../models/Group').IGroup, actor: string) {
+  const data = group.toObject();
+  const member = group.members.find(m => entityId(m.userId) === actor && m.status === 'active');
+  if (member?.role !== 'admin') { delete data.invitationCode; delete data.joinRequests; }
+  return data;
+}
+function mutationError(error: unknown, res: Response): boolean {
+  if (error instanceof mongoose.Error.VersionError) { res.status(409).json({status:'error',message:'Le groupe a été modifié : rechargez puis réessayez'}); return true; }
+  if (error instanceof mongoose.Error.ValidationError || error instanceof mongoose.Error.CastError) { res.status(400).json({status:'error',message:'Données de groupe invalides'}); return true; }
+  return false;
+}
 
 const MEMBER_POPULATE_FIELDS = 'fullName email avatar' as const;
 
@@ -28,7 +42,8 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       name,
       description,
       type,
-      avatar,
+      currency: req.body.currency || "XOF",
+      avatar: typeof avatar === 'string' ? {url:avatar} : avatar,
       settings: settings || {},
       contributionSettings: contributionSettings || {},
       votingRules: votingRules || {},
@@ -45,14 +60,16 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       isActive: true,
     });
 
+    await groupEvent(group, 'created', 'member_joined', 'Groupe créé', `Le groupe ${group.name} est créé`);
     await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(201).json({
       status: 'success',
       message: 'Group created successfully',
-      data: { group },
+      data: { group: safeGroup(group, authReq.user.id) },
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Create group error:', error);
     res.status(500).json({
       status: 'error',
@@ -68,17 +85,18 @@ export const getUserGroups = async (req: Request, res: Response): Promise<void> 
     if (!requireAuth(authReq, res)) return;
 
     const groups = await Group.find({
-      'members.userId': authReq.user.id,
-      'members.status': 'active',
+      members: { $elemMatch: { userId: authReq.user.id, status: 'active' } },
+      isActive: true, archivedAt: { $exists: false },
     })
       .populate('members.userId', MEMBER_POPULATE_FIELDS)
       .sort({ updatedAt: -1 });
 
     res.status(200).json({
       status: 'success',
-      data: { groups, count: groups.length },
+      data: { groups: groups.map(group => safeGroup(group, authReq.user.id)), count: groups.length },
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Get user groups error:', error);
     res.status(500).json({
       status: 'error',
@@ -99,7 +117,7 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
       .populate('members.userId', `${MEMBER_POPULATE_FIELDS} phone`)
       .populate('createdBy', 'fullName email');
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -109,7 +127,7 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
 
     // Check if user is a member
     const isMember = group.members.some(
-      (m) => m.userId.toString() === authReq.user.id && m.status === 'active'
+      (m) => entityId(m.userId) === authReq.user.id && m.status === 'active'
     );
 
     if (!isMember) {
@@ -122,9 +140,10 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
 
     res.status(200).json({
       status: 'success',
-      data: { group },
+      data: { group: safeGroup(group, authReq.user.id) },
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Get group error:', error);
     res.status(500).json({
       status: 'error',
@@ -142,6 +161,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
     const {
       name,
       description,
+      type,
       avatar,
       settings,
       contributionSettings,
@@ -150,7 +170,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
 
     const group = await Group.findById(id);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -160,7 +180,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
 
     // Check if user is admin
     const member = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active"
     );
 
     if (!member || member.role !== 'admin') {
@@ -171,11 +191,16 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    if (req.body.currency !== undefined && req.body.currency !== group.currency) { res.status(400).json({status:'error',message:'La devise du groupe est immuable'}); return; }
     // Update fields
     if (name) group.name = name;
     if (description) group.description = description;
+    if (type) group.type = type;
     if (avatar) group.avatar = avatar;
-    if (settings) group.settings = { ...group.settings, ...settings };
+    if (settings) {
+      if (settings.maxMembers !== undefined && settings.maxMembers < group.members.filter(member => member.status === 'active').length) { res.status(409).json({status:'error',message:'La capacité ne peut exclure des membres actifs'}); return; }
+      group.settings = { ...group.settings, ...settings };
+    }
     if (contributionSettings) {
       group.contributionSettings = {
         ...group.contributionSettings,
@@ -192,9 +217,10 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
     res.status(200).json({
       status: 'success',
       message: 'Group updated successfully',
-      data: { group },
+      data: { group: safeGroup(group, authReq.user.id) },
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Update group error:', error);
     res.status(500).json({
       status: 'error',
@@ -212,7 +238,7 @@ export const archiveGroup = async (req: Request, res: Response): Promise<void> =
 
     const group = await Group.findById(id);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -222,7 +248,7 @@ export const archiveGroup = async (req: Request, res: Response): Promise<void> =
 
     // Check if user is admin
     const member = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active"
     );
 
     if (!member || member.role !== 'admin') {
@@ -236,12 +262,14 @@ export const archiveGroup = async (req: Request, res: Response): Promise<void> =
     group.isActive = false;
     group.archivedAt = new Date();
     await group.save();
+    await groupEvent(group, 'archived', 'group_archived', 'Groupe archivé', `${group.name} est archivé`);
 
     res.status(200).json({
       status: 'success',
       message: 'Group archived successfully',
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Archive group error:', error);
     res.status(500).json({
       status: 'error',
@@ -260,7 +288,7 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
 
     const group = await Group.findById(id);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -270,7 +298,7 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
 
     // Check if requester is admin or treasurer
     const requesterMember = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active"
     );
 
     if (
@@ -293,9 +321,13 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    if (requesterMember.role === 'treasurer' && role !== 'member') { res.status(403).json({status:'error',message:'Seul un administrateur attribue des responsabilités'}); return; }
+    const target = await User.findOne({_id:userId,isActive:true}).select('_id fullName');
+    if (!target) { res.status(404).json({status:'error',message:'Compte actif introuvable'}); return; }
+    if (group.members.filter(member => member.status === 'active').length >= (group.settings.maxMembers || 100)) { res.status(409).json({status:'error',message:'Capacité du groupe atteinte'}); return; }
     // Check if user is already a member
     const existingMember = group.members.find(
-      (m) => m.userId.toString() === userId
+      (m) => entityId(m.userId) === userId
     );
 
     if (existingMember) {
@@ -306,9 +338,11 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
         });
         return;
       } else {
+        if (existingMember.status === 'suspended' && requesterMember.role !== 'admin') { res.status(403).json({status:'error',message:'Seul un administrateur réactive un membre suspendu'}); return; }
         // Reactivate member
         existingMember.status = 'active';
         existingMember.joinedAt = new Date();
+        existingMember.role = role;
       }
     } else {
       // Add new member
@@ -322,14 +356,16 @@ export const addMember = async (req: Request, res: Response): Promise<void> => {
     }
 
     await group.save();
+    await groupEvent(group, `member:${userId}`, 'member_joined', 'Membre ajouté', `${target.fullName} a rejoint ${group.name}`);
     await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(200).json({
       status: 'success',
       message: 'Member added successfully',
-      data: { group },
+      data: { group: safeGroup(group, authReq.user.id) },
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Add member error:', error);
     res.status(500).json({
       status: 'error',
@@ -347,7 +383,7 @@ export const removeMember = async (req: Request, res: Response): Promise<void> =
 
     const group = await Group.findById(id);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -357,7 +393,7 @@ export const removeMember = async (req: Request, res: Response): Promise<void> =
 
     // Check if requester is admin
     const requesterMember = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active"
     );
 
     if (!requesterMember || requesterMember.role !== 'admin') {
@@ -369,7 +405,7 @@ export const removeMember = async (req: Request, res: Response): Promise<void> =
     }
 
     // Find and deactivate member
-    const member = group.members.find((m) => m.userId.toString() === userId);
+    const member = group.members.find((m) => entityId(m.userId) === userId);
 
     if (!member) {
       res.status(404).json({
@@ -384,7 +420,7 @@ export const removeMember = async (req: Request, res: Response): Promise<void> =
       (m) => m.role === 'admin' && m.status === 'active'
     );
 
-    if (member.role === 'admin' && activeAdmins.length === 1) {
+    if (member.status === 'active' && member.role === 'admin' && activeAdmins.length === 1) {
       res.status(400).json({
         status: 'error',
         message: 'Cannot remove the last admin',
@@ -400,6 +436,7 @@ export const removeMember = async (req: Request, res: Response): Promise<void> =
       message: 'Member removed successfully',
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Remove member error:', error);
     res.status(500).json({
       status: 'error',
@@ -421,7 +458,7 @@ export const updateMemberRole = async (
 
     const group = await Group.findById(id);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -431,7 +468,7 @@ export const updateMemberRole = async (
 
     // Check if requester is admin
     const requesterMember = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active"
     );
 
     if (!requesterMember || requesterMember.role !== 'admin') {
@@ -443,7 +480,7 @@ export const updateMemberRole = async (
     }
 
     // Find member
-    const member = group.members.find((m) => m.userId.toString() === userId);
+    const member = group.members.find((m) => entityId(m.userId) === userId);
 
     if (!member) {
       res.status(404).json({
@@ -458,7 +495,7 @@ export const updateMemberRole = async (
       (m) => m.role === 'admin' && m.status === 'active'
     );
 
-    if (member.role === 'admin' && activeAdmins.length === 1 && role !== 'admin') {
+    if (member.status === 'active' && member.role === 'admin' && activeAdmins.length === 1 && role !== 'admin') {
       res.status(400).json({
         status: 'error',
         message: 'Cannot change role of the last admin',
@@ -468,14 +505,17 @@ export const updateMemberRole = async (
 
     member.role = role;
     await group.save();
+    const roleLabels = {admin:'administrateur',treasurer:'trésorier',member:'membre'};
+    await groupEvent(group, `role:${userId}:${role}`, 'role_changed', 'Rôle modifié', `Un membre de ${group.name} est désormais ${roleLabels[role as keyof typeof roleLabels] || role}`);
     await group.populate('members.userId', MEMBER_POPULATE_FIELDS);
 
     res.status(200).json({
       status: 'success',
       message: 'Member role updated successfully',
-      data: { group },
+      data: { group: safeGroup(group, authReq.user.id) },
     });
   } catch (error) {
+    if (mutationError(error, res)) return;
     logger.error('Update member role error:', error);
     res.status(500).json({
       status: 'error',

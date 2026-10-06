@@ -1,9 +1,11 @@
+import { entityId } from '../utils/membership';
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import aiService from '../services/ai.service';
 import AIReport from '../models/AIReport';
 import logger from '../utils/logger';
+import { Group } from '../models';
 
 /**
  * Helper to extract error message
@@ -109,6 +111,8 @@ export const getGroupInsights = async (req: Request, res: Response): Promise<voi
  */
 export const getInsightById = async (req: Request, res: Response): Promise<void> => {
   try {
+    const authReq = req as AuthRequest;
+    if (!requireAuth(authReq, res)) return;
     const { reportId } = req.params;
 
     const report = await AIReport.findById(reportId)
@@ -120,6 +124,15 @@ export const getInsightById = async (req: Request, res: Response): Promise<void>
         status: 'error',
         message: 'Insight report not found',
       });
+      return;
+    }
+
+    const group = await Group.findById(report.groupId).select('members');
+    const isMember = group?.members.some(
+      member => entityId(member.userId) === authReq.user.id && member.status === 'active'
+    );
+    if (!isMember) {
+      res.status(403).json({ status: 'error', message: 'You are not a member of this group' });
       return;
     }
 
@@ -144,7 +157,9 @@ export const detectAnomalies = async (req: Request, res: Response): Promise<void
   try {
     const groupId = req.params.groupId as string;
 
-    const result = await aiService.detectAnomalies(groupId);
+    const authReq = req as AuthRequest;
+    if (!requireAuth(authReq, res)) return;
+    const result = await aiService.detectAnomalies(groupId, authReq.user.id);
 
     res.json({
       status: 'success',
@@ -176,7 +191,9 @@ export const generateRecommendations = async (req: Request, res: Response): Prom
   try {
     const groupId = req.params.groupId as string;
 
-    const result = await aiService.generateRecommendations(groupId);
+    const authReq = req as AuthRequest;
+    if (!requireAuth(authReq, res)) return;
+    const result = await aiService.generateRecommendations(groupId, authReq.user.id);
 
     res.json({
       status: 'success',

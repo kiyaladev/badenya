@@ -2,7 +2,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import logger from './logger';
 
-const QUEUE_KEY = '@badenya_offline_queue';
+let accountId: string | null = null;
+let accountVersion = 0;
+const queueKey = () => `@badenya_offline_queue:${accountId}`;
+export const discardLegacyData = async (): Promise<void> => {
+  const keys = await AsyncStorage.getAllKeys();
+  const legacy = keys.filter(
+    key => key === '@badenya_offline_queue' || key.startsWith('@badenya_cache_/')
+  );
+  if (legacy.length) await AsyncStorage.multiRemove(legacy);
+};
+export const getAccountId = () => accountId;
+export const getAccountVersion = () => accountVersion;
+export const setAccountId = (id: string | null) => {
+  if (accountId !== id) accountVersion++;
+  accountId = id;
+};
+export const requestKey = (url: string, params?: Record<string, unknown>) =>
+  `${url}?${JSON.stringify(Object.entries(params || {}).sort(([a], [b]) => a.localeCompare(b)))}`;
 const CACHE_PREFIX = '@badenya_cache_';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -12,6 +29,8 @@ export interface QueuedRequest {
   url: string;
   data?: unknown;
   createdAt: number;
+  accountId?: string;
+  idempotencyKey?: string;
 }
 
 interface CachedResponse {
@@ -34,9 +53,7 @@ export const isOnline = async (): Promise<boolean> => {
 /**
  * Subscribe to connectivity changes
  */
-export const onConnectivityChange = (
-  callback: (isConnected: boolean) => void
-): (() => void) => {
+export const onConnectivityChange = (callback: (isConnected: boolean) => void): (() => void) => {
   return NetInfo.addEventListener((state: NetInfoState) => {
     const connected = state.isConnected === true && state.isInternetReachable !== false;
     callback(connected);
@@ -48,16 +65,20 @@ export const onConnectivityChange = (
 /**
  * Add a request to the offline queue
  */
-export const enqueueRequest = async (request: Omit<QueuedRequest, 'id' | 'createdAt'>): Promise<void> => {
+export const enqueueRequest = async (
+  request: Omit<QueuedRequest, 'id' | 'createdAt'>
+): Promise<void> => {
   try {
+    if (!accountId) throw new Error('Une session est requise pour la synchronisation');
     const queue = await getQueue();
     const entry: QueuedRequest = {
       ...request,
+      accountId,
       id: `${Date.now()}_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`,
       createdAt: Date.now(),
     };
     queue.push(entry);
-    await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    await AsyncStorage.setItem(queueKey(), JSON.stringify(queue));
     logger.info('Offline', `Request queued: ${request.method} ${request.url}`);
   } catch (error) {
     logger.error('Offline', 'Failed to enqueue request', error);
@@ -69,8 +90,11 @@ export const enqueueRequest = async (request: Omit<QueuedRequest, 'id' | 'create
  */
 export const getQueue = async (): Promise<QueuedRequest[]> => {
   try {
-    const raw = await AsyncStorage.getItem(QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!accountId) return [];
+    const raw = await AsyncStorage.getItem(queueKey());
+    return raw
+      ? (JSON.parse(raw) as QueuedRequest[]).filter(item => item.accountId === accountId)
+      : [];
   } catch {
     return [];
   }
@@ -82,8 +106,8 @@ export const getQueue = async (): Promise<QueuedRequest[]> => {
 export const dequeueRequest = async (id: string): Promise<void> => {
   try {
     const queue = await getQueue();
-    const filtered = queue.filter((r) => r.id !== id);
-    await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(filtered));
+    const filtered = queue.filter(r => r.id !== id);
+    await AsyncStorage.setItem(queueKey(), JSON.stringify(filtered));
   } catch (error) {
     logger.error('Offline', 'Failed to dequeue request', error);
   }
@@ -104,8 +128,9 @@ export const getQueueCount = async (): Promise<number> => {
  */
 export const cacheResponse = async (url: string, data: unknown): Promise<void> => {
   try {
+    if (!accountId) return;
     const entry: CachedResponse = { data, cachedAt: Date.now() };
-    await AsyncStorage.setItem(`${CACHE_PREFIX}${url}`, JSON.stringify(entry));
+    await AsyncStorage.setItem(`${CACHE_PREFIX}${accountId}:${url}`, JSON.stringify(entry));
   } catch (error) {
     logger.error('Offline', 'Failed to cache response', error);
   }
@@ -116,12 +141,13 @@ export const cacheResponse = async (url: string, data: unknown): Promise<void> =
  */
 export const getCachedResponse = async (url: string): Promise<unknown | null> => {
   try {
-    const raw = await AsyncStorage.getItem(`${CACHE_PREFIX}${url}`);
+    if (!accountId) return null;
+    const raw = await AsyncStorage.getItem(`${CACHE_PREFIX}${accountId}:${url}`);
     if (!raw) return null;
 
     const entry: CachedResponse = JSON.parse(raw);
     if (Date.now() - entry.cachedAt > CACHE_TTL) {
-      await AsyncStorage.removeItem(`${CACHE_PREFIX}${url}`);
+      await AsyncStorage.removeItem(`${CACHE_PREFIX}${accountId}:${url}`);
       return null;
     }
     return entry.data;
@@ -136,7 +162,7 @@ export const getCachedResponse = async (url: string): Promise<unknown | null> =>
 export const clearCache = async (): Promise<void> => {
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const cacheKeys = keys.filter((k) => k.startsWith(CACHE_PREFIX));
+    const cacheKeys = keys.filter(k => k.startsWith(`${CACHE_PREFIX}${accountId}:`));
     if (cacheKeys.length > 0) {
       await AsyncStorage.multiRemove(cacheKeys);
     }
@@ -151,7 +177,7 @@ export const clearCache = async (): Promise<void> => {
  */
 export const clearQueue = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(QUEUE_KEY);
+    await AsyncStorage.removeItem(queueKey());
     logger.info('Offline', 'Offline queue cleared');
   } catch (error) {
     logger.error('Offline', 'Failed to clear queue', error);
@@ -159,6 +185,11 @@ export const clearQueue = async (): Promise<void> => {
 };
 
 export default {
+  discardLegacyData,
+  getAccountId,
+  getAccountVersion,
+  setAccountId,
+  requestKey,
   isOnline,
   onConnectivityChange,
   enqueueRequest,

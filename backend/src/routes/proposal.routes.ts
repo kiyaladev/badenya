@@ -15,7 +15,7 @@ import { validate } from '../middleware/validation';
 const router = Router();
 
 // All routes require authentication
-router.use(authenticate);
+
 
 /**
  * @swagger
@@ -286,16 +286,16 @@ const closeProposalValidation = [
 
 // Routes
 router.post(
-  '/groups/:groupId/proposals',
+  '/groups/:groupId/proposals', authenticate,
   createProposalValidation,
   validate,
   createProposal
 );
-router.get('/groups/:groupId/proposals', getGroupProposals);
-router.get('/proposals/:id', getProposalById);
-router.post('/proposals/:id/vote', castVoteValidation, validate, castVote);
-router.put('/proposals/:id/close', closeProposalValidation, validate, closeProposal);
-router.post('/proposals/:id/execute', executeProposal);
-router.delete('/proposals/:id', deleteProposal);
+router.get('/groups/:groupId/proposals', authenticate, getGroupProposals);
+router.get('/proposals/:id', authenticate, getProposalById);
+router.post('/proposals/:id/vote', authenticate, castVoteValidation, validate, castVote);
+router.put('/proposals/:id/close', authenticate, closeProposalValidation, validate, closeProposal);
+router.post('/proposals/:id/execute', authenticate, executeProposal);
+router.delete('/proposals/:id', authenticate, deleteProposal);
 
 export default router;

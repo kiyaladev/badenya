@@ -230,7 +230,7 @@ const groupIdValidation = [
 // Routes
 // Create vote in group
 router.post(
-  '/groups/:groupId/votes',
+  '/groups/:groupId/votes', authenticate,
   authenticate,
   createVoteValidation,
   validate,
@@ -239,7 +239,7 @@ router.post(
 
 // Get all votes in group
 router.get(
-  '/groups/:groupId/votes',
+  '/groups/:groupId/votes', authenticate,
   authenticate,
   groupIdValidation,
   validate,
@@ -247,11 +247,11 @@ router.get(
 );
 
 // Get vote details
-router.get('/votes/:id', authenticate, voteIdValidation, validate, getVote);
+router.get('/votes/:id', authenticate, authenticate, voteIdValidation, validate, getVote);
 
 // Cast vote
 router.post(
-  '/votes/:id/cast',
+  '/votes/:id/cast', authenticate,
   authenticate,
   castVoteValidation,
   validate,
@@ -260,7 +260,7 @@ router.post(
 
 // Close vote
 router.put(
-  '/votes/:id/close',
+  '/votes/:id/close', authenticate,
   authenticate,
   voteIdValidation,
   validate,
@@ -269,7 +269,7 @@ router.put(
 
 // Delete vote (creator only, no votes cast)
 router.delete(
-  '/votes/:id',
+  '/votes/:id', authenticate,
   authenticate,
   voteIdValidation,
   validate,

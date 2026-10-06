@@ -1,3 +1,5 @@
+> Document historique : cet état et ces procédures ne décrivent pas la version actuelle. Consultez le [README](../README.md), le [guide de démarrage](QUICKSTART_DEVELOPER_GUIDE.md), le [guide de déploiement](DEPLOYMENT_GUIDE.md) et l’audit du 6 octobre 2026.
+
 # CI/CD Pipeline Guide
 
 **Project:** Badenya  

@@ -3,6 +3,7 @@ import { Notification, User } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import logger from '../utils/logger';
+import { sendPushNotification } from '../services/notification.service';
 
 // Get all notifications for current user
 export const getUserNotifications = async (
@@ -188,8 +189,7 @@ export const sendNotification = async (
       isRead: false,
     });
 
-    // TODO: Send push notification via Firebase Cloud Messaging
-    // This will be implemented when Firebase is configured
+    await sendPushNotification(userId, notification);
 
     res.status(201).json({
       status: 'success',
@@ -215,7 +215,7 @@ export const updateDeviceToken = async (
     if (!requireAuth(authReq, res)) return;
     const { token } = req.body;
 
-    if (!token) {
+    if (typeof token !== 'string' || !token || token.length>4096) {
       res.status(400).json({
         status: 'error',
         message: 'Device token is required',
@@ -232,16 +232,9 @@ export const updateDeviceToken = async (
       return;
     }
 
-    // Check if token already exists
-    const tokenExists = user.deviceTokens?.some((t) => t === token);
-
-    if (!tokenExists) {
-      if (!user.deviceTokens) {
-        user.deviceTokens = [];
-      }
-      user.deviceTokens.push(token);
-      await user.save();
-    }
+    // A device token belongs to the current account, including after an offline logout.
+    await User.updateMany({_id:{$ne:user._id},deviceTokens:token},{$pull:{deviceTokens:token}});
+    await User.updateOne({_id:user._id,isActive:true},{$addToSet:{deviceTokens:token}});
 
     res.status(200).json({
       status: 'success',
@@ -266,7 +259,7 @@ export const removeDeviceToken = async (
     if (!requireAuth(authReq, res)) return;
     const { token } = req.body;
 
-    if (!token) {
+    if (typeof token !== 'string' || !token || token.length>4096) {
       res.status(400).json({
         status: 'error',
         message: 'Device token is required',

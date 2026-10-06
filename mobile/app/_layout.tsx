@@ -1,17 +1,22 @@
+import { notificationRoute } from '@/utils/notificationRoute';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { AppState, View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import '../global.css';
-import type { Subscription } from 'expo-modules-core';
+import type { EventSubscription } from 'expo-modules-core';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { useColorScheme as useSystemColorScheme } from '@/components/useColorScheme';
+import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
+import { Icon } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useOfflineStore } from '@/store/offlineStore';
+import { useThemeStore } from '@/store/themeStore';
 import pushNotificationService from '@/services/push-notification.service';
 import offlineService from '@/services/offline.service';
 import logger from '@/services/logger';
@@ -25,12 +30,33 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(auth)',
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  syncBanner: {
+    paddingBottom: 6,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+  },
+  bannerIcon: {
+    marginRight: 8,
+  },
+  bannerText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -57,17 +83,40 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const systemColorScheme = useSystemColorScheme();
+  const { mode: themeMode, setTheme } = useThemeStore();
+  const { setColorScheme } = useNativeWindColorScheme();
+  const colorScheme = themeMode === 'auto' ? systemColorScheme : themeMode;
   const router = useRouter();
-  const { isAuthenticated, checkAuth } = useAuthStore();
-  const { setConnected } = useOfflineStore();
+  const { isAuthenticated, checkAuth, user } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const { isConnected, pendingCount, isSyncing, syncError, setConnected } = useOfflineStore();
+  const offlineBannerStyle: ViewStyle = {
+    ...styles.syncBanner,
+    paddingTop: insets.top + 4,
+    backgroundColor: '#f59e0b',
+  };
+  const syncingBannerStyle: ViewStyle = {
+    ...styles.syncBanner,
+    paddingTop: insets.top + 4,
+    backgroundColor: '#0284c7',
+  };
 
-  const notificationListener = useRef<Subscription | null>(null);
-  const responseListener = useRef<Subscription | null>(null);
+  useEffect(() => {
+    setColorScheme(themeMode === 'auto' ? 'system' : themeMode);
+  }, [setColorScheme, themeMode]);
+
+  const notificationListener = useRef<EventSubscription | null>(null);
+  const responseListener = useRef<EventSubscription | null>(null);
+
+  useEffect(() => {
+    const preference = user?.preferences?.theme;
+    if (preference) setTheme(preference);
+  }, [user?.preferences?.theme, setTheme]);
 
   // Monitor network connectivity
   useEffect(() => {
-    const unsubscribe = offlineService.onConnectivityChange((connected) => {
+    const unsubscribe = offlineService.onConnectivityChange(connected => {
       setConnected(connected);
       logger.info('Layout', `Network ${connected ? 'online' : 'offline'}`);
     });
@@ -76,7 +125,7 @@ function RootLayoutNav() {
 
   // Check auth status when app returns to foreground
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
       if (nextAppState === 'active' && isAuthenticated) {
         checkAuth().catch(() => {
           // Token expired or invalid — user will be logged out by checkAuth
@@ -84,12 +133,14 @@ function RootLayoutNav() {
       }
     });
     return () => subscription.remove();
-  }, [isAuthenticated, checkAuth]);
+  }, [isAuthenticated, checkAuth, user]);
 
   useEffect(() => {
     // Register for push notifications when user is authenticated
-    if (isAuthenticated) {
-      pushNotificationService.registerForPushNotifications().catch((err) => logger.error('Layout', 'Failed to register push notifications', err));
+    if (isAuthenticated && user?.preferences?.notifications?.push !== false) {
+      pushNotificationService
+        .registerForPushNotifications()
+        .catch(err => logger.error('Layout', 'Failed to register push notifications', err));
     }
 
     // Setup notification listeners
@@ -106,13 +157,8 @@ function RootLayoutNav() {
       // Navigate to relevant screen based on notification data
       const data = response.notification.request.content.data;
 
-      if (data.groupId) {
-        router.push(`/(screens)/group-details?id=${data.groupId}`);
-      } else if (data.proposalId) {
-        router.push(`/(screens)/proposal-details?id=${data.proposalId}`);
-      } else if (data.transactionId) {
-        router.push(`/(screens)/transaction-details?id=${data.transactionId}`);
-      }
+      const target = notificationRoute(data);
+      if (target) router.push(target as Parameters<typeof router.push>[0]);
     });
 
     // Cleanup listeners on unmount
@@ -124,15 +170,37 @@ function RootLayoutNav() {
         responseListener.current.remove();
       }
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.preferences?.notifications?.push]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <View style={styles.root}>
+        {!isConnected && (
+          <View style={offlineBannerStyle}>
+            <Icon name="exclamation-triangle" size={14} color="#ffffff" style={styles.bannerIcon} />
+            <Text style={styles.bannerText}>
+              Mode hors-ligne — Consultation des données enregistrées ; une connexion est nécessaire
+              pour modifier
+            </Text>
+          </View>
+        )}
+        {isConnected && (isSyncing || pendingCount > 0 || syncError) && (
+          <View style={syncingBannerStyle}>
+            <Icon name="refresh" size={14} color="#ffffff" style={styles.bannerIcon} />
+            <Text style={styles.bannerText}>
+              {syncError ||
+                (isSyncing
+                  ? 'Synchronisation en cours...'
+                  : `${pendingCount} action(s) en attente de synchronisation`)}
+            </Text>
+          </View>
+        )}
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(screens)" />
+        </Stack>
+      </View>
     </ThemeProvider>
   );
 }

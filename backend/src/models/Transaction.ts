@@ -30,6 +30,9 @@ export interface ITransaction extends Document {
     filename: string;
     name: string;
   }>;
+  flagged?: { reason: string; at: Date; by: mongoose.Types.ObjectId };
+  idempotencyKey?: string;
+  requestFingerprint?: string;
   processedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -109,6 +112,9 @@ const TransactionSchema: Schema = new Schema(
         name: String,
       },
     ],
+    flagged: { reason: String, at: Date, by: {type: Schema.Types.ObjectId, ref: 'User'} },
+    idempotencyKey: String,
+    requestFingerprint: String,
     processedAt: Date,
   },
   {
@@ -116,6 +122,7 @@ const TransactionSchema: Schema = new Schema(
   }
 );
 
+TransactionSchema.index({groupId:1, initiatedBy:1, idempotencyKey:1}, {unique:true, partialFilterExpression:{idempotencyKey:{$type:'string'}}});
 // Indexes
 TransactionSchema.index({ groupId: 1, createdAt: -1 });
 TransactionSchema.index({ initiatedBy: 1 });

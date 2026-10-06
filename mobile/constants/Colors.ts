@@ -1,19 +1,25 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+import { Colors as ThemeColors } from './Theme';
 
-export default {
+/**
+ * Backwards-compatible color map for the themed helper components.
+ * The main design tokens live in Theme.ts; this keeps legacy imports typed
+ * while using the same palette everywhere.
+ */
+const Colors = {
   light: {
-    text: '#000',
-    background: '#fff',
-    tint: tintColorLight,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorLight,
+    text: ThemeColors.light.text,
+    background: ThemeColors.light.background,
+    tint: ThemeColors.light.primary,
+    tabIconDefault: ThemeColors.light.tabIconDefault,
+    tabIconSelected: ThemeColors.light.tabIconSelected,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
+    text: ThemeColors.dark.text,
+    background: ThemeColors.dark.background,
+    tint: ThemeColors.dark.primary,
+    tabIconDefault: ThemeColors.dark.tabIconDefault,
+    tabIconSelected: ThemeColors.dark.tabIconSelected,
   },
 };
+
+export default Colors;

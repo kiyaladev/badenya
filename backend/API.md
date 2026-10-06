@@ -4,17 +4,24 @@
 This is the backend API for Badenya, a collaborative financial management platform for tontines and savings groups.
 
 ## Technology Stack
-- **Runtime**: Node.js
+- **Runtime**: Node.js 20+
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Database**: MongoDB with Mongoose
 - **Authentication**: JWT (JSON Web Tokens)
 - **Validation**: Express-Validator
 
+## Interactive Documentation
+
+When the backend is running, the complete OpenAPI reference is available in
+Swagger UI at `http://localhost:5000/api/docs` (or `/api/docs` on the
+production API). The OpenAPI JSON document is available at
+`http://localhost:5000/api/docs.json`.
+
 ## Getting Started
 
 ### Prerequisites
-- Node.js 16+ and npm
+- Node.js 20+ and npm
 - MongoDB instance (local for development, personal server for production)
 
 ### Installation

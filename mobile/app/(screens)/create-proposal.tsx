@@ -1,21 +1,39 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Keyboard } from 'react-native';
-import { useState } from 'react';
+import { Alert } from '@/services/dialog.service';
+import { View, Text, ScrollView, TouchableOpacity, Platform, Keyboard } from 'react-native';
+import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useProposalStore } from '@/store/proposalStore';
 import { useGroupStore } from '@/store/groupStore';
-import { Button, Input } from '@/components/ui';
+import { Button, EmptyState, Icon, Input, Loading } from '@/components/ui';
+import type { IconName } from '@/components/ui/Icon';
 
 type ProposalCategory = 'loan' | 'investment' | 'charity' | 'event' | 'emergency' | 'other';
 type ProposalPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export default function CreateProposalScreen() {
   const router = useRouter();
-  const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const { createProposal, isLoading } = useProposalStore();
-  const { groups } = useGroupStore();
+  const { groupId: routeGroupId } = useLocalSearchParams<{ groupId?: string }>();
+  const { createProposal, isLoading: isSubmitting } = useProposalStore();
+  const { groups, fetchGroups, isLoading: isGroupsLoading } = useGroupStore();
 
-  const group = groups.find(g => g._id === groupId);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(routeGroupId || '');
+
+  useEffect(() => {
+    if (groups.length === 0) {
+      fetchGroups();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (routeGroupId) {
+      setSelectedGroupId(routeGroupId);
+    } else if (!selectedGroupId && groups.length > 0) {
+      setSelectedGroupId(groups[0]._id);
+    }
+  }, [routeGroupId, groups, selectedGroupId]);
+
+  const group = groups.find(g => g._id === selectedGroupId);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -31,25 +49,80 @@ export default function CreateProposalScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = [
-    { value: 'loan', label: 'Prêt', icon: '💰', description: 'Prêt à un membre' },
+  const categories: Array<{
+    value: ProposalCategory;
+    label: string;
+    icon: IconName;
+    description: string;
+  }> = [
+    { value: 'loan', label: 'Prêt', icon: 'money', description: 'Prêt à un membre' },
     {
       value: 'investment',
       label: 'Investissement',
-      icon: '📈',
+      icon: 'line-chart',
       description: 'Investissement collectif',
     },
-    { value: 'charity', label: 'Charité', icon: '❤️', description: 'Don caritatif' },
-    { value: 'event', label: 'Événement', icon: '🎉', description: "Organisation d'événement" },
-    { value: 'emergency', label: 'Urgence', icon: '🚨', description: "Situation d'urgence" },
-    { value: 'other', label: 'Autre', icon: '📋', description: 'Autre type de proposition' },
+    { value: 'charity', label: 'Charité', icon: 'heart', description: 'Don caritatif' },
+    {
+      value: 'event',
+      label: 'Événement',
+      icon: 'calendar',
+      description: "Organisation d'événement",
+    },
+    {
+      value: 'emergency',
+      label: 'Urgence',
+      icon: 'exclamation-triangle',
+      description: "Situation d'urgence",
+    },
+    {
+      value: 'other',
+      label: 'Autre',
+      icon: 'file-text-o',
+      description: 'Autre type de proposition',
+    },
   ];
 
-  const priorities = [
-    { value: 'low', label: 'Basse', color: 'bg-gray-100 text-gray-700', icon: '⬇️' },
-    { value: 'medium', label: 'Moyenne', color: 'bg-blue-100 text-blue-700', icon: '➡️' },
-    { value: 'high', label: 'Haute', color: 'bg-orange-100 text-orange-700', icon: '⬆️' },
-    { value: 'urgent', label: 'Urgente', color: 'bg-red-100 text-red-700', icon: '🔴' },
+  const priorities: Array<{
+    value: ProposalPriority;
+    label: string;
+    bgSelected: string;
+    textSelected: string;
+    iconColor: string;
+    icon: IconName;
+  }> = [
+    {
+      value: 'low',
+      label: 'Basse',
+      bgSelected: 'bg-gray-100 dark:bg-gray-700',
+      textSelected: 'text-gray-700 dark:text-gray-200',
+      iconColor: '#4b5563',
+      icon: 'arrow-down',
+    },
+    {
+      value: 'medium',
+      label: 'Moyenne',
+      bgSelected: 'bg-blue-100',
+      textSelected: 'text-blue-700',
+      iconColor: '#1d4ed8',
+      icon: 'minus',
+    },
+    {
+      value: 'high',
+      label: 'Haute',
+      bgSelected: 'bg-orange-100',
+      textSelected: 'text-orange-700',
+      iconColor: '#c2410c',
+      icon: 'arrow-up',
+    },
+    {
+      value: 'urgent',
+      label: 'Urgente',
+      bgSelected: 'bg-red-100',
+      textSelected: 'text-red-700',
+      iconColor: '#b91c1c',
+      icon: 'exclamation-circle',
+    },
   ];
 
   const validateForm = (): boolean => {
@@ -93,13 +166,13 @@ export default function CreateProposalScreen() {
       return;
     }
 
-    if (!group) {
-      Alert.alert('Erreur', 'Groupe introuvable');
+    if (!selectedGroupId || !group) {
+      Alert.alert('Erreur', 'Veuillez sélectionner un groupe valide');
       return;
     }
 
     try {
-      await createProposal(groupId!, {
+      await createProposal(selectedGroupId, {
         title: formData.title.trim(),
         description: formData.description.trim(),
         amount: parseFloat(formData.amount),
@@ -136,11 +209,30 @@ export default function CreateProposalScreen() {
     });
   };
 
+  if (isGroupsLoading && groups.length === 0) {
+    return <Loading />;
+  }
+
+  if (groups.length === 0) {
+    return (
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900 items-center justify-center px-6">
+        <EmptyState
+          title="Aucun groupe actif"
+          description="Vous devez faire partie d'un groupe d'épargne pour créer une proposition de dépense."
+          actionLabel="Créer un groupe"
+          onAction={() => router.push('/(screens)/create-group')}
+        />
+      </View>
+    );
+  }
+
   if (!group) {
     return (
-      <View className="flex-1 bg-gray-50 items-center justify-center px-6">
-        <Text className="text-6xl mb-4">❌</Text>
-        <Text className="text-gray-800 text-xl font-bold mb-2">Groupe introuvable</Text>
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900 items-center justify-center px-6">
+        <Icon name="times-circle" size={48} color="#dc2626" />
+        <Text className="text-gray-800 dark:text-gray-100 text-xl font-bold mb-2">
+          Groupe introuvable
+        </Text>
         <TouchableOpacity
           onPress={() => router.back()}
           className="bg-primary-600 py-3 px-6 rounded-lg"
@@ -152,19 +244,84 @@ export default function CreateProposalScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Nouvelle proposition</Text>
-          <Text className="text-gray-600">Créez une proposition pour le groupe {group.name}</Text>
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+            Nouvelle proposition
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-300">
+            Créez une proposition pour le groupe {group.name}
+          </Text>
         </View>
 
+        {/* Group Selector when not routed with groupId */}
+        {!routeGroupId && groups.length > 1 && (
+          <View className="mb-6">
+            <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">
+              Groupe concerné *
+            </Text>
+            <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 overflow-hidden">
+              {groups.map((g, index) => {
+                const isSelected = g._id === selectedGroupId;
+                return (
+                  <TouchableOpacity
+                    key={g._id}
+                    onPress={() => setSelectedGroupId(g._id)}
+                    className={`flex-row items-center justify-between p-3.5 ${
+                      index !== groups.length - 1
+                        ? 'border-b border-gray-200 dark:border-gray-600'
+                        : ''
+                    } ${isSelected ? 'bg-primary-50/60' : ''}`}
+                  >
+                    <View className="flex-row items-center flex-1 mr-3">
+                      <View
+                        className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                          isSelected ? 'bg-primary-600' : 'bg-gray-100 dark:bg-gray-700'
+                        }`}
+                      >
+                        <Icon name="users" size={16} color={isSelected ? '#ffffff' : '#4b5563'} />
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className={`font-medium ${
+                            isSelected
+                              ? 'text-primary-700 font-semibold'
+                              : 'text-gray-800 dark:text-gray-100'
+                          }`}
+                          numberOfLines={1}
+                        >
+                          {g.name}
+                        </Text>
+                        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                          {g.balance.toLocaleString()} {g.currency} disponible • {g.members.length}{' '}
+                          membres
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
+                        isSelected ? 'border-primary-600 bg-primary-600' : 'border-gray-300'
+                      }`}
+                    >
+                      {isSelected && (
+                        <View className="w-2.5 h-2.5 rounded-full bg-white dark:bg-gray-800" />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Info Box */}
-        <View className="bg-blue-50 p-4 rounded-lg mb-6">
+        <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-6">
           <Text className="text-blue-800 text-sm">
-            💡 <Text className="font-semibold">Info:</Text> Tous les membres du groupe pourront
-            voter sur cette proposition.
+            <Icon name="info-circle" size={14} color="#1e40af" />{' '}
+            <Text className="font-semibold">Info:</Text> Tous les membres du groupe pourront voter
+            sur cette proposition.
           </Text>
         </View>
 
@@ -203,13 +360,17 @@ export default function CreateProposalScreen() {
             placeholder="Ex: 50000"
             keyboardType="numeric"
             error={errors.amount}
-            rightIcon={<Text className="text-gray-500 text-sm">XOF</Text>}
+            rightIcon={
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                {group?.currency || 'XOF'}
+              </Text>
+            }
           />
         </View>
 
         {/* Category */}
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Catégorie *</Text>
+          <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">Catégorie *</Text>
           <View className="space-y-2">
             {categories.map(cat => (
               <TouchableOpacity
@@ -219,18 +380,24 @@ export default function CreateProposalScreen() {
                 }
                 className={`p-4 rounded-lg border-2 ${
                   formData.category === cat.value
-                    ? 'border-primary-600 bg-primary-50'
-                    : 'border-gray-200 bg-white'
+                    ? 'border-primary-600 bg-primary-50 dark:bg-gray-800'
+                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
                 }`}
               >
                 <View className="flex-row items-center">
-                  <Text className="text-2xl mr-3">{cat.icon}</Text>
+                  <View className="w-8 items-center mr-3">
+                    <Icon name={cat.icon} size={18} color="#0284c7" />
+                  </View>
                   <View className="flex-1">
-                    <Text className="text-gray-800 font-semibold">{cat.label}</Text>
-                    <Text className="text-gray-600 text-sm">{cat.description}</Text>
+                    <Text className="text-gray-800 dark:text-gray-100 font-semibold">
+                      {cat.label}
+                    </Text>
+                    <Text className="text-gray-600 dark:text-gray-300 text-sm">
+                      {cat.description}
+                    </Text>
                   </View>
                   {formData.category === cat.value && (
-                    <Text className="text-primary-600 text-xl">✓</Text>
+                    <Icon name="check" size={16} color="#0284c7" />
                   )}
                 </View>
               </TouchableOpacity>
@@ -240,37 +407,47 @@ export default function CreateProposalScreen() {
 
         {/* Priority */}
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Priorité *</Text>
+          <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">Priorité *</Text>
           <View className="flex-row flex-wrap gap-2">
-            {priorities.map(priority => (
-              <TouchableOpacity
-                key={priority.value}
-                onPress={() =>
-                  setFormData({ ...formData, priority: priority.value as ProposalPriority })
-                }
-                className={`px-4 py-3 rounded-lg border-2 ${
-                  formData.priority === priority.value
-                    ? 'border-primary-600 ' + priority.color
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                <Text
-                  className={
-                    formData.priority === priority.value
-                      ? priority.color.split(' ')[1]
-                      : 'text-gray-600'
+            {priorities.map(priority => {
+              const isSelected = formData.priority === priority.value;
+              return (
+                <TouchableOpacity
+                  key={priority.value}
+                  onPress={() =>
+                    setFormData({ ...formData, priority: priority.value as ProposalPriority })
                   }
+                  className={`px-4 py-3 rounded-lg border-2 ${
+                    isSelected
+                      ? `border-primary-600 ${priority.bgSelected}`
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
+                  }`}
                 >
-                  {priority.icon} {priority.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <View className="flex-row items-center">
+                    <Icon
+                      name={priority.icon}
+                      size={14}
+                      color={isSelected ? priority.iconColor : '#6b7280'}
+                    />
+                    <Text
+                      className={`ml-2 font-medium ${
+                        isSelected ? priority.textSelected : 'text-gray-600 dark:text-gray-300'
+                      }`}
+                    >
+                      {priority.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
         {/* Recipient (Optional) */}
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Bénéficiaire (optionnel)</Text>
+          <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">
+            Bénéficiaire (optionnel)
+          </Text>
           <View className="mb-2">
             <Input
               label="Nom du bénéficiaire"
@@ -293,12 +470,19 @@ export default function CreateProposalScreen() {
 
         {/* Voting Deadline */}
         <View className="mb-6">
-          <Text className="text-gray-700 font-medium mb-2">Date limite de vote *</Text>
+          <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">
+            Date limite de vote *
+          </Text>
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
-            className="bg-white border border-gray-300 rounded-lg px-4 py-3"
+            className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg px-4 py-3"
           >
-            <Text className="text-gray-800">📅 {formatDate(formData.votingDeadline)}</Text>
+            <View className="flex-row items-center">
+              <Icon name="calendar" size={16} color="#374151" />
+              <Text className="text-gray-800 dark:text-gray-100 ml-2">
+                {formatDate(formData.votingDeadline)}
+              </Text>
+            </View>
           </TouchableOpacity>
           {errors.votingDeadline && (
             <Text className="text-red-600 text-sm mt-1">{errors.votingDeadline}</Text>
@@ -321,9 +505,12 @@ export default function CreateProposalScreen() {
         </View>
 
         {/* Submit Button */}
-        <Button onPress={handleSubmit} disabled={isLoading}>
-          {isLoading ? 'Création en cours...' : 'Créer la proposition'}
-        </Button>
+        <Button
+          title="Créer la proposition"
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+          loading={isSubmitting}
+        />
 
         <View className="h-6" />
       </View>

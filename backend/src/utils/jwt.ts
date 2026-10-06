@@ -1,3 +1,4 @@
+import {randomUUID} from 'crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 
 /**
@@ -6,6 +7,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 interface TokenPayload {
   id: string;
   email: string;
+  sessionVersion?: number;
 }
 
 /**
@@ -30,7 +32,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
     throw new Error('JWT_SECRET environment variable is not set');
   }
   const options: SignOptions = { expiresIn: (process.env.JWT_EXPIRE || '24h') as SignOptions['expiresIn'] };
-  return jwt.sign(payload, secret, options);
+  return jwt.sign(payload, secret, {...options,jwtid:randomUUID()});
 };
 
 /**
@@ -55,7 +57,7 @@ export const generateRefreshToken = (payload: TokenPayload): string => {
     throw new Error('JWT_REFRESH_SECRET environment variable is not set');
   }
   const options: SignOptions = { expiresIn: (process.env.JWT_REFRESH_EXPIRE || '7d') as SignOptions['expiresIn'] };
-  return jwt.sign(payload, secret, options);
+  return jwt.sign(payload, secret, {...options,jwtid:randomUUID()});
 };
 
 /**

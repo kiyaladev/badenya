@@ -1,6 +1,6 @@
 /**
  * Validate required environment variables for the mobile app.
- * Logs warnings in __DEV__ mode; does not crash the app.
+ * Logs warnings in development; the API client still has a safe fallback.
  */
 
 interface EnvCheck {
@@ -9,16 +9,20 @@ interface EnvCheck {
 }
 
 const envChecks: EnvCheck[] = [
-  { name: 'API_URL', required: true },
-  { name: 'APP_NAME', required: false },
+  { name: 'EXPO_PUBLIC_API_URL', required: true },
+  { name: 'EXPO_PUBLIC_APP_NAME', required: false },
 ];
 
 export function validateEnv(): void {
   const missing: string[] = [];
 
   for (const check of envChecks) {
-    // React Native dotenv exposes vars via process.env
-    const value = process.env[check.name];
+    // Expo inlines EXPO_PUBLIC_* variables during bundling.
+    const values: Record<string, string | undefined> = {
+      EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+      EXPO_PUBLIC_APP_NAME: process.env.EXPO_PUBLIC_APP_NAME,
+    };
+    const value = values[check.name];
     if (check.required && !value) {
       missing.push(check.name);
     }
@@ -27,7 +31,7 @@ export function validateEnv(): void {
   if (missing.length > 0) {
     console.warn(
       `[Badenya Mobile] Missing env vars: ${missing.join(', ')}. ` +
-      'Check your .env.development or .env.production file.'
+        'Check your .env.development or .env.production file.'
     );
   }
 }

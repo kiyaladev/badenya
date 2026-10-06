@@ -1,6 +1,9 @@
+import crypto from 'crypto';
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IGroup extends Document {
+  invitationCode: string;
+  joinRequests: Array<{_id: mongoose.Types.ObjectId;userId: mongoose.Types.ObjectId;requestedAt: Date}>;
   name: string;
   description?: string;
   type: 'tontine' | 'association' | 'family' | 'friends' | 'project';
@@ -38,6 +41,7 @@ export interface IGroup extends Document {
     requireApprovalToJoin: boolean;
     allowMemberProposals: boolean;
     maxProposalsPerMonth: number;
+    maxMembers: number;
   };
   avatar?: {
     url: string;
@@ -52,6 +56,8 @@ export interface IGroup extends Document {
 
 const GroupSchema: Schema = new Schema(
   {
+    invitationCode: {type:String,default:()=>crypto.randomBytes(12).toString('hex'),index:true},
+    joinRequests: [{userId:{type:Schema.Types.ObjectId,ref:'User'},requestedAt:{type:Date,default:Date.now}}],
     name: {
       type: String,
       required: true,
@@ -71,6 +77,7 @@ const GroupSchema: Schema = new Schema(
     currency: {
       type: String,
       default: 'XOF',
+      enum: ['XOF','XAF','EUR','USD','GNF','CDF','MAD'],
     },
     balance: {
       type: Number,
@@ -84,8 +91,8 @@ const GroupSchema: Schema = new Schema(
         enum: ['daily', 'weekly', 'monthly', 'custom'],
         default: 'monthly',
       },
-      amount: Number,
-      dueDay: Number,
+      amount: {type:Number,min:0,max:1000000000000},
+      dueDay: {type:Number,min:1,max:31,validate:Number.isSafeInteger},
       autoReminder: {
         type: Boolean,
         default: true,
@@ -123,14 +130,17 @@ const GroupSchema: Schema = new Schema(
       quorum: {
         type: Number,
         default: 50,
+        min: 0, max: 100,
       },
       approvalThreshold: {
         type: Number,
         default: 50,
+        min: 0, max: 100,
       },
       votingDuration: {
         type: Number,
         default: 72,
+        min: 1, max: 8760,
       },
       allowAbstention: {
         type: Boolean,
@@ -156,6 +166,7 @@ const GroupSchema: Schema = new Schema(
       },
     },
     settings: {
+      maxMembers: {type:Number,default:100,min:1,max:5000,validate:Number.isSafeInteger},
       isPrivate: {
         type: Boolean,
         default: false,
@@ -171,6 +182,7 @@ const GroupSchema: Schema = new Schema(
       maxProposalsPerMonth: {
         type: Number,
         default: 10,
+        min: 1, max: 1000,
       },
     },
     avatar: {
@@ -190,6 +202,7 @@ const GroupSchema: Schema = new Schema(
   },
   {
     timestamps: true,
+    optimisticConcurrency: true,
   }
 );
 

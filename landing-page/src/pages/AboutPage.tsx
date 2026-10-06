@@ -78,91 +78,10 @@ export default function AboutPage() {
             </div>
           </motion.div>
 
-          {/* Story */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-8 text-white mb-12"
-          >
-            <h2 className="text-3xl font-bold mb-6">Notre Histoire</h2>
-            <div className="space-y-4 text-lg leading-relaxed opacity-90">
-              <p>
-                Badenya a été fondé en 2024 par une équipe passionnée d'entrepreneurs et de développeurs africains qui ont grandi en participant à des tontines familiales et communautaires.
-              </p>
-              <p>
-                Nous avons constaté que bien que ces pratiques d'épargne collective soient extrêmement populaires et efficaces, elles souffraient souvent d'un manque de transparence, de difficultés de gestion et de limitations géographiques.
-              </p>
-              <p>
-                C'est ainsi qu'est né Badenya - du mot bambara signifiant "entraide" - une plateforme qui digitalise et améliore ces pratiques ancestrales tout en préservant leur essence communautaire.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Team */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Notre Équipe</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  id: 'team-amadou',
-                  name: 'Amadou Diop',
-                  role: 'CEO & Co-fondateur',
-                  bio: '10 ans d\'expérience en fintech et entrepreneuriat social.',
-                },
-                {
-                  id: 'team-mariam',
-                  name: 'Mariam Kante',
-                  role: 'CTO & Co-fondatrice',
-                  bio: 'Experte en développement mobile et architecture cloud.',
-                },
-                {
-                  id: 'team-youssouf',
-                  name: 'Youssouf Traore',
-                  role: 'Head of Product',
-                  bio: 'Passionné par l\'UX/UI et l\'innovation centrée sur l\'utilisateur.',
-                },
-              ].map((member) => (
-                <div key={member.id} className="bg-white rounded-xl shadow-lg p-6 text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-white text-3xl font-bold">
-                      {member.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{member.name}</h3>
-                  <p className="text-blue-600 font-medium mb-3">{member.role}</p>
-                  <p className="text-gray-600 text-sm">{member.bio}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.0 }}
-            className="mt-16 bg-white rounded-xl shadow-lg p-8"
-          >
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Badenya en Chiffres</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {[
-                { id: 'stat-users', number: '10K+', label: 'Utilisateurs actifs' },
-                { id: 'stat-groups', number: '500+', label: 'Groupes créés' },
-                { id: 'stat-savings', number: '50M+', label: 'XOF épargnés' },
-                { id: 'stat-rating', number: '4.8/5', label: 'Note moyenne' },
-              ].map((stat) => (
-                <div key={stat.id} className="text-center">
-                  <div className="text-4xl font-bold text-blue-600 mb-2">{stat.number}</div>
-                  <div className="text-gray-600">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+          <section className="bg-blue-50 rounded-xl p-8 text-gray-800">
+            <h2 className="text-3xl font-bold mb-6">Un historique partagé</h2>
+            <p>Badenya rassemble les cotisations, propositions et décisions d’un groupe dans un espace commun. Les membres peuvent suivre les opérations ; les responsables valident les écritures et les bénéficiaires.</p>
+          </section>
 
           {/* CTA */}
           <motion.div
@@ -179,14 +98,14 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="/#download"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition"
+                href="https://badenya.naimba.com"
+                className="bg-blue-700 hover:bg-blue-800 text-white px-8 py-4 rounded-lg text-lg font-semibold transition"
               >
-                Télécharger l'app
+                Ouvrir l’application
               </a>
               <a
                 href="/contact"
-                className="bg-white hover:bg-gray-50 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition border-2 border-blue-600"
+                className="bg-white hover:bg-gray-50 text-blue-700 px-8 py-4 rounded-lg text-lg font-semibold transition border-2 border-blue-600"
               >
                 Nous contacter
               </a>

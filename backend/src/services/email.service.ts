@@ -1,5 +1,7 @@
-import nodemailer from 'nodemailer';
-import logger from '../utils/logger';
+import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
+import logger from "../utils/logger";
+import { isConfiguredValue } from "../utils/configuredValue";
 
 interface EmailOptions {
   to: string;
@@ -8,35 +10,42 @@ interface EmailOptions {
   text?: string;
 }
 
-type EmailProvider = 'smtp' | 'sendgrid';
+type EmailProvider = "smtp" | "sendgrid";
 
 /**
  * Detect which email provider is configured.
  */
 const detectProvider = (): EmailProvider | null => {
-  if (process.env.SENDGRID_API_KEY) return 'sendgrid';
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) return 'smtp';
+  if (isConfiguredValue(process.env.SENDGRID_API_KEY)) return "sendgrid";
+  if (
+    isConfiguredValue(process.env.SMTP_HOST) &&
+    isConfiguredValue(process.env.SMTP_USER) &&
+    isConfiguredValue(process.env.SMTP_PASSWORD)
+  )
+    return "smtp";
   return null;
 };
+
+export const isEmailConfigured = () => detectProvider() !== null;
 
 // Create reusable transporter
 const createTransporter = () => {
   const provider = detectProvider();
 
-  if (provider === 'sendgrid') {
+  if (provider === "sendgrid") {
     return nodemailer.createTransport({
-      host: 'smtp.sendgrid.net',
+      host: "smtp.sendgrid.net",
       port: 587,
       secure: false,
       auth: {
-        user: 'apikey',
+        user: "apikey",
         pass: process.env.SENDGRID_API_KEY,
       },
     });
   }
 
-  if (provider === 'smtp') {
-    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  if (provider === "smtp") {
+    const port = parseInt(process.env.SMTP_PORT || "587", 10);
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port,
@@ -48,43 +57,61 @@ const createTransporter = () => {
     });
   }
 
-  logger.warn('No email provider configured — emails will be logged but not sent');
+  logger.warn(
+    "No email provider configured",
+  );
   return null;
 };
 
-let transporter: nodemailer.Transporter | null = null;
+let transporter: Transporter | null = null;
+let transportConfiguration = "";
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[character] || character));
 
 const getTransporter = () => {
-  if (!transporter) {
+  const configuration = JSON.stringify([process.env.SENDGRID_API_KEY, process.env.SMTP_HOST,
+    process.env.SMTP_PORT, process.env.SMTP_USER, process.env.SMTP_PASSWORD]);
+  if (!transporter || configuration !== transportConfiguration) {
+    transporter?.close();
     transporter = createTransporter();
+    transportConfiguration = configuration;
   }
   return transporter;
 };
 
 /**
- * Send an email. Falls back to logging when no provider is configured.
+ * Report success only after the configured provider accepts the message.
  */
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   const transport = getTransporter();
-  const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@badenya.app';
+  const from =
+    process.env.EMAIL_FROM ||
+    process.env.SMTP_FROM ||
+    process.env.SMTP_USER ||
+    "noreply@badenya.app";
 
   if (!transport) {
-    logger.info(`[Email stub] To: ${options.to} | Subject: ${options.subject}`);
-    return true;
+    logger.warn("Email was not sent: provider unavailable");
+    return false;
   }
 
   try {
-    await transport.sendMail({
+    const result = await transport.sendMail({
       from: `Badenya <${from}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text,
     });
-    logger.info(`Email sent to ${options.to} via ${detectProvider()}`);
+    if (Array.isArray(result.rejected) && result.rejected.length > 0) {
+      logger.warn("Email provider rejected the recipient");
+      return false;
+    }
+    logger.info(`Email accepted by ${detectProvider()}`);
     return true;
   } catch (error) {
-    logger.error('Failed to send email:', error);
+    logger.error("Failed to send email:", error);
     return false;
   }
 };
@@ -95,26 +122,26 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
 export const sendPasswordResetEmail = async (
   to: string,
   resetToken: string,
-  userName: string
+  userName: string,
 ): Promise<boolean> => {
-  const appUrl = process.env.APP_URL || 'https://badenya.app';
-  const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+  const appUrl = process.env.APP_URL || "https://badenya.naimba.com";
+  const resetUrl = `${appUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
   return sendEmail({
     to,
-    subject: 'Réinitialisation de votre mot de passe — Badenya',
+    subject: "Réinitialisation de votre mot de passe — Badenya",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 24px; text-align: center; border-radius: 8px 8px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">Badenya</h1>
         </div>
         <div style="padding: 32px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-          <h2 style="color: #111827; margin-top: 0;">Bonjour ${userName},</h2>
+          <h2 style="color: #111827; margin-top: 0;">Bonjour ${escapeHtml(userName)},</h2>
           <p style="color: #4b5563; line-height: 1.6;">
             Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
           </p>
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetUrl}" style="background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+            <a href="${escapeHtml(resetUrl)}" style="background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
               Réinitialiser mon mot de passe
             </a>
           </div>
@@ -138,20 +165,20 @@ export const sendPasswordResetEmail = async (
 export const sendContactConfirmationEmail = async (
   to: string,
   name: string,
-  subject: string
+  subject: string,
 ): Promise<boolean> => {
   return sendEmail({
     to,
-    subject: 'Nous avons bien reçu votre message — Badenya',
+    subject: "Nous avons bien reçu votre message — Badenya",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 24px; text-align: center; border-radius: 8px 8px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">Badenya</h1>
         </div>
         <div style="padding: 32px; background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-          <h2 style="color: #111827; margin-top: 0;">Merci ${name} !</h2>
+          <h2 style="color: #111827; margin-top: 0;">Merci ${escapeHtml(name)} !</h2>
           <p style="color: #4b5563; line-height: 1.6;">
-            Nous avons bien reçu votre message concernant <strong>"${subject}"</strong>.
+            Nous avons bien reçu votre message concernant <strong>"${escapeHtml(subject)}"</strong>.
             Notre équipe vous répondra dans les plus brefs délais.
           </p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />

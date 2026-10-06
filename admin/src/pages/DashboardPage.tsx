@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type DashboardStats } from '../services/adminService';
+import AdminLayout from '../components/AdminLayout';
 import { getErrorMessage } from '../utils/errorHandler';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -34,112 +35,9 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const navItems = [
-    { name: 'Tableau de bord', icon: '📊', path: '/dashboard', active: true },
-    { name: 'Utilisateurs', icon: '👥', path: '/users', active: false },
-    { name: 'Groupes', icon: '🏢', path: '/groups', active: false },
-    { name: 'Transactions', icon: '💰', path: '/transactions', active: false },
-  ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Chargement du tableau de bord...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}>
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-xl">B</span>
-          </div>
-          {sidebarOpen && (
-            <span className="ml-3 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-              Badenya
-            </span>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 py-6 px-4 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.name}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                item.active
-                  ? 'bg-blue-50 text-blue-600 font-medium'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {sidebarOpen && <span>{item.name}</span>}
-            </button>
-          ))}
-        </nav>
-
-        {/* Toggle button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 border-t border-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          <svg
-            className={`w-6 h-6 mx-auto transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-          </svg>
-        </button>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
-            <p className="text-sm text-gray-500">Bienvenue sur le panneau d'administration</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.fullName}
-              </p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
-            </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-              {user?.fullName?.[0] || 'A'}
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-            >
-              Déconnexion
-            </button>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 overflow-auto">
+    <AdminLayout subtitle="Tableau de bord">
+      {loading && <p role="status" className="p-8 text-gray-700">Chargement du tableau de bord...</p>}
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,9 +55,9 @@ export default function DashboardPage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Utilisateurs</p>
+                      <p className="text-sm font-medium text-gray-600">Utilisateurs</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalUsers}</p>
-                      <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                      <p className="text-sm text-green-800 mt-1 flex items-center gap-1">
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                         {stats.activeUsers} actifs
                       </p>
@@ -176,15 +74,15 @@ export default function DashboardPage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Groupes</p>
+                      <p className="text-sm font-medium text-gray-600">Groupes</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalGroups}</p>
-                      <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                      <p className="text-sm text-green-800 mt-1 flex items-center gap-1">
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                         {stats.activeGroups} actifs
                       </p>
                     </div>
                     <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
-                      <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-7 h-7 text-green-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
@@ -195,9 +93,9 @@ export default function DashboardPage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Transactions</p>
+                      <p className="text-sm font-medium text-gray-600">Transactions</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalTransactions}</p>
-                      <p className="text-sm text-gray-500 mt-1">Total</p>
+                      <p className="text-sm text-gray-600 mt-1">Total</p>
                     </div>
                     <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center">
                       <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,14 +109,13 @@ export default function DashboardPage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Volume</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {stats.totalTransactionVolume.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">XOF</p>
+                      <p className="text-sm font-medium text-gray-600">Volume</p>
+                      {Object.entries(stats.totalsByCurrency || { XOF: stats.totalTransactionVolume }).map(([currency, value]) => (
+                        <p key={currency} className="text-xl font-bold text-gray-900 mt-2 break-words">{(typeof value === 'number' ? value : value.totalTransactionVolume).toLocaleString('fr-FR')} {currency}</p>
+                      ))}
                     </div>
                     <div className="w-14 h-14 bg-yellow-50 rounded-2xl flex items-center justify-center">
-                      <svg className="w-7 h-7 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-7 h-7 text-yellow-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
@@ -263,7 +160,7 @@ export default function DashboardPage() {
                       <span className="text-2xl">👥</span>
                     </div>
                     <p className="font-semibold text-gray-900">Gérer les utilisateurs</p>
-                    <p className="text-sm text-gray-500 mt-1">Voir tous les utilisateurs</p>
+                    <p className="text-sm text-gray-600 mt-1">Voir tous les utilisateurs</p>
                   </button>
                   <button
                     onClick={() => navigate('/groups')}
@@ -273,7 +170,7 @@ export default function DashboardPage() {
                       <span className="text-2xl">🏢</span>
                     </div>
                     <p className="font-semibold text-gray-900">Gérer les groupes</p>
-                    <p className="text-sm text-gray-500 mt-1">Voir tous les groupes</p>
+                    <p className="text-sm text-gray-600 mt-1">Voir tous les groupes</p>
                   </button>
                   <button
                     onClick={() => navigate('/transactions')}
@@ -283,14 +180,12 @@ export default function DashboardPage() {
                       <span className="text-2xl">💰</span>
                     </div>
                     <p className="font-semibold text-gray-900">Voir les transactions</p>
-                    <p className="text-sm text-gray-500 mt-1">Historique complet</p>
+                    <p className="text-sm text-gray-600 mt-1">Historique complet</p>
                   </button>
                 </div>
               </div>
             </>
           )}
-        </main>
-      </div>
-    </div>
+    </AdminLayout>
   );
 }

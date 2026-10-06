@@ -1,3 +1,5 @@
+> Document historique : cet état et ces procédures ne décrivent pas la version actuelle. Consultez le [README](../README.md), le [guide de démarrage](QUICKSTART_DEVELOPER_GUIDE.md), le [guide de déploiement](DEPLOYMENT_GUIDE.md) et l’audit du 6 octobre 2026.
+
 # 🚀 What To Do Next - Developer Guide
 
 **Project Status:** ✅ PRODUCTION READY  
@@ -254,9 +256,9 @@ After testing, update .env with production keys
 ### Key Documents
 | Document | Purpose |
 |----------|---------|
-| QUICKSTART.md | Quick start guide |
+| QUICKSTART_DEVELOPER_GUIDE.md | Quick start guide |
 | DEPLOYMENT_GUIDE.md | Full deployment instructions |
-| MOBILE_BUILD_GUIDE.md | Mobile build process |
+| ../mobile/BUILD_RELEASE_GUIDE.md | Mobile build process |
 | PAYMENT_INTEGRATION_GUIDE.md | Payment integration |
 | FIREBASE_SETUP.md | Firebase configuration |
 | ENV_SETUP.md | Environment variables |

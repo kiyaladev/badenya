@@ -1,10 +1,14 @@
+import ConfirmationModal from '../components/ConfirmationModal';
+import { LoadingState } from '../components/Feedback';
+import { ErrorMessage } from '../components/Feedback';
+import Pagination from '../components/Pagination';
+import { groupTypeLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
-import { useFocusTrap } from '../hooks/useFocusTrap';
 import AdminLayout from '../components/AdminLayout';
 
 export default function GroupsPage() {
@@ -19,7 +23,6 @@ export default function GroupsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGroups, setTotalGroups] = useState(0);
   const [confirmArchive, setConfirmArchive] = useState<string | null>(null);
-  const archiveModalRef = useFocusTrap<HTMLDivElement>(!!confirmArchive);
   const limit = 10;
 
   const loadGroups = useCallback(async () => {
@@ -64,16 +67,9 @@ export default function GroupsPage() {
     }
   };
 
-  const getGroupTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      savings: 'Épargne',
-      tontine: 'Tontine',
-      investment: 'Investissement',
-    };
-    return types[type] || type;
-  };
+  const getGroupTypeLabel = (type: string) => groupTypeLabels[type] || type;
 
-  const totalPages = Math.ceil(totalGroups / limit);
+
 
   return (
     <AdminLayout subtitle="Gestion des groupes">
@@ -90,6 +86,7 @@ export default function GroupsPage() {
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <select
+            aria-label="Type de groupe"
             value={typeFilter}
             onChange={(e) => {
               setTypeFilter(e.target.value);
@@ -97,24 +94,15 @@ export default function GroupsPage() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Tous les types</option>
-            <option value="savings">Épargne</option>
-            <option value="tontine">Tontine</option>
-            <option value="investment">Investissement</option>
+            {Object.entries(groupTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            <p>{error}</p>
-          </div>
-        )}
+        {error && <ErrorMessage message={error} />}
 
         {/* Groups Grid */}
         {loading ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement...</p>
-          </div>
+          <LoadingState />
         ) : groups.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <p className="text-gray-600">Aucun groupe trouvé</p>
@@ -156,7 +144,7 @@ export default function GroupsPage() {
                   </div>
                 </div>
 
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => navigate(`/groups/${group._id}`)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
@@ -177,39 +165,11 @@ export default function GroupsPage() {
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Affichage de {(currentPage - 1) * limit + 1} à {Math.min(currentPage * limit, totalGroups)} sur {totalGroups} groupes
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Précédent
-              </button>
-              <span className="px-4 py-2 text-sm text-gray-700">
-                Page {currentPage} sur {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Suivant
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination page={currentPage} limit={limit} total={totalGroups} onChange={setCurrentPage} />
 
       {/* Confirmation Modal */}
       {confirmArchive && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div ref={archiveModalRef} className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-archive-title">
-            <h3 id="confirm-archive-title" className="text-lg font-semibold text-gray-900 mb-2">Confirmer l'archivage</h3>
+        <ConfirmationModal id="confirm-archive-title" title="Confirmer l'archivage" onClose={() => setConfirmArchive(null)}>
             <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir archiver ce groupe ?</p>
             <div className="flex justify-end space-x-3">
               <button
@@ -225,8 +185,7 @@ export default function GroupsPage() {
                 Archiver
               </button>
             </div>
-          </div>
-        </div>
+        </ConfirmationModal>
       )}
     </AdminLayout>
   );

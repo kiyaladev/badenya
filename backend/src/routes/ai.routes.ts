@@ -2,6 +2,7 @@ import express from 'express';
 import { param } from 'express-validator';
 import * as aiController from '../controllers/ai.controller';
 import { authenticate } from '../middleware/auth';
+import { requireGroupMember } from '../middleware/groupMember';
 import { validate } from '../middleware/validation';
 
 const router = express.Router();
@@ -57,7 +58,7 @@ const reportIdValidation = [
  *       500:
  *         description: AI service error
  */
-router.post('/groups/:groupId/insights', authenticate, groupIdValidation, validate, aiController.generateInsights);
+router.post('/groups/:groupId/insights', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateInsights);
 
 /**
  * @swagger
@@ -107,7 +108,7 @@ router.post('/groups/:groupId/insights', authenticate, groupIdValidation, valida
  *                     total:
  *                       type: integer
  */
-router.get('/groups/:groupId/insights', authenticate, groupIdValidation, validate, aiController.getGroupInsights);
+router.get('/groups/:groupId/insights', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.getGroupInsights);
 
 /**
  * @swagger
@@ -143,7 +144,7 @@ router.get('/groups/:groupId/insights', authenticate, groupIdValidation, validat
  *       404:
  *         description: Report not found
  */
-router.get('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.getInsightById);
+router.get('/insights/:reportId', authenticate, authenticate, reportIdValidation, validate, aiController.getInsightById);
 
 /**
  * @swagger
@@ -179,7 +180,7 @@ router.get('/insights/:reportId', authenticate, reportIdValidation, validate, ai
  *       404:
  *         description: Group not found
  */
-router.post('/groups/:groupId/anomalies', authenticate, groupIdValidation, validate, aiController.detectAnomalies);
+router.post('/groups/:groupId/anomalies', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.detectAnomalies);
 
 /**
  * @swagger
@@ -215,7 +216,7 @@ router.post('/groups/:groupId/anomalies', authenticate, groupIdValidation, valid
  *       404:
  *         description: Group not found
  */
-router.post('/groups/:groupId/recommendations', authenticate, groupIdValidation, validate, aiController.generateRecommendations);
+router.post('/groups/:groupId/recommendations', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateRecommendations);
 
 /**
  * @swagger
@@ -238,6 +239,6 @@ router.post('/groups/:groupId/recommendations', authenticate, groupIdValidation,
  *       404:
  *         description: Report not found
  */
-router.delete('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.deleteInsight);
+router.delete('/insights/:reportId', authenticate, authenticate, reportIdValidation, validate, aiController.deleteInsight);
 
 export default router;

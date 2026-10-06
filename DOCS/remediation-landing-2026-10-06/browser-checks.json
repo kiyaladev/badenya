@@ -1,0 +1,117 @@
+{
+  "results": [
+    {
+      "width": 375,
+      "path": "/",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 375,
+      "path": "/contact",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 375,
+      "path": "/about",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 375,
+      "path": "/privacy",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 375,
+      "path": "/terms",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 375,
+      "path": "/reset-password?token=test",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/contact",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/about",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/privacy",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/terms",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/reset-password?token=test",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/contact",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/about",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/privacy",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/terms",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/reset-password?token=test",
+      "overflow": false,
+      "violations": []
+    }
+  ],
+  "requestBody": {
+    "token": "known-token",
+    "newPassword": "ValidPassword123"
+  },
+  "resetEndpoint": "mocked; real delivery requires configured SMTP"
+}

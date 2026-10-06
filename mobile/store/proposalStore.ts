@@ -41,7 +41,7 @@ export const useProposalStore = create<ProposalState>((set, get) => ({
   },
 
   fetchProposalById: async (proposalId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, currentProposal: null });
     try {
       const proposal = await proposalService.getProposalById(proposalId);
       set({ currentProposal: proposal, isLoading: false });

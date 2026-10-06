@@ -1,0 +1,1962 @@
+{
+  "date": "2026-10-06",
+  "tests": {
+    "backend-unit": {
+      "success": true,
+      "suites": 10,
+      "passed": 83,
+      "failed": 0,
+      "pending": 0
+    },
+    "backend-integration": {
+      "success": true,
+      "suites": 5,
+      "passed": 68,
+      "failed": 0,
+      "pending": 0
+    },
+    "admin": {
+      "success": true,
+      "suites": 6,
+      "passed": 47,
+      "failed": 0,
+      "pending": 0
+    },
+    "landing": {
+      "success": true,
+      "suites": 3,
+      "passed": 16,
+      "failed": 0,
+      "pending": 0
+    },
+    "mobile": {
+      "success": true,
+      "suites": 17,
+      "passed": 185,
+      "failed": 0,
+      "pending": 0
+    }
+  },
+  "runtime": {
+    "evidence": [
+      {
+        "check": "login Audit Admin",
+        "status": 200
+      },
+      {
+        "check": "login Audit Member",
+        "status": 200
+      },
+      {
+        "check": "login Audit Suspended",
+        "status": 200
+      },
+      {
+        "check": "group details active member",
+        "status": 403,
+        "message": "You are not a member of this group"
+      },
+      {
+        "check": "group list suspended member",
+        "status": 200,
+        "groups": [
+          "Tontine audit"
+        ]
+      },
+      {
+        "check": "public contact",
+        "status": 401,
+        "message": "No token provided"
+      },
+      {
+        "check": "public newsletter",
+        "status": 401,
+        "message": "No token provided"
+      },
+      {
+        "check": "create group custom currency",
+        "status": 201,
+        "message": "Group created successfully",
+        "currency": "XOF"
+      },
+      {
+        "check": "create contribution",
+        "status": 201,
+        "id": "6ac4e03c1bf7a9f9f784186e"
+      },
+      {
+        "check": "verify contribution",
+        "status": 200,
+        "balance": 11000
+      },
+      {
+        "check": "verify expense above balance",
+        "status": 500,
+        "transactionStatus": "completed",
+        "balanceBefore": 11000,
+        "balanceAfter": 11000
+      },
+      {
+        "check": "execute proposal",
+        "status": 200,
+        "transactionsBefore": 2,
+        "transactionsAfter": 2,
+        "proposal": {
+          "status": "approved",
+          "executedAt": "2026-10-06T11:49:16.431Z"
+        }
+      },
+      {
+        "check": "vote change and privacy",
+        "statuses": [
+          200,
+          200,
+          200
+        ],
+        "options": [
+          {
+            "id": "yes",
+            "votes": 1
+          },
+          {
+            "id": "no",
+            "votes": 1
+          }
+        ],
+        "ballots": [
+          {
+            "userId": "6ac4e03919c711934f7c13f7",
+            "optionId": "no"
+          }
+        ],
+        "anonymous": true,
+        "showIntermediate": false
+      },
+      {
+        "check": "suspended member votes",
+        "status": 200
+      }
+    ],
+    "groupId": "6ac4e03919c711934f7c13ff"
+  },
+  "double_count": {
+    "check": "flag completed contribution then reverify",
+    "flagStatus": 200,
+    "verifyStatus": 200,
+    "balanceBefore": 11000,
+    "balanceAfter": 12000,
+    "transactionAmount": 1000
+  },
+  "suspension": {
+    "suspendStatus": 200,
+    "currentSessionStatus": 200,
+    "newLoginStatus": 200,
+    "active": false
+  },
+  "live": {
+    "crossOrigin": {
+      "error": "Failed to fetch"
+    },
+    "interaction": {
+      "url": "https://badenya.naimba.com/",
+      "unchanged": true
+    },
+    "errors": [
+      "Access to fetch at 'https://badenya-api.naimba.com/health' from origin 'https://badenya.naimba.com' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header contains multiple values 'https://badenya.naimba.com,http://localhost:3000,http://localhost:5173,http://localhost:19006,https://admin.badenya.app', but only one is allowed. Have the server send the header with a valid value."
+    ]
+  },
+  "browser": [
+    {
+      "name": "landing-home",
+      "width": 375,
+      "url": "http://127.0.0.1:16082/",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya\nGérez vos épargnes collectives en toute simplicité\n\nBadenya vous aide à créer, gérer et faire fructifier vos tontines et groupes d'épargne avec la puissance du digital.\n\nTélécharger l'app\nEn savoir plus\nSolde total\n2,450,000 XOF\n👥 Groupe Famille\n850,000 XOF\n💼 Investissement Pro\n1,200,000 XOF\n🎯 Projet Immo\n400,000 XOF\nFONCTIONNALITÉS\nFonctionnalités puissantes\n\nTout ce dont vous avez besoin pour gérer vos groupes d'épargne de manière efficace\n\nGestion de groupes\n\nCréez et gérez plusieurs groupes d'épargne avec des rôles et permissions.\n\nSuivi des cotisations\n\nSuivez facilement toutes les contributions et les dépenses de votre groupe.\n\nVotes démocratiques\n\nPrenez des décisions importantes ensemble grâce au système de vote intégré.\n\nRapports détaillés\n\nGénérez des rapports financiers complets et exportez-les en PDF ou Excel.\n\nNotifications en temps réel\n\nRestez informé de toutes les activités importantes de vos groupes.\n\nSécurité maximale\n\nVos données sont protégées avec un chiffrement de niveau bancaire.\n\n0+\n\nUtilisateurs actifs\n\n0+\n\nGroupes créés\n\n0M+\n\nXOF épargnés\n\n0%\n\nSatisfaction\n\nGUIDE\nComment ça marche ?\n\nCommencez en 3 étapes simples\n\n01\nTéléchargez l'app\n\nInstallez Badenya gratuitement sur votre smartphone Android ou iOS.\n\n02\nCréez votre groupe\n\nConfigurez votre groupe d'épargne en quelques clics et invitez vos membres.\n\n03\nCommencez à épargner\n\nGérez les cotisations, votez sur les dépenses et suivez votre progression.\n\nTÉMOIGNAGES\nCe que disent nos utilisateurs\n\nRejoignez des milliers d'utilisateurs satisfaits\n\nAD\n\nAminata Diallo\n\nPrésidente de groupe, Dakar\n\n\"Badenya a transformé la gestion de notre tontine familiale. Tout est transparent et facile à suivre !\"\n\nMK\n\nMoussa Kone\n\nEntrepreneur, Abidjan\n\n\"L'application est intuitive et le système de vot",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 563
+        }
+      ],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Télécharger l'app",
+          "href": "#download"
+        },
+        {
+          "text": "En savoir plus",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Télécharger surApp Store",
+          "href": "/#download"
+        },
+        {
+          "text": "Télécharger surGoogle Play",
+          "href": "/#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-home-375.png"
+    },
+    {
+      "name": "landing-about",
+      "width": 375,
+      "url": "http://127.0.0.1:16082/about",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya\nÀ propos de Badenya\n\nRévolutionner l'épargne collective en Afrique\n\nNotre Mission\n\nBadenya est né d'une vision simple mais puissante : moderniser les pratiques d'épargne collective traditionnelles africaines en les rendant accessibles, transparentes et efficaces grâce à la technologie.\n\nNous croyons fermement au pouvoir de la communauté et de l'entraide. Notre mission est de fournir aux groupes d'épargne, aux tontines et aux associations d'investissement les outils digitaux dont ils ont besoin pour prospérer au 21ème siècle.\n\nNos Valeurs\n🤝\nConfiance\n\nNous construisons une plateforme basée sur la transparence et la sécurité pour instaurer la confiance entre tous les membres.\n\n🚀\nInnovation\n\nNous combinons les meilleures pratiques traditionnelles avec les technologies modernes pour créer des solutions adaptées.\n\n🌍\nImpact\n\nNous nous engageons à avoir un impact positif sur les communautés africaines en facilitant l'accès à l'épargne et à l'investissement.\n\nNotre Histoire\n\nBadenya a été fondé en 2024 par une équipe passionnée d'entrepreneurs et de développeurs africains qui ont grandi en participant à des tontines familiales et communautaires.\n\nNous avons constaté que bien que ces pratiques d'épargne collective soient extrêmement populaires et efficaces, elles souffraient souvent d'un manque de transparence, de difficultés de gestion et de limitations géographiques.\n\nC'est ainsi qu'est né Badenya - du mot bambara signifiant \"entraide\" - une plateforme qui digitalise et améliore ces pratiques ancestrales tout en préservant leur essence communautaire.\n\nNotre Équipe\nAD\nAmadou Diop\n\nCEO & Co-fondateur\n\n10 ans d'expérience en fintech et entrepreneuriat social.\n\nMK\nMariam Kante\n\nCTO & Co-fondatrice\n\nExperte en développement mobile et architecture cloud.\n\nYT\nYoussouf Tr",
+      "overflow": [],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Télécharger l'app",
+          "href": "/#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-about-375.png"
+    },
+    {
+      "name": "landing-contact",
+      "width": 375,
+      "url": "http://127.0.0.1:16082/contact",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya\nContactez-nous\n\nUne question ? Une suggestion ? Nous sommes là pour vous aider\n\nEnvoyez-nous un message\nNom complet\nEmail\nSujet\nSélectionnez un sujet\nSupport technique\nQuestions commerciales\nPartenariat\nAutre\nMessage\nEnvoyer le message\nInformations de contact\nEmail\n\ncontact@badenya.app\n\nsupport@badenya.app\n\nTéléphone\n\n+221 XX XXX XX XX\n\n+225 XX XX XX XX XX\n\nBureaux\n\nDakar, Sénégal\n\nAbidjan, Côte d'Ivoire\n\nHoraires\n\nLun - Ven: 9h - 18h\n\nSam: 9h - 13h\n\nSuivez-nous\nB\nBadenya\n\nLa solution moderne pour gérer vos épargnes collectives en Afrique. Simplifiez la gestion de vos tontines.\n\nProduit\nFonctionnalités\nComment ça marche\nTémoignages\nTélécharger\nEntreprise\nÀ propos\nContact\nCarrières\n(bientôt)\nBlog\n(bientôt)\nLégal\nConditions d'utilisation\n(bientôt)\nPolitique de confidentialité\n(bientôt)\nMentions légales\n(bientôt)\n\n© 2026 Badenya. Tous droits réservés.\n\nFait avec ❤️ en Afrique",
+      "overflow": [],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-contact-375.png"
+    },
+    {
+      "name": "landing-missing-route",
+      "width": 375,
+      "url": "http://127.0.0.1:16082/missing-route",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 375,
+      "bodyText": "404\nPage introuvable\n\nLa page que vous recherchez n'existe pas ou a été déplacée.\n\nRetour à l'accueil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-missing-route-375.png"
+    },
+    {
+      "name": "landing-home",
+      "width": 768,
+      "url": "http://127.0.0.1:16082/",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 917,
+      "bodyText": "B\nBadenya\nFonctionnalités\nComment ça marche\nTémoignages\nFAQ\nÀ propos\nContact\nTélécharger\nGérez vos épargnes collectives en toute simplicité\n\nBadenya vous aide à créer, gérer et faire fructifier vos tontines et groupes d'épargne avec la puissance du digital.\n\nTélécharger l'app\nEn savoir plus\nSolde total\n2,450,000 XOF\n👥 Groupe Famille\n850,000 XOF\n💼 Investissement Pro\n1,200,000 XOF\n🎯 Projet Immo\n400,000 XOF\nFONCTIONNALITÉS\nFonctionnalités puissantes\n\nTout ce dont vous avez besoin pour gérer vos groupes d'épargne de manière efficace\n\nGestion de groupes\n\nCréez et gérez plusieurs groupes d'épargne avec des rôles et permissions.\n\nSuivi des cotisations\n\nSuivez facilement toutes les contributions et les dépenses de votre groupe.\n\nVotes démocratiques\n\nPrenez des décisions importantes ensemble grâce au système de vote intégré.\n\nRapports détaillés\n\nGénérez des rapports financiers complets et exportez-les en PDF ou Excel.\n\nNotifications en temps réel\n\nRestez informé de toutes les activités importantes de vos groupes.\n\nSécurité maximale\n\nVos données sont protégées avec un chiffrement de niveau bancaire.\n\n0+\n\nUtilisateurs actifs\n\n0+\n\nGroupes créés\n\n0M+\n\nXOF épargnés\n\n0%\n\nSatisfaction\n\nGUIDE\nComment ça marche ?\n\nCommencez en 3 étapes simples\n\n01\nTéléchargez l'app\n\nInstallez Badenya gratuitement sur votre smartphone Android ou iOS.\n\n02\nCréez votre groupe\n\nConfigurez votre groupe d'épargne en quelques clics et invitez vos membres.\n\n03\nCommencez à épargner\n\nGérez les cotisations, votez sur les dépenses et suivez votre progression.\n\nTÉMOIGNAGES\nCe que disent nos utilisateurs\n\nRejoignez des milliers d'utilisateurs satisfaits\n\nAD\n\nAminata Diallo\n\nPrésidente de groupe, Dakar\n\n\"Badenya a transformé la gestion de notre tontine familiale. Tout est transparent et facile à suivre !\"\n\nMK\n\nMoussa",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "FonctionnalitésComment ça marcheTémoignagesFAQÀ proposContactTélécharg",
+          "right": 917
+        },
+        {
+          "tag": "A",
+          "text": "Télécharger",
+          "right": 917
+        },
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 1152
+        }
+      ],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Télécharger l'app",
+          "href": "#download"
+        },
+        {
+          "text": "En savoir plus",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Télécharger surApp Store",
+          "href": "/#download"
+        },
+        {
+          "text": "Télécharger surGoogle Play",
+          "href": "/#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-home-768.png"
+    },
+    {
+      "name": "landing-about",
+      "width": 768,
+      "url": "http://127.0.0.1:16082/about",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 917,
+      "bodyText": "B\nBadenya\nFonctionnalités\nComment ça marche\nTémoignages\nFAQ\nÀ propos\nContact\nTélécharger\nÀ propos de Badenya\n\nRévolutionner l'épargne collective en Afrique\n\nNotre Mission\n\nBadenya est né d'une vision simple mais puissante : moderniser les pratiques d'épargne collective traditionnelles africaines en les rendant accessibles, transparentes et efficaces grâce à la technologie.\n\nNous croyons fermement au pouvoir de la communauté et de l'entraide. Notre mission est de fournir aux groupes d'épargne, aux tontines et aux associations d'investissement les outils digitaux dont ils ont besoin pour prospérer au 21ème siècle.\n\nNos Valeurs\n🤝\nConfiance\n\nNous construisons une plateforme basée sur la transparence et la sécurité pour instaurer la confiance entre tous les membres.\n\n🚀\nInnovation\n\nNous combinons les meilleures pratiques traditionnelles avec les technologies modernes pour créer des solutions adaptées.\n\n🌍\nImpact\n\nNous nous engageons à avoir un impact positif sur les communautés africaines en facilitant l'accès à l'épargne et à l'investissement.\n\nNotre Histoire\n\nBadenya a été fondé en 2024 par une équipe passionnée d'entrepreneurs et de développeurs africains qui ont grandi en participant à des tontines familiales et communautaires.\n\nNous avons constaté que bien que ces pratiques d'épargne collective soient extrêmement populaires et efficaces, elles souffraient souvent d'un manque de transparence, de difficultés de gestion et de limitations géographiques.\n\nC'est ainsi qu'est né Badenya - du mot bambara signifiant \"entraide\" - une plateforme qui digitalise et améliore ces pratiques ancestrales tout en préservant leur essence communautaire.\n\nNotre Équipe\nAD\nAmadou Diop\n\nCEO & Co-fondateur\n\n10 ans d'expérience en fintech et entrepreneuriat social.\n\nMK\nMariam Kante\n\nCTO & Co-fon",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "FonctionnalitésComment ça marcheTémoignagesFAQÀ proposContactTélécharg",
+          "right": 917
+        },
+        {
+          "tag": "A",
+          "text": "Télécharger",
+          "right": 917
+        }
+      ],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Télécharger l'app",
+          "href": "/#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-about-768.png"
+    },
+    {
+      "name": "landing-contact",
+      "width": 768,
+      "url": "http://127.0.0.1:16082/contact",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 917,
+      "bodyText": "B\nBadenya\nFonctionnalités\nComment ça marche\nTémoignages\nFAQ\nÀ propos\nContact\nTélécharger\nContactez-nous\n\nUne question ? Une suggestion ? Nous sommes là pour vous aider\n\nEnvoyez-nous un message\nNom complet\nEmail\nSujet\nSélectionnez un sujet\nSupport technique\nQuestions commerciales\nPartenariat\nAutre\nMessage\nEnvoyer le message\nInformations de contact\nEmail\n\ncontact@badenya.app\n\nsupport@badenya.app\n\nTéléphone\n\n+221 XX XXX XX XX\n\n+225 XX XX XX XX XX\n\nBureaux\n\nDakar, Sénégal\n\nAbidjan, Côte d'Ivoire\n\nHoraires\n\nLun - Ven: 9h - 18h\n\nSam: 9h - 13h\n\nSuivez-nous\nB\nBadenya\n\nLa solution moderne pour gérer vos épargnes collectives en Afrique. Simplifiez la gestion de vos tontines.\n\nProduit\nFonctionnalités\nComment ça marche\nTémoignages\nTélécharger\nEntreprise\nÀ propos\nContact\nCarrières\n(bientôt)\nBlog\n(bientôt)\nLégal\nConditions d'utilisation\n(bientôt)\nPolitique de confidentialité\n(bientôt)\nMentions légales\n(bientôt)\n\n© 2026 Badenya. Tous droits réservés.\n\nFait avec ❤️ en Afrique",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "FonctionnalitésComment ça marcheTémoignagesFAQÀ proposContactTélécharg",
+          "right": 917
+        },
+        {
+          "tag": "A",
+          "text": "Télécharger",
+          "right": 917
+        }
+      ],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-contact-768.png"
+    },
+    {
+      "name": "landing-missing-route",
+      "width": 768,
+      "url": "http://127.0.0.1:16082/missing-route",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 768,
+      "bodyText": "404\nPage introuvable\n\nLa page que vous recherchez n'existe pas ou a été déplacée.\n\nRetour à l'accueil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-missing-route-768.png"
+    },
+    {
+      "name": "landing-home",
+      "width": 1440,
+      "url": "http://127.0.0.1:16082/",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya\nFonctionnalités\nComment ça marche\nTémoignages\nFAQ\nÀ propos\nContact\nTélécharger\nGérez vos épargnes collectives en toute simplicité\n\nBadenya vous aide à créer, gérer et faire fructifier vos tontines et groupes d'épargne avec la puissance du digital.\n\nTélécharger l'app\nEn savoir plus\nSolde total\n2,450,000 XOF\n👥 Groupe Famille\n850,000 XOF\n💼 Investissement Pro\n1,200,000 XOF\n🎯 Projet Immo\n400,000 XOF\nFONCTIONNALITÉS\nFonctionnalités puissantes\n\nTout ce dont vous avez besoin pour gérer vos groupes d'épargne de manière efficace\n\nGestion de groupes\n\nCréez et gérez plusieurs groupes d'épargne avec des rôles et permissions.\n\nSuivi des cotisations\n\nSuivez facilement toutes les contributions et les dépenses de votre groupe.\n\nVotes démocratiques\n\nPrenez des décisions importantes ensemble grâce au système de vote intégré.\n\nRapports détaillés\n\nGénérez des rapports financiers complets et exportez-les en PDF ou Excel.\n\nNotifications en temps réel\n\nRestez informé de toutes les activités importantes de vos groupes.\n\nSécurité maximale\n\nVos données sont protégées avec un chiffrement de niveau bancaire.\n\n0+\n\nUtilisateurs actifs\n\n0+\n\nGroupes créés\n\n0M+\n\nXOF épargnés\n\n0%\n\nSatisfaction\n\nGUIDE\nComment ça marche ?\n\nCommencez en 3 étapes simples\n\n01\nTéléchargez l'app\n\nInstallez Badenya gratuitement sur votre smartphone Android ou iOS.\n\n02\nCréez votre groupe\n\nConfigurez votre groupe d'épargne en quelques clics et invitez vos membres.\n\n03\nCommencez à épargner\n\nGérez les cotisations, votez sur les dépenses et suivez votre progression.\n\nTÉMOIGNAGES\nCe que disent nos utilisateurs\n\nRejoignez des milliers d'utilisateurs satisfaits\n\nAD\n\nAminata Diallo\n\nPrésidente de groupe, Dakar\n\n\"Badenya a transformé la gestion de notre tontine familiale. Tout est transparent et facile à suivre !\"\n\nMK\n\nMoussa",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 2160
+        }
+      ],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Télécharger l'app",
+          "href": "#download"
+        },
+        {
+          "text": "En savoir plus",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Télécharger surApp Store",
+          "href": "/#download"
+        },
+        {
+          "text": "Télécharger surGoogle Play",
+          "href": "/#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-home-1440.png"
+    },
+    {
+      "name": "landing-about",
+      "width": 1440,
+      "url": "http://127.0.0.1:16082/about",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya\nFonctionnalités\nComment ça marche\nTémoignages\nFAQ\nÀ propos\nContact\nTélécharger\nÀ propos de Badenya\n\nRévolutionner l'épargne collective en Afrique\n\nNotre Mission\n\nBadenya est né d'une vision simple mais puissante : moderniser les pratiques d'épargne collective traditionnelles africaines en les rendant accessibles, transparentes et efficaces grâce à la technologie.\n\nNous croyons fermement au pouvoir de la communauté et de l'entraide. Notre mission est de fournir aux groupes d'épargne, aux tontines et aux associations d'investissement les outils digitaux dont ils ont besoin pour prospérer au 21ème siècle.\n\nNos Valeurs\n🤝\nConfiance\n\nNous construisons une plateforme basée sur la transparence et la sécurité pour instaurer la confiance entre tous les membres.\n\n🚀\nInnovation\n\nNous combinons les meilleures pratiques traditionnelles avec les technologies modernes pour créer des solutions adaptées.\n\n🌍\nImpact\n\nNous nous engageons à avoir un impact positif sur les communautés africaines en facilitant l'accès à l'épargne et à l'investissement.\n\nNotre Histoire\n\nBadenya a été fondé en 2024 par une équipe passionnée d'entrepreneurs et de développeurs africains qui ont grandi en participant à des tontines familiales et communautaires.\n\nNous avons constaté que bien que ces pratiques d'épargne collective soient extrêmement populaires et efficaces, elles souffraient souvent d'un manque de transparence, de difficultés de gestion et de limitations géographiques.\n\nC'est ainsi qu'est né Badenya - du mot bambara signifiant \"entraide\" - une plateforme qui digitalise et améliore ces pratiques ancestrales tout en préservant leur essence communautaire.\n\nNotre Équipe\nAD\nAmadou Diop\n\nCEO & Co-fondateur\n\n10 ans d'expérience en fintech et entrepreneuriat social.\n\nMK\nMariam Kante\n\nCTO & Co-fon",
+      "overflow": [],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Télécharger l'app",
+          "href": "/#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-about-1440.png"
+    },
+    {
+      "name": "landing-contact",
+      "width": 1440,
+      "url": "http://127.0.0.1:16082/contact",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya\nFonctionnalités\nComment ça marche\nTémoignages\nFAQ\nÀ propos\nContact\nTélécharger\nContactez-nous\n\nUne question ? Une suggestion ? Nous sommes là pour vous aider\n\nEnvoyez-nous un message\nNom complet\nEmail\nSujet\nSélectionnez un sujet\nSupport technique\nQuestions commerciales\nPartenariat\nAutre\nMessage\nEnvoyer le message\nInformations de contact\nEmail\n\ncontact@badenya.app\n\nsupport@badenya.app\n\nTéléphone\n\n+221 XX XXX XX XX\n\n+225 XX XX XX XX XX\n\nBureaux\n\nDakar, Sénégal\n\nAbidjan, Côte d'Ivoire\n\nHoraires\n\nLun - Ven: 9h - 18h\n\nSam: 9h - 13h\n\nSuivez-nous\nB\nBadenya\n\nLa solution moderne pour gérer vos épargnes collectives en Afrique. Simplifiez la gestion de vos tontines.\n\nProduit\nFonctionnalités\nComment ça marche\nTémoignages\nTélécharger\nEntreprise\nÀ propos\nContact\nCarrières\n(bientôt)\nBlog\n(bientôt)\nLégal\nConditions d'utilisation\n(bientôt)\nPolitique de confidentialité\n(bientôt)\nMentions légales\n(bientôt)\n\n© 2026 Badenya. Tous droits réservés.\n\nFait avec ❤️ en Afrique",
+      "overflow": [],
+      "links": [
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "FAQ",
+          "href": "#faq"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        },
+        {
+          "text": "Fonctionnalités",
+          "href": "#features"
+        },
+        {
+          "text": "Comment ça marche",
+          "href": "#how-it-works"
+        },
+        {
+          "text": "Témoignages",
+          "href": "#testimonials"
+        },
+        {
+          "text": "Télécharger",
+          "href": "#download"
+        }
+      ],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-contact-1440.png"
+    },
+    {
+      "name": "landing-missing-route",
+      "width": 1440,
+      "url": "http://127.0.0.1:16082/missing-route",
+      "title": "Badenya - Plateforme de Gestion Collective d'Épargne et de Tontine",
+      "scrollWidth": 1440,
+      "bodyText": "404\nPage introuvable\n\nLa page que vous recherchez n'existe pas ou a été déplacée.\n\nRetour à l'accueil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/landing-missing-route-1440.png"
+    },
+    {
+      "check": "footer features on about",
+      "url": "http://127.0.0.1:16082/about#features",
+      "targetExists": 0
+    },
+    {
+      "check": "admin login",
+      "url": "http://127.0.0.1:16081/login",
+      "text": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs"
+    },
+    {
+      "name": "admin-dashboard",
+      "width": 375,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 563
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-dashboard-375.png"
+    },
+    {
+      "name": "admin-users",
+      "width": 375,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 563
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-users-375.png"
+    },
+    {
+      "name": "admin-groups",
+      "width": 375,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 563
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-groups-375.png"
+    },
+    {
+      "name": "admin-transactions",
+      "width": 375,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 563
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-transactions-375.png"
+    },
+    {
+      "name": "admin-groups",
+      "width": 375,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 375,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 563
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-groups-375.png"
+    },
+    {
+      "name": "admin-dashboard",
+      "width": 768,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 768,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 1152
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-dashboard-768.png"
+    },
+    {
+      "name": "admin-users",
+      "width": 768,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 768,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 1152
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-users-768.png"
+    },
+    {
+      "name": "admin-groups",
+      "width": 768,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 768,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 1152
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-groups-768.png"
+    },
+    {
+      "name": "admin-transactions",
+      "width": 768,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 768,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 1152
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-transactions-768.png"
+    },
+    {
+      "name": "admin-groups",
+      "width": 768,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 768,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 1152
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-groups-768.png"
+    },
+    {
+      "name": "admin-dashboard",
+      "width": 1440,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 2160
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-dashboard-1440.png"
+    },
+    {
+      "name": "admin-users",
+      "width": 1440,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 2160
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-users-1440.png"
+    },
+    {
+      "name": "admin-groups",
+      "width": 1440,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 2160
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-groups-1440.png"
+    },
+    {
+      "name": "admin-transactions",
+      "width": 1440,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 2160
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-transactions-1440.png"
+    },
+    {
+      "name": "admin-groups",
+      "width": 1440,
+      "url": "http://127.0.0.1:16081/login",
+      "title": "admin",
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nRequest failed with status code 429\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "",
+          "right": 2160
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [],
+      "failures": [
+        {
+          "url": "http://127.0.0.1:16054/api/v1/auth/me",
+          "status": 429
+        }
+      ],
+      "screenshot": "/tmp/badenya-audit-screenshots/admin-groups-1440.png"
+    },
+    {
+      "name": "mobile-home",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "Bonjour\nUtilisateur\nUS\nSolde total\n0 XOF\n\nGroupes\n0\n\nMembres\n0\nActions rapides\n\nNouveau Groupe\n\nContribution\n\nStatistiques\nMes groupes\n\nAucun groupe\nCréez ou rejoignez un groupe pour commencer à épargner ensemble\n\nCréer un groupe\n\n\nAccueil\n\n\nGroupes\n\n\nTransactions\n\n\nNotifications\n\n\nProfil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-home-375.png"
+    },
+    {
+      "name": "mobile-login",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/login",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "\nBienvenue\nConnectez-vous à votre compte\nEmail\n\nMot de passe\n\n\nMot de passe oublié ?\nSe connecter\n\nou\nPas encore de compte ? \nS'inscrire",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-login-375.png"
+    },
+    {
+      "name": "mobile-register",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/register",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "\nCréer un compte\nRejoignez Badenya dès aujourd'hui\nNom complet\n\nEmail\n\nTéléphone\n\nMot de passe\n\n\nConfirmer le mot de passe\n\n\nS'inscrire\n\nDéjà un compte ? \nSe connecter",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-register-375.png"
+    },
+    {
+      "name": "mobile-forgot-password",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/forgot-password",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "\nRetour\n\nMot de passe oublié ?\nRecevez un lien de réinitialisation sécurisé\nEntrez l'adresse email associée à votre compte Badenya pour recevoir les instructions de réinitialisation.\nAdresse email\n\nEnvoyer le lien\n\nRetour à la connexion",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-forgot-password-375.png"
+    },
+    {
+      "name": "mobile-groups",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/groups",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "Groupes & Tontines\nMes Groupes (0)\nDécouvrir la Communauté\n\nTous\nTontines\nAssociations\nFamille\nAmis\nProjets\n\nAucun groupe\nCommencez par créer votre premier groupe d'épargne ou explorez la communauté\n\nCréer un groupe\n\n\n\nAccueil\n\n\nGroupes\n\n\nTransactions\n\n\nNotifications\n\n\nProfil",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "TousTontinesAssociationsFamilleAmisProjets",
+          "right": 544
+        },
+        {
+          "tag": "DIV",
+          "text": "Famille",
+          "right": 381
+        },
+        {
+          "tag": "DIV",
+          "text": "Amis",
+          "right": 453
+        },
+        {
+          "tag": "DIV",
+          "text": "Amis",
+          "right": 437
+        },
+        {
+          "tag": "DIV",
+          "text": "Projets",
+          "right": 536
+        },
+        {
+          "tag": "DIV",
+          "text": "Projets",
+          "right": 520
+        }
+      ],
+      "links": [],
+      "unlabelledInputs": [
+        {
+          "tag": "INPUT",
+          "type": "text",
+          "placeholder": "Rechercher parmi mes groupes..."
+        }
+      ],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-groups-375.png"
+    },
+    {
+      "name": "mobile-settings",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/settings",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "Paramètres\nCOMPTE\n\nMon profil\n\nSÉCURITÉ\n\nChanger le mot de passe\n\n\nBiométrie\nNon supporté sur cet appareil\nNOTIFICATIONS\n\nActiver les notifications\n\nNotifications email\n\nNotifications push\nPRÉFÉRENCES\n\nMode sombre\n\nLangue\nFrançais\n\nÀ PROPOS\n\nConditions d'utilisation\n\n\nPolitique de confidentialité\n\n\nAide & Support\n\n\nVersion\n1.0.0\nZONE DANGEREUSE\n\nSe déconnecter\n\nSupprimer mon compte",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "placeholder": ""
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "placeholder": ""
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "placeholder": ""
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "placeholder": ""
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "placeholder": ""
+        }
+      ],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-settings-375.png"
+    },
+    {
+      "name": "mobile-reset-password",
+      "width": 375,
+      "url": "http://127.0.0.1:16083/reset-password?token=audit",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "Bonjour\nUtilisateur\nUS\nSolde total\n0 XOF\n\nGroupes\n0\n\nMembres\n0\nActions rapides\n\nNouveau Groupe\n\nContribution\n\nStatistiques\nMes groupes\n\nAucun groupe\nCréez ou rejoignez un groupe pour commencer à épargner ensemble\n\nCréer un groupe\n\n\nAccueil\n\n\nGroupes\n\n\nTransactions\n\n\nNotifications\n\n\nProfil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/mobile-reset-password-375.png"
+    },
+    {
+      "name": "live-home",
+      "width": 375,
+      "url": "https://badenya.naimba.com/",
+      "title": "",
+      "scrollWidth": 375,
+      "bodyText": "Bonjour\nUtilisateur\nUS\nSolde total\n0 XOF\n\nGroupes\n0\n\nMembres\n0\nActions rapides\n\nNouveau Groupe\n\nContribution\n\nStatistiques\nMes groupes\n\nAucun groupe\nCréez ou rejoignez un groupe pour commencer à épargner ensemble\n\nCréer un groupe\n\n\nAccueil\n\n\nGroupes\n\n\nTransactions\n\n\nNotifications\n\n\nProfil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/live-home-375.png"
+    },
+    {
+      "name": "live-home",
+      "width": 768,
+      "url": "https://badenya.naimba.com/",
+      "title": "",
+      "scrollWidth": 768,
+      "bodyText": "Bonjour\nUtilisateur\nUS\nSolde total\n0 XOF\n\nGroupes\n0\n\nMembres\n0\nActions rapides\n\nNouveau Groupe\n\nContribution\n\nStatistiques\nMes groupes\n\nAucun groupe\nCréez ou rejoignez un groupe pour commencer à épargner ensemble\n\nCréer un groupe\n\n\nAccueil\n\n\nGroupes\n\n\nTransactions\n\n\nNotifications\n\n\nProfil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/live-home-768.png"
+    },
+    {
+      "name": "live-home",
+      "width": 1440,
+      "url": "https://badenya.naimba.com/",
+      "title": "",
+      "scrollWidth": 1440,
+      "bodyText": "Bonjour\nUtilisateur\nUS\nSolde total\n0 XOF\n\nGroupes\n0\n\nMembres\n0\nActions rapides\n\nNouveau Groupe\n\nContribution\n\nStatistiques\nMes groupes\n\nAucun groupe\nCréez ou rejoignez un groupe pour commencer à épargner ensemble\n\nCréer un groupe\n\n\nAccueil\n\n\nGroupes\n\n\nTransactions\n\n\nNotifications\n\n\nProfil",
+      "overflow": [],
+      "links": [],
+      "unlabelledInputs": [],
+      "buttons": 0,
+      "errors": [
+        "Cannot use 'import.meta' outside a module"
+      ],
+      "failures": [],
+      "screenshot": "/tmp/badenya-audit-screenshots/live-home-1440.png"
+    }
+  ],
+  "admin_and_accessibility": [
+    {
+      "check": "login with seeded session",
+      "status": 200
+    },
+    {
+      "route": "/dashboard",
+      "url": "http://127.0.0.1:16081/dashboard",
+      "width": 375,
+      "scrollWidth": 637,
+      "bodyText": "B\nBadenya\n📊\nTableau de bord\n👥\nUtilisateurs\n🏢\nGroupes\n💰\nTransactions\nTableau de bord\n\nBienvenue sur le panneau d'administration\n\nAudit Admin\n\naudit-admin@example.test\n\nA\nDéconnexion\n\nUtilisateurs\n\n3\n\n3 actifs\n\nGroupes\n\n2\n\n2 actifs\n\nTransactions\n\n2\n\nTotal\n\nVolume\n\n1,000,999\n\nXOF\n\nActivité récente (7 derniers jours)\n\nNouveaux utilisateurs\n\n3\n\nNouveaux groupes\n\n2\n\nNouvelles transactions\n\n2\n\nActions rapides\n👥\n\nGérer les utilisateurs\n\nVoir tous les utilisateurs\n\n🏢\n\nGérer les groupes\n\nVoir tous les groupes\n\n💰\n\nVoir les transactions\n\nHistorique complet",
+      "overflow": [
+        {
+          "tag": "DIV",
+          "text": "Tableau de bordBienvenue sur le panneau d'administrationAudi",
+          "right": 637
+        },
+        {
+          "tag": "HEADER",
+          "text": "Tableau de bordBienvenue sur le panneau d'administrationAudi",
+          "right": 637
+        },
+        {
+          "tag": "DIV",
+          "text": "Audit Adminaudit-admin@example.testADéconnexion",
+          "right": 613
+        },
+        {
+          "tag": "DIV",
+          "text": "Audit Adminaudit-admin@example.test",
+          "right": 434
+        }
+      ],
+      "a11y": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 1,
+          "examples": [
+            {
+              "html": "<button class=\"p-4 border-t border-gray-200 text-gray-500 hover:text-gray-700 transition-colors\">",
+              "summary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3,
+          "examples": [
+            {
+              "html": "<button class=\"bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors\">Déconnexion</button>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #e7000b, background color: #fef2f2, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "html": "<p class=\"text-sm text-green-600 mt-1 flex items-center gap-1\"><span class=\"w-2 h-2 bg-green-500 rounded-full\"></span>3 actifs</p>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.21 (foreground color: #00a63e, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/users",
+      "url": "http://127.0.0.1:16081/users",
+      "width": 375,
+      "scrollWidth": 396,
+      "bodyText": "Badenya Admin\n\nGestion des utilisateurs\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nUTILISATEUR\tEMAIL\tTÉLÉPHONE\tRÔLE\tSTATUT\tACTIONS\n\nA\nAudit Suspended\nInscrit le 06/10/2026\n\t\naudit-suspended@example.test\n\t\n+22370000003\n\tuser\tActif\tDétailsSuspendre\n\nA\nAudit Member\nInscrit le 06/10/2026\n\t\naudit-member@example.test\n\t\n+22370000002\n\tuser\tActif\tDétailsSuspendre\n\nA\nAudit Admin\nInscrit le 06/10/2026\n\t\naudit-admin@example.test\n\t\n+22370000001\n\tadmin\tActif\tDétailsSuspendre",
+      "overflow": [
+        {
+          "tag": "BUTTON",
+          "text": "Transactions",
+          "right": 396
+        },
+        {
+          "tag": "TABLE",
+          "text": "UtilisateurEmailTéléphoneRôleStatutActionsAAudit SuspendedIn",
+          "right": 995
+        },
+        {
+          "tag": "THEAD",
+          "text": "UtilisateurEmailTéléphoneRôleStatutActions",
+          "right": 995
+        },
+        {
+          "tag": "TR",
+          "text": "UtilisateurEmailTéléphoneRôleStatutActions",
+          "right": 995
+        }
+      ],
+      "a11y": []
+    },
+    {
+      "route": "/groups",
+      "url": "http://127.0.0.1:16081/groups",
+      "width": 375,
+      "scrollWidth": 396,
+      "bodyText": "Badenya Admin\n\nGestion des groupes\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nTous les types\nÉpargne\nTontine\nInvestissement\nAudit currency\nfamily\nActif\nSolde:\n0 XOF\nMembres:\n1\nCréé le:\n06/10/2026\nDétails\nArchiver\nTontine audit\nTontine\nActif\nSolde:\n11,000 XOF\nMembres:\n3\nCréé le:\n06/10/2026\nDétails\nArchiver",
+      "overflow": [
+        {
+          "tag": "BUTTON",
+          "text": "Transactions",
+          "right": 396
+        }
+      ],
+      "a11y": [
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": 1,
+          "examples": [
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les types</option><option value=\"savings\">Épargne</option><o",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/transactions",
+      "url": "http://127.0.0.1:16081/transactions",
+      "width": 375,
+      "scrollWidth": 396,
+      "bodyText": "Badenya Admin\n\nMonitoring des transactions\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nTous les statuts\nEn attente\nVérifié\nRejeté\nTous les types\nContribution\nDépense\nRetrait\nDATE\tUTILISATEUR\tGROUPE\tTYPE\tMONTANT\tSTATUT\tACTIONS\n06/10/2026\t\nAudit Member\naudit-member@example.test\n\tTontine audit\tDépense\t999,999 XOF\tcompleted\tSignaler\n06/10/2026\t\nAudit Member\naudit-member@example.test\n\tTontine audit\tContribution\t1,000 XOF\tcompleted\tSignaler",
+      "overflow": [
+        {
+          "tag": "BUTTON",
+          "text": "Transactions",
+          "right": 396
+        },
+        {
+          "tag": "TABLE",
+          "text": "DateUtilisateurGroupeTypeMontantStatutActions06/10/2026Audit",
+          "right": 986
+        },
+        {
+          "tag": "THEAD",
+          "text": "DateUtilisateurGroupeTypeMontantStatutActions",
+          "right": 986
+        },
+        {
+          "tag": "TR",
+          "text": "DateUtilisateurGroupeTypeMontantStatutActions",
+          "right": 986
+        }
+      ],
+      "a11y": [
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": 2,
+          "examples": [
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les statuts</option><option value=\"pending\">En attente</opti",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            },
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les types</option><option value=\"contribution\">Contribution<",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/groups/6ac4e03919c711934f7c13ff",
+      "url": "http://127.0.0.1:16081/groups/6ac4e03919c711934f7c13ff",
+      "width": 375,
+      "scrollWidth": 396,
+      "bodyText": "Badenya Admin\n\nDétails du groupe\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nRetour à la liste\nTontine audit\nTontine\nActif\nArchiver le groupe\nInformations\nSolde du groupe\n11,000 XOF\nNombre de membres\n3\nType de groupe\nTontine\nDate de création\n6 octobre 2026\nMembres (3)\nU\n\nUtilisateur\n\nadmin\nU\n\nUtilisateur\n\nmember\nU\n\nUtilisateur\n\nmember\nStatistiques\n\nCette section affichera des statistiques détaillées sur le groupe (transactions, contributions, etc.)",
+      "overflow": [
+        {
+          "tag": "BUTTON",
+          "text": "Transactions",
+          "right": 396
+        }
+      ],
+      "a11y": []
+    },
+    {
+      "route": "/users/6ac4e03919c711934f7c13f7",
+      "url": "http://127.0.0.1:16081/users/6ac4e03919c711934f7c13f7",
+      "width": 375,
+      "scrollWidth": 409,
+      "bodyText": "Badenya Admin\n\nDétails utilisateur\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nRetour à la liste\nA\nAudit Member\n\naudit-member@example.test\n\nuser\nActif\nSuspendre l'utilisateur\nInformations\nEmail\naudit-member@example.test\nTéléphone\n+22370000002\nRôle\nuser\nDate d'inscription\n6 octobre 2026 à 13:49\nActivité récente\n\nCette section affichera l'historique d'activité de l'utilisateur (groupes rejoints, transactions effectuées, etc.)\n\nGroupes\n\nCette section affichera les groupes auxquels l'utilisateur appartient.",
+      "overflow": [
+        {
+          "tag": "BUTTON",
+          "text": "Transactions",
+          "right": 396
+        },
+        {
+          "tag": "DIV",
+          "text": "Suspendre l'utilisateur",
+          "right": 409
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Suspendre l'utilisateur",
+          "right": 409
+        }
+      ],
+      "a11y": []
+    },
+    {
+      "route": "/dashboard",
+      "url": "http://127.0.0.1:16081/dashboard",
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyText": "B\nBadenya\n📊\nTableau de bord\n👥\nUtilisateurs\n🏢\nGroupes\n💰\nTransactions\nTableau de bord\n\nBienvenue sur le panneau d'administration\n\nAudit Admin\n\naudit-admin@example.test\n\nA\nDéconnexion\n\nUtilisateurs\n\n3\n\n3 actifs\n\nGroupes\n\n2\n\n2 actifs\n\nTransactions\n\n2\n\nTotal\n\nVolume\n\n1,000,999\n\nXOF\n\nActivité récente (7 derniers jours)\n\nNouveaux utilisateurs\n\n3\n\nNouveaux groupes\n\n2\n\nNouvelles transactions\n\n2\n\nActions rapides\n👥\n\nGérer les utilisateurs\n\nVoir tous les utilisateurs\n\n🏢\n\nGérer les groupes\n\nVoir tous les groupes\n\n💰\n\nVoir les transactions\n\nHistorique complet",
+      "overflow": [],
+      "a11y": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 1,
+          "examples": [
+            {
+              "html": "<button class=\"p-4 border-t border-gray-200 text-gray-500 hover:text-gray-700 transition-colors\">",
+              "summary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3,
+          "examples": [
+            {
+              "html": "<button class=\"bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors\">Déconnexion</button>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #e7000b, background color: #fef2f2, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "html": "<p class=\"text-sm text-green-600 mt-1 flex items-center gap-1\"><span class=\"w-2 h-2 bg-green-500 rounded-full\"></span>3 actifs</p>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.21 (foreground color: #00a63e, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/users",
+      "url": "http://127.0.0.1:16081/users",
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyText": "Badenya Admin\n\nGestion des utilisateurs\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nUTILISATEUR\tEMAIL\tTÉLÉPHONE\tRÔLE\tSTATUT\tACTIONS\n\nA\nAudit Suspended\nInscrit le 06/10/2026\n\t\naudit-suspended@example.test\n\t\n+22370000003\n\tuser\tActif\tDétailsSuspendre\n\nA\nAudit Member\nInscrit le 06/10/2026\n\t\naudit-member@example.test\n\t\n+22370000002\n\tuser\tActif\tDétailsSuspendre\n\nA\nAudit Admin\nInscrit le 06/10/2026\n\t\naudit-admin@example.test\n\t\n+22370000001\n\tadmin\tActif\tDétailsSuspendre",
+      "overflow": [
+        {
+          "tag": "TABLE",
+          "text": "UtilisateurEmailTéléphoneRôleStatutActionsAAudit SuspendedIn",
+          "right": 1003
+        },
+        {
+          "tag": "THEAD",
+          "text": "UtilisateurEmailTéléphoneRôleStatutActions",
+          "right": 1003
+        },
+        {
+          "tag": "TR",
+          "text": "UtilisateurEmailTéléphoneRôleStatutActions",
+          "right": 1003
+        },
+        {
+          "tag": "TH",
+          "text": "Statut",
+          "right": 837
+        }
+      ],
+      "a11y": []
+    },
+    {
+      "route": "/groups",
+      "url": "http://127.0.0.1:16081/groups",
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyText": "Badenya Admin\n\nGestion des groupes\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nTous les types\nÉpargne\nTontine\nInvestissement\nAudit currency\nfamily\nActif\nSolde:\n0 XOF\nMembres:\n1\nCréé le:\n06/10/2026\nDétails\nArchiver\nTontine audit\nTontine\nActif\nSolde:\n11,000 XOF\nMembres:\n3\nCréé le:\n06/10/2026\nDétails\nArchiver",
+      "overflow": [],
+      "a11y": [
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": 1,
+          "examples": [
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les types</option><option value=\"savings\">Épargne</option><o",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/transactions",
+      "url": "http://127.0.0.1:16081/transactions",
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyText": "Badenya Admin\n\nMonitoring des transactions\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nTous les statuts\nEn attente\nVérifié\nRejeté\nTous les types\nContribution\nDépense\nRetrait\nDATE\tUTILISATEUR\tGROUPE\tTYPE\tMONTANT\tSTATUT\tACTIONS\n06/10/2026\t\nAudit Member\naudit-member@example.test\n\tTontine audit\tDépense\t999,999 XOF\tcompleted\tSignaler\n06/10/2026\t\nAudit Member\naudit-member@example.test\n\tTontine audit\tContribution\t1,000 XOF\tcompleted\tSignaler",
+      "overflow": [
+        {
+          "tag": "TABLE",
+          "text": "DateUtilisateurGroupeTypeMontantStatutActions06/10/2026Audit",
+          "right": 994
+        },
+        {
+          "tag": "THEAD",
+          "text": "DateUtilisateurGroupeTypeMontantStatutActions",
+          "right": 994
+        },
+        {
+          "tag": "TR",
+          "text": "DateUtilisateurGroupeTypeMontantStatutActions",
+          "right": 994
+        },
+        {
+          "tag": "TH",
+          "text": "Statut",
+          "right": 889
+        }
+      ],
+      "a11y": [
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": 2,
+          "examples": [
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les statuts</option><option value=\"pending\">En attente</opti",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            },
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les types</option><option value=\"contribution\">Contribution<",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/groups/6ac4e03919c711934f7c13ff",
+      "url": "http://127.0.0.1:16081/groups/6ac4e03919c711934f7c13ff",
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyText": "Badenya Admin\n\nDétails du groupe\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nRetour à la liste\nTontine audit\nTontine\nActif\nArchiver le groupe\nInformations\nSolde du groupe\n11,000 XOF\nNombre de membres\n3\nType de groupe\nTontine\nDate de création\n6 octobre 2026\nMembres (3)\nU\n\nUtilisateur\n\nadmin\nU\n\nUtilisateur\n\nmember\nU\n\nUtilisateur\n\nmember\nStatistiques\n\nCette section affichera des statistiques détaillées sur le groupe (transactions, contributions, etc.)",
+      "overflow": [],
+      "a11y": []
+    },
+    {
+      "route": "/users/6ac4e03919c711934f7c13f7",
+      "url": "http://127.0.0.1:16081/users/6ac4e03919c711934f7c13f7",
+      "width": 768,
+      "scrollWidth": 768,
+      "bodyText": "Badenya Admin\n\nDétails utilisateur\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nRetour à la liste\nA\nAudit Member\n\naudit-member@example.test\n\nuser\nActif\nSuspendre l'utilisateur\nInformations\nEmail\naudit-member@example.test\nTéléphone\n+22370000002\nRôle\nuser\nDate d'inscription\n6 octobre 2026 à 13:49\nActivité récente\n\nCette section affichera l'historique d'activité de l'utilisateur (groupes rejoints, transactions effectuées, etc.)\n\nGroupes\n\nCette section affichera les groupes auxquels l'utilisateur appartient.",
+      "overflow": [],
+      "a11y": []
+    },
+    {
+      "route": "/dashboard",
+      "url": "http://127.0.0.1:16081/dashboard",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "bodyText": "B\nBadenya\n📊\nTableau de bord\n👥\nUtilisateurs\n🏢\nGroupes\n💰\nTransactions\nTableau de bord\n\nBienvenue sur le panneau d'administration\n\nAudit Admin\n\naudit-admin@example.test\n\nA\nDéconnexion\n\nUtilisateurs\n\n3\n\n3 actifs\n\nGroupes\n\n2\n\n2 actifs\n\nTransactions\n\n2\n\nTotal\n\nVolume\n\n1,000,999\n\nXOF\n\nActivité récente (7 derniers jours)\n\nNouveaux utilisateurs\n\n3\n\nNouveaux groupes\n\n2\n\nNouvelles transactions\n\n2\n\nActions rapides\n👥\n\nGérer les utilisateurs\n\nVoir tous les utilisateurs\n\n🏢\n\nGérer les groupes\n\nVoir tous les groupes\n\n💰\n\nVoir les transactions\n\nHistorique complet",
+      "overflow": [],
+      "a11y": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "nodes": 1,
+          "examples": [
+            {
+              "html": "<button class=\"p-4 border-t border-gray-200 text-gray-500 hover:text-gray-700 transition-colors\">",
+              "summary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3,
+          "examples": [
+            {
+              "html": "<button class=\"bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition-colors\">Déconnexion</button>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.36 (foreground color: #e7000b, background color: #fef2f2, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "html": "<p class=\"text-sm text-green-600 mt-1 flex items-center gap-1\"><span class=\"w-2 h-2 bg-green-500 rounded-full\"></span>3 actifs</p>",
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.21 (foreground color: #00a63e, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/users",
+      "url": "http://127.0.0.1:16081/users",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "bodyText": "Badenya Admin\n\nGestion des utilisateurs\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nUTILISATEUR\tEMAIL\tTÉLÉPHONE\tRÔLE\tSTATUT\tACTIONS\n\nA\nAudit Suspended\nInscrit le 06/10/2026\n\t\naudit-suspended@example.test\n\t\n+22370000003\n\tuser\tActif\tDétailsSuspendre\n\nA\nAudit Member\nInscrit le 06/10/2026\n\t\naudit-member@example.test\n\t\n+22370000002\n\tuser\tActif\tDétailsSuspendre\n\nA\nAudit Admin\nInscrit le 06/10/2026\n\t\naudit-admin@example.test\n\t\n+22370000001\n\tadmin\tActif\tDétailsSuspendre",
+      "overflow": [],
+      "a11y": []
+    },
+    {
+      "route": "/groups",
+      "url": "http://127.0.0.1:16081/groups",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "bodyText": "Badenya Admin\n\nGestion des groupes\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nTous les types\nÉpargne\nTontine\nInvestissement\nAudit currency\nfamily\nActif\nSolde:\n0 XOF\nMembres:\n1\nCréé le:\n06/10/2026\nDétails\nArchiver\nTontine audit\nTontine\nActif\nSolde:\n11,000 XOF\nMembres:\n3\nCréé le:\n06/10/2026\nDétails\nArchiver",
+      "overflow": [],
+      "a11y": [
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": 1,
+          "examples": [
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les types</option><option value=\"savings\">Épargne</option><o",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/transactions",
+      "url": "http://127.0.0.1:16081/transactions",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "bodyText": "Badenya Admin\n\nMonitoring des transactions\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nTous les statuts\nEn attente\nVérifié\nRejeté\nTous les types\nContribution\nDépense\nRetrait\nDATE\tUTILISATEUR\tGROUPE\tTYPE\tMONTANT\tSTATUT\tACTIONS\n06/10/2026\t\nAudit Member\naudit-member@example.test\n\tTontine audit\tDépense\t999,999 XOF\tcompleted\tSignaler\n06/10/2026\t\nAudit Member\naudit-member@example.test\n\tTontine audit\tContribution\t1,000 XOF\tcompleted\tSignaler",
+      "overflow": [],
+      "a11y": [
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "nodes": 2,
+          "examples": [
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les statuts</option><option value=\"pending\">En attente</opti",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            },
+            {
+              "html": "<select class=\"px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"><option value=\"\">Tous les types</option><option value=\"contribution\">Contribution<",
+              "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/groups/6ac4e03919c711934f7c13ff",
+      "url": "http://127.0.0.1:16081/groups/6ac4e03919c711934f7c13ff",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "bodyText": "Badenya Admin\n\nDétails du groupe\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nRetour à la liste\nTontine audit\nTontine\nActif\nArchiver le groupe\nInformations\nSolde du groupe\n11,000 XOF\nNombre de membres\n3\nType de groupe\nTontine\nDate de création\n6 octobre 2026\nMembres (3)\nU\n\nUtilisateur\n\nadmin\nU\n\nUtilisateur\n\nmember\nU\n\nUtilisateur\n\nmember\nStatistiques\n\nCette section affichera des statistiques détaillées sur le groupe (transactions, contributions, etc.)",
+      "overflow": [],
+      "a11y": []
+    },
+    {
+      "route": "/users/6ac4e03919c711934f7c13f7",
+      "url": "http://127.0.0.1:16081/users/6ac4e03919c711934f7c13f7",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "bodyText": "Badenya Admin\n\nDétails utilisateur\n\nDéconnexion\nTableau de bord\nUtilisateurs\nGroupes\nTransactions\nRetour à la liste\nA\nAudit Member\n\naudit-member@example.test\n\nuser\nActif\nSuspendre l'utilisateur\nInformations\nEmail\naudit-member@example.test\nTéléphone\n+22370000002\nRôle\nuser\nDate d'inscription\n6 octobre 2026 à 13:49\nActivité récente\n\nCette section affichera l'historique d'activité de l'utilisateur (groupes rejoints, transactions effectuées, etc.)\n\nGroupes\n\nCette section affichera les groupes auxquels l'utilisateur appartient.",
+      "overflow": [],
+      "a11y": []
+    },
+    {
+      "check": "reload protected groups",
+      "url": "http://127.0.0.1:16081/dashboard"
+    },
+    {
+      "check": "logout",
+      "url": "http://127.0.0.1:16081/login",
+      "text": "B\nBadenya Admin\n\nConnectez-vous à votre tableau de bord\n\nEmail\nMot de passe\nSe connecter\n\n🔒 Accès réservé aux administrateurs"
+    },
+    {
+      "check": "landing mobile menu",
+      "expanded": "true"
+    },
+    {
+      "check": "keyboard focus",
+      "focus": "<a href=\"#features\" class=\"block text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors px-4 py-3 rounded-xl font-medium\">Fonctionnalités</a>"
+    }
+  ],
+  "stable_landing_accessibility": [
+    {
+      "route": "/",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "nodes": 10,
+          "impact": "serious",
+          "examples": [
+            "<span>Carrières</span>",
+            "<span class=\"ml-2 text-xs text-gray-600\">(bientôt)</span>"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/about",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "nodes": 10,
+          "impact": "serious",
+          "examples": [
+            "<span>Carrières</span>",
+            "<span class=\"ml-2 text-xs text-gray-600\">(bientôt)</span>"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/contact",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "nodes": 10,
+          "impact": "serious",
+          "examples": [
+            "<span>Carrières</span>",
+            "<span class=\"ml-2 text-xs text-gray-600\">(bientôt)</span>"
+          ]
+        },
+        {
+          "id": "link-name",
+          "nodes": 3,
+          "impact": "serious",
+          "examples": [
+            "<a href=\"https://facebook.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"bg-white p-3 rounded-lg hover:bg-blue-50 transition shadow-md\">",
+            "<a href=\"https://twitter.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"bg-white p-3 rounded-lg hover:bg-blue-50 transition shadow-md\">"
+          ]
+        }
+      ]
+    }
+  ]
+}

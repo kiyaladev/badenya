@@ -52,7 +52,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       // Update local state
       const notifications = get().notifications.map(n =>
-        n._id === notificationId ? { ...n, isRead: true, readAt: new Date() } : n
+        n._id === notificationId ? { ...n, isRead: true, readAt: new Date().toISOString() } : n
       );
       const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -73,7 +73,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const notifications = get().notifications.map(n => ({
         ...n,
         isRead: true,
-        readAt: new Date(),
+        readAt: new Date().toISOString(),
       }));
 
       set({ notifications, unreadCount: 0 });

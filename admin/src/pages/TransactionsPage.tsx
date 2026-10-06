@@ -1,10 +1,14 @@
+import ConfirmationModal from '../components/ConfirmationModal';
+import { Toast } from '../components/Feedback';
+import { ErrorMessage } from '../components/Feedback';
+import Pagination from '../components/Pagination';
+import { transactionStatusLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import adminService, { type Transaction } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
-import { useFocusTrap } from '../hooks/useFocusTrap';
 import AdminLayout from '../components/AdminLayout';
 
 export default function TransactionsPage() {
@@ -22,7 +26,6 @@ export default function TransactionsPage() {
   const [flagModal, setFlagModal] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState('');
   const [flagLoading, setFlagLoading] = useState(false);
-  const flagModalRef = useFocusTrap<HTMLDivElement>(!!flagModal);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const limit = 10;
 
@@ -83,8 +86,8 @@ export default function TransactionsPage() {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
-      verified: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
+      completed: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -93,12 +96,12 @@ export default function TransactionsPage() {
     const types: Record<string, string> = {
       contribution: 'Contribution',
       expense: 'Dépense',
-      withdrawal: 'Retrait',
+      refund: 'Remboursement', adjustment: 'Ajustement',
     };
     return types[type] || type;
   };
 
-  const totalPages = Math.ceil(totalTransactions / limit);
+
 
   return (
     <AdminLayout subtitle="Monitoring des transactions">
@@ -116,6 +119,7 @@ export default function TransactionsPage() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <select
+            aria-label="Statut de transaction"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -125,10 +129,11 @@ export default function TransactionsPage() {
           >
             <option value="">Tous les statuts</option>
             <option value="pending">En attente</option>
-            <option value="verified">Vérifié</option>
-            <option value="rejected">Rejeté</option>
+            <option value="completed">Terminée</option>
+            <option value="failed">Échouée</option><option value="cancelled">Annulée</option>
           </select>
           <select
+            aria-label="Type de transaction"
             value={typeFilter}
             onChange={(e) => {
               setTypeFilter(e.target.value);
@@ -139,40 +144,36 @@ export default function TransactionsPage() {
             <option value="">Tous les types</option>
             <option value="contribution">Contribution</option>
             <option value="expense">Dépense</option>
-            <option value="withdrawal">Retrait</option>
+            <option value="refund">Remboursement</option><option value="adjustment">Ajustement</option>
           </select>
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            <p>{error}</p>
-          </div>
-        )}
+        {error && <ErrorMessage message={error} />}
 
         {/* Transactions Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div tabIndex={0} role="region" aria-label="Tableau des transactions" className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Utilisateur
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Groupe
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Montant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -186,7 +187,7 @@ export default function TransactionsPage() {
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-600">
                     Aucune transaction trouvée
                   </td>
                 </tr>
@@ -204,7 +205,7 @@ export default function TransactionsPage() {
                       <div className="text-sm font-medium text-gray-900">
                         {typeof transaction.user === 'object' ? transaction.user?.fullName || 'N/A' : 'N/A'}
                       </div>
-                      <div className="text-sm text-gray-500">{typeof transaction.user === 'object' && transaction.user?.email}</div>
+                      <div className="text-sm text-gray-600">{typeof transaction.user === 'object' && transaction.user?.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {typeof transaction.group === 'object' ? transaction.group?.name : '-'}
@@ -215,12 +216,13 @@ export default function TransactionsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {transaction.amount.toLocaleString()} XOF
+                      {transaction.amount.toLocaleString('fr-FR')} {transaction.currency || 'XOF'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
-                        {transaction.status}
+                        {transactionStatusLabels[transaction.status] || transaction.status}
                       </span>
+                      {(transaction.flagged || transaction.flag) && <span className="block text-xs text-red-800">Signalée</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -237,57 +239,21 @@ export default function TransactionsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Affichage de {(currentPage - 1) * limit + 1} à {Math.min(currentPage * limit, totalTransactions)} sur {totalTransactions} transactions
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Précédent
-              </button>
-              <span className="px-4 py-2 text-sm text-gray-700">
-                Page {currentPage} sur {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Suivant
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination page={currentPage} limit={limit} total={totalTransactions} onChange={setCurrentPage} />
 
       {/* Notification Toast */}
-      {notification && (
-        <div role="status" aria-live="polite" className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
-          <div className="flex items-center justify-between">
-            <p>{notification.message}</p>
-            <button onClick={() => setNotification(null)} className="ml-4 text-gray-400 hover:text-gray-600">✕</button>
-          </div>
-        </div>
-      )}
+      {notification && <Toast notification={notification} onClose={() => setNotification(null)} />}
 
       {/* Flag Transaction Modal */}
       {flagModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div ref={flagModalRef} className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="flag-transaction-title">
-            <h3 id="flag-transaction-title" className="text-lg font-semibold text-gray-900 mb-2">Signaler la transaction</h3>
+        <ConfirmationModal id="flag-transaction-title" title="Signaler la transaction" onClose={() => { setFlagModal(null); setFlagReason(''); }}>
             <p className="text-gray-600 mb-4">Veuillez indiquer la raison du signalement :</p>
             <input
               type="text"
               value={flagReason}
               onChange={(e) => setFlagReason(e.target.value)}
               placeholder="Raison du signalement"
+              aria-label="Raison du signalement"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-6"
               autoFocus
             />
@@ -306,8 +272,7 @@ export default function TransactionsPage() {
                 {flagLoading ? 'Signalement...' : 'Signaler'}
               </button>
             </div>
-          </div>
-        </div>
+        </ConfirmationModal>
       )}
     </AdminLayout>
   );

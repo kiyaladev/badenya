@@ -1,30 +1,159 @@
+import { Alert } from '@/services/dialog.service';
+import { themedStyles } from '@/utils/themedStyles';
+import { useThemeStore } from '@/store/themeStore';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Keyboard,
+  StyleSheet,
+  ViewStyle,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import authService from '@/services/auth.service';
+import { Button, Input, Icon } from '@/components/ui';
+
+const baseStyles = StyleSheet.create({
+  success: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#dbeafe',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 10,
+  },
+  successText: {
+    fontSize: 15,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  keyboard: {
+    flex: 1,
+  },
+  scroll: {
+    backgroundColor: '#ffffff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  header: {
+    paddingBottom: 56,
+    paddingHorizontal: 24,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 20,
+  },
+  backIcon: {
+    marginRight: 6,
+  },
+  backText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  logo: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    color: '#ffffff',
+    fontSize: 26,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  formCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -32,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  description: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  submitButton: {
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  footer: {
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#0284c7',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
 
 export default function ForgotPasswordScreen() {
+  const styles = themedStyles(
+    baseStyles,
+    useThemeStore(state => state.colors)
+  );
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const headerStyle: ViewStyle = {
+    ...styles.header,
+    paddingTop: insets.top + 20,
+  };
 
   const validateEmail = () => {
     if (!email) {
       setError('Email requis');
       return false;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Email invalide');
       return false;
     }
@@ -33,19 +162,20 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleResetPassword = async () => {
+    Keyboard.dismiss();
     if (!validateEmail()) {
       return;
     }
 
     setIsLoading(true);
     try {
-      await authService.forgotPassword(email);
+      await authService.forgotPassword(email.trim());
       setEmailSent(true);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const errorObj = err as { response?: { data?: { message?: string } } };
       Alert.alert(
         'Erreur',
-        error.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.'
+        errorObj.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.'
       );
     } finally {
       setIsLoading(false);
@@ -54,18 +184,16 @@ export default function ForgotPasswordScreen() {
 
   if (emailSent) {
     return (
-      <View className="flex-1 bg-white px-6 justify-center items-center">
-        <Text className="text-6xl mb-6">📧</Text>
-        <Text className="text-2xl font-bold text-gray-800 text-center mb-4">Email envoyé !</Text>
-        <Text className="text-base text-gray-600 text-center mb-8">
-          Vérifiez votre boîte mail pour réinitialiser votre mot de passe.
+      <View style={styles.success}>
+        <View style={styles.successIcon}>
+          <Icon name="envelope-open" size={40} color="#0284c7" />
+        </View>
+        <Text style={styles.successTitle}>Demande prise en compte</Text>
+        <Text style={styles.successText}>
+          Si un compte correspond, votre demande a été prise en compte. Si aucun email n’arrive,
+          réessayez plus tard.
         </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="bg-primary-600 py-4 px-8 rounded-lg"
-        >
-          <Text className="text-white text-base font-bold">Retour à la connexion</Text>
-        </TouchableOpacity>
+        <Button title="Retour à la connexion" onPress={() => router.back()} fullWidth size="lg" />
       </View>
     );
   }
@@ -73,53 +201,72 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
+      style={styles.keyboard}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="bg-white"
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-6 pt-16">
-          {/* Header */}
-          <View className="mb-10">
-            <TouchableOpacity onPress={() => router.back()} className="mb-6">
-              <Text className="text-primary-600 text-base font-medium">← Retour</Text>
-            </TouchableOpacity>
-
-            <Text className="text-4xl font-bold text-gray-800 mb-2">Mot de passe oublié ?</Text>
-            <Text className="text-lg text-gray-600">
-              Entrez votre email pour recevoir un lien de réinitialisation
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={text => {
-                setEmail(text);
-                setError('');
-              }}
-              placeholder="exemple@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="bg-gray-100 px-4 py-3 rounded-lg text-base"
-            />
-            {error ? <Text className="text-red-500 text-sm mt-1">{error}</Text> : null}
-          </View>
-
-          {/* Reset Button */}
-          <TouchableOpacity
-            onPress={handleResetPassword}
-            disabled={isLoading}
-            className={`py-4 rounded-lg ${isLoading ? 'bg-primary-400' : 'bg-primary-600'}`}
-          >
-            <Text className="text-white text-center text-base font-bold">
-              {isLoading ? 'Envoi...' : 'Envoyer le lien'}
-            </Text>
+        {/* Header with gradient accent */}
+        <LinearGradient
+          colors={['#0284c7', '#0369a1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={headerStyle}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Icon name="arrow-left" size={14} color="#ffffff" style={styles.backIcon} />
+            <Text style={styles.backText}>Retour</Text>
           </TouchableOpacity>
+
+          <View style={styles.headerContent}>
+            <View style={styles.logo}>
+              <Icon name="key" size={30} color="#ffffff" />
+            </View>
+            <Text style={styles.title}>Mot de passe oublié ?</Text>
+            <Text style={styles.subtitle}>Recevez un lien de réinitialisation sécurisé</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Form Card */}
+        <View style={styles.formCard}>
+          <Text style={styles.description}>
+            Entrez l'adresse email associée à votre compte Badenya pour recevoir les instructions de
+            réinitialisation.
+          </Text>
+
+          <Input
+            label="Adresse email"
+            value={email}
+            onChangeText={text => {
+              setEmail(text);
+              setError('');
+            }}
+            placeholder="exemple@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={error}
+            leftIcon={<Icon name="envelope" size={18} color="#9ca3af" />}
+          />
+
+          <Button
+            title="Envoyer le lien"
+            onPress={handleResetPassword}
+            loading={isLoading}
+            fullWidth
+            size="lg"
+            iconName="paper-plane"
+            iconPosition="right"
+            style={styles.submitButton}
+          />
+
+          <View style={styles.footer}>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Text style={styles.footerText}>Retour à la connexion</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

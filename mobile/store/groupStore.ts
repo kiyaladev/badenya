@@ -39,7 +39,14 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const group = await groupService.getGroupById(groupId);
-      set({ currentGroup: group, isLoading: false });
+      const { groups } = get();
+      set({
+        currentGroup: group,
+        groups: groups.some(g => g._id === groupId)
+          ? groups.map(g => (g._id === groupId ? group : g))
+          : [...groups, group],
+        isLoading: false,
+      });
     } catch (error) {
       const errorMessage = getErrorMessage(error, 'Erreur lors du chargement du groupe');
       set({ error: errorMessage, isLoading: false });

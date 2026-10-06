@@ -19,7 +19,7 @@
         "simulator": false
       },
       "env": {
-        "API_URL": "https://api.badenya.com/api"
+        "EXPO_PUBLIC_API_URL": "https://api.badenya.app/api/v1"
       }
     },
     "production": {
@@ -30,7 +30,7 @@
         "simulator": false
       },
       "env": {
-        "API_URL": "https://api.badenya.com/api",
+        "EXPO_PUBLIC_API_URL": "https://api.badenya.app/api/v1",
         "NODE_ENV": "production"
       }
     }

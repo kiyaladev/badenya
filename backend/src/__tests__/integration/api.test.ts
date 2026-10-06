@@ -5,13 +5,13 @@ const app = createTestApp();
 
 describe('API Health & Basic Routes', () => {
   describe('GET /health', () => {
-    it('should return 200 OK', async () => {
+    it('reports unavailable database instead of false readiness', async () => {
       const response = await request(app).get('/health');
 
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe('success');
-      expect(response.body.message).toBe('Badenya API is running');
-      expect(response.body.timestamp).toBeDefined();
+      expect(response.status).toBe(503);
+      expect(response.body.status).toBe('error');
+      expect(response.body.database).toBe(false);
+      expect(response.body.services).toBeDefined();
     });
 
     it('should return valid timestamp', async () => {
@@ -27,9 +27,8 @@ describe('API Health & Basic Routes', () => {
     it('should handle root API route', async () => {
       const response = await request(app).get('/api/v1');
 
-      // Since there's no explicit handler for /api/v1 in routes,
-      // it will return 404 (after hitting the router)
-      expect(response.status).toBeDefined();
+      expect(response.status).toBe(200);
+      expect(response.body.version).toBe('1.0.0');
     });
   });
 
@@ -53,10 +52,11 @@ describe('API Health & Basic Routes', () => {
     it('should accept JSON body', async () => {
       const response = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: 'test@example.com', password: 'test' })
+        .send({ email: 'test@example.com' })
         .set('Content-Type', 'application/json');
 
-      // We expect an error since we don't have DB, but it should accept the JSON
+      expect(response.status).toBe(400);
+      // Parsed JSON is validated before any database lookup.
       expect(response.headers['content-type']).toMatch(/json/);
     });
   });

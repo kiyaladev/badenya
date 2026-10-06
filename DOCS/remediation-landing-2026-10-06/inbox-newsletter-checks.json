@@ -1,0 +1,30 @@
+{
+  "results": [
+    {
+      "width": 375,
+      "path": "/inbox",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 768,
+      "path": "/inbox",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "path": "/inbox",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "path": "/newsletter/unsubscribe",
+      "overflow": false,
+      "violations": []
+    }
+  ],
+  "handled": true,
+  "newsletterToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "api": "mocked"
+}

@@ -2,12 +2,20 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Alert } from 'react-native';
 import logger from './logger';
+import api from './api';
 
 export interface ImageInfo {
   uri: string;
   name: string;
   type: string;
   size?: number;
+}
+
+export interface UploadedImage {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
 }
 
 /**
@@ -250,6 +258,25 @@ export const imageToBase64 = async (uri: string): Promise<string | null> => {
   }
 };
 
+/** Upload a local image to the authenticated API and return its public URL. */
+export const uploadImage = async (image: ImageInfo): Promise<UploadedImage> => {
+  const base64 = await imageToBase64(image.uri);
+  if (!base64) {
+    throw new Error(`Impossible de lire l'image ${image.name}`);
+  }
+
+  const response = await api.post('/uploads/image', {
+    data: `data:${image.type};base64,${base64}`,
+    filename: image.name,
+    mimeType: image.type,
+  });
+  const file = response.data?.data?.file;
+  if (!file?.url) {
+    throw new Error('Le serveur n’a pas retourné l’URL du fichier');
+  }
+  return file as UploadedImage;
+};
+
 export default {
   requestCameraPermissions,
   requestMediaLibraryPermissions,
@@ -260,4 +287,5 @@ export default {
   deleteImageLocally,
   getImageSize,
   imageToBase64,
+  uploadImage,
 };

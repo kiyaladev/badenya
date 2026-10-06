@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as reportController from '../controllers/report.controller';
 import { authenticate } from '../middleware/auth';
+import { requireGroupMember } from '../middleware/groupMember';
 import { query } from 'express-validator';
 
 const router = Router();
@@ -188,6 +189,7 @@ router.use(authenticate);
  */
 router.get(
   '/:groupId/reports/summary',
+  requireGroupMember(),
   [
     query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
     query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
@@ -201,6 +203,7 @@ router.get(
  */
 router.get(
   '/:groupId/reports/pdf',
+  requireGroupMember(),
   [
     query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
     query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
@@ -214,6 +217,7 @@ router.get(
  */
 router.get(
   '/:groupId/reports/excel',
+  requireGroupMember(),
   [
     query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
     query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
@@ -227,6 +231,7 @@ router.get(
  */
 router.get(
   '/:groupId/reports/monthly/:year/:month',
+  requireGroupMember(),
   reportController.getMonthlyReport
 );
 

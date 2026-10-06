@@ -26,12 +26,15 @@ cp .env.example .env
 ```
 
 Variables requises:
+
 - `MONGODB_URI` - URL de connexion MongoDB locale (par défaut: `mongodb://localhost:27017/badenya`)
 - `JWT_SECRET` - Secret pour les access tokens
 - `JWT_REFRESH_SECRET` - Secret pour les refresh tokens
 - `PORT` - Port du serveur (défaut: 5000)
 
 **Important**: Ce projet utilise MongoDB en local pour le développement. Assurez-vous que MongoDB est installé et démarré sur votre machine avant de lancer le serveur.
+
+Si l'instance MongoDB active l'authentification, renseignez une URI avec ses identifiants, par exemple `mongodb://<user>:<password>@localhost:27017/badenya?authSource=admin`, avant d'utiliser le serveur ou le seeder.
 
 ### Vérifier MongoDB
 
@@ -47,6 +50,24 @@ npm run dev
 ```
 
 Le serveur démarre sur http://localhost:5000 et se connecte automatiquement à MongoDB local.
+
+### Données de démonstration
+
+Le seeder est idempotent : il recrée uniquement les données marquées comme démonstration et ne supprime pas les autres collections.
+
+```bash
+npm run seed
+```
+
+Pour une autre base, passez explicitement `MONGODB_URI` : `MONGODB_URI=mongodb://localhost:27018/badenya npm run seed`.
+
+Comptes de test par défaut : `admin@badenya.test`, `fatou@badenya.test`, `moussa@badenya.test`, `aicha@badenya.test` et `koffi@badenya.test` avec le mot de passe `BadenyaDemo123!`. Le mot de passe peut être remplacé avec `SEED_DEMO_PASSWORD`.
+
+La commande destructive est volontairement protégée et ne doit être utilisée qu'en environnement de test :
+
+```bash
+SEED_ALLOW_RESET=true npm run seed:reset
+```
 
 ## Production
 
@@ -92,12 +113,15 @@ src/
 ## Endpoints API
 
 ### Health Check
+
 - `GET /health` - Vérifier l'état de l'API
 
 ### API v1
+
 - `GET /api/v1` - Information de version
 
 ### Authentification
+
 - `POST /api/v1/auth/register` - Inscription
 - `POST /api/v1/auth/login` - Connexion
 - `POST /api/v1/auth/refresh-token` - Rafraîchir le token
@@ -109,6 +133,7 @@ src/
 - `POST /api/v1/auth/reset-password` - Réinitialiser le mot de passe
 
 ### Groupes
+
 - `POST /api/v1/groups` - Créer un groupe
 - `GET /api/v1/groups` - Liste des groupes
 - `GET /api/v1/groups/:id` - Détails d'un groupe
@@ -119,6 +144,7 @@ src/
 - `PUT /api/v1/groups/:id/members/:userId/role` - Modifier le rôle
 
 ### Transactions
+
 - `POST /api/v1/groups/:groupId/transactions` - Créer une transaction
 - `GET /api/v1/groups/:groupId/transactions` - Liste des transactions
 - `GET /api/v1/transactions/:id` - Détails d'une transaction
@@ -126,6 +152,7 @@ src/
 - `DELETE /api/v1/transactions/:id` - Annuler une transaction
 
 ### Propositions
+
 - `POST /api/v1/groups/:groupId/proposals` - Créer une proposition
 - `GET /api/v1/groups/:groupId/proposals` - Liste des propositions
 - `GET /api/v1/proposals/:id` - Détails d'une proposition
@@ -139,6 +166,8 @@ Pour plus de détails, consultez [API.md](./API.md).
 
 - `npm run dev` - Démarrer en mode développement
 - `npm run build` - Compiler TypeScript
+- `npm run seed` - Charger les données de démonstration
+- `npm run seed:reset` - Réinitialiser puis charger les données de démonstration (autorisation explicite requise)
 - `npm start` - Démarrer en production
 - `npm run lint` - Vérifier le code
 - `npm run format` - Formater le code
@@ -156,4 +185,3 @@ Pour plus de détails, consultez [API.md](./API.md).
 ## License
 
 ISC
-

@@ -48,14 +48,14 @@ export interface IVote extends Document {
   updatedAt: Date;
   
   // Methods
-  calculateResults(): {
+  calculateResults(eligibleMembers?: number): {
     winningOptionId?: string;
     totalVotes: number;
     participationRate: number;
     votesPerOption: Map<string, number>;
     decidedAt: Date;
   };
-  closeVote(): Promise<IVote>;
+  closeVote(eligibleMembers?: number): Promise<IVote>;
   hasUserVoted(userId: string): boolean;
   canUserVote(userId: string): boolean;
 }
@@ -165,6 +165,7 @@ const VoteSchema: Schema = new Schema(
   },
   {
     timestamps: true,
+    optimisticConcurrency: true,
   }
 );
 
@@ -174,43 +175,28 @@ VoteSchema.index({ endDate: 1 });
 VoteSchema.index({ 'votes.userId': 1 });
 
 // Methods
-VoteSchema.methods.calculateResults = function () {
+VoteSchema.methods.calculateResults = function (eligibleMembers = 0) {
   const vote = this as IVote;
-  const votesPerOption = new Map<string, number>();
-  
-  // Count votes per option
-  vote.votes.forEach((v) => {
-    const count = votesPerOption.get(v.optionId) || 0;
-    votesPerOption.set(v.optionId, count + 1);
-  });
-  
-  // Find winning option (most votes)
-  let winningOptionId: string | undefined;
-  let maxVotes = 0;
-  
-  votesPerOption.forEach((count, optionId) => {
-    if (count > maxVotes) {
-      maxVotes = count;
-      winningOptionId = optionId;
-    }
-  });
-  
-  // Calculate participation rate (would need total group members)
-  const totalVotes = vote.votes.length;
-  
-  return {
-    winningOptionId,
-    totalVotes,
-    participationRate: 0, // To be calculated with group member count
-    votesPerOption,
-    decidedAt: new Date(),
-  };
+  const votesPerOption = new Map<string, number>(vote.options.map(option => [option.id, 0]));
+  for (const ballot of vote.votes) {
+    if (votesPerOption.has(ballot.optionId)) votesPerOption.set(ballot.optionId, (votesPerOption.get(ballot.optionId) || 0) + 1);
+  }
+  const totalVotes = [...votesPerOption.values()].reduce((sum, count) => sum + count, 0);
+  const participationRate = eligibleMembers > 0 ? Math.min(100, totalVotes / eligibleMembers * 100) : 0;
+  const maxVotes = Math.max(0, ...votesPerOption.values());
+  const leaders = [...votesPerOption].filter(([, count]) => count === maxVotes && count > 0);
+  let winningOptionId = leaders.length === 1 ? leaders[0][0] : undefined;
+  if (vote.type === 'quorum' && participationRate < (vote.quorumPercentage ?? 50)) winningOptionId = undefined;
+  if (vote.type === 'unanimous' && (eligibleMembers === 0 || totalVotes !== eligibleMembers || maxVotes !== eligibleMembers)) winningOptionId = undefined;
+  return { winningOptionId, totalVotes, participationRate, votesPerOption, decidedAt: new Date() };
 };
 
-VoteSchema.methods.closeVote = async function () {
+VoteSchema.methods.closeVote = async function (eligibleMembers = 0) {
   const vote = this as IVote;
+  if (vote.status === 'closed' || vote.status === 'executed') return vote;
   vote.status = 'closed';
-  vote.result = vote.calculateResults();
+  vote.result = vote.calculateResults(eligibleMembers);
+  vote.options.forEach(option => { option.votes = vote.result?.votesPerOption.get(option.id) || 0; });
   return vote.save();
 };
 
@@ -227,7 +213,7 @@ VoteSchema.methods.canUserVote = function (userId: string): boolean {
   
   // Check if voting period is valid
   const now = new Date();
-  if (now < vote.startDate || now > vote.endDate) return false;
+  if (now < vote.startDate || now >= vote.endDate) return false;
   
   // Check if user already voted and can't change
   if (this.hasUserVoted(userId) && !vote.allowChangeVote) return false;

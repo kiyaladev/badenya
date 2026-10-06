@@ -1,8 +1,9 @@
+import { useThemeStore } from '@/store/themeStore';
 import React from 'react';
-import { View, Text, TouchableOpacity, ViewStyle, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, TextStyle, ViewStyle, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
+import Icon from './Icon';
 
 interface HeaderProps {
   title: string;
@@ -23,10 +24,13 @@ export default function Header({
   variant = 'default',
   size = 'md',
 }: HeaderProps) {
+  const colors = useThemeStore(state => state.colors);
   const insets = useSafeAreaInsets();
 
-  const heights = { sm: 56, md: 64, lg: 80 };
   const titleSizes = { sm: 18, md: 20, lg: 24 };
+  const isLight = variant === 'gradient';
+  const textColor = isLight ? '#ffffff' : colors.text;
+  const subtitleColor = isLight ? 'rgba(255,255,255,0.9)' : colors.textSecondary;
 
   const headerStyle: ViewStyle = {
     paddingTop: insets.top + 8,
@@ -36,52 +40,64 @@ export default function Header({
     alignItems: 'center',
     justifyContent: 'space-between',
   };
-
-  const isLight = variant === 'gradient';
-  const textColor = isLight ? '#ffffff' : '#111827';
-  const subtitleColor = isLight ? 'rgba(255,255,255,0.9)' : '#6b7280';
+  const leftSectionStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  };
+  const backButtonStyle: ViewStyle = {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderRadius: 18,
+    backgroundColor: isLight ? 'rgba(255,255,255,0.2)' : colors.surface,
+  };
+  const titleContainerStyle: ViewStyle = { flex: 1 };
+  const titleStyle: TextStyle = {
+    fontSize: titleSizes[size],
+    fontWeight: '700',
+    color: textColor,
+  };
+  const subtitleStyle: TextStyle = {
+    fontSize: 14,
+    color: subtitleColor,
+    marginTop: 2,
+  };
+  const rightSectionStyle: ViewStyle = { marginLeft: 16 };
+  const defaultWrapperStyle: ViewStyle = {
+    backgroundColor: variant === 'transparent' ? 'transparent' : colors.card,
+    borderBottomWidth: variant === 'default' ? 1 : 0,
+    borderBottomColor: colors.border,
+  };
 
   const content = (
     <View style={headerStyle}>
       {/* Left Section */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+      <View style={leftSectionStyle}>
         {showBack && onBack && (
           <TouchableOpacity
             onPress={onBack}
-            style={{
-              width: 36,
-              height: 36,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 12,
-              borderRadius: 18,
-              backgroundColor: isLight ? 'rgba(255,255,255,0.2)' : '#f3f4f6',
-            }}
+            style={backButtonStyle}
             activeOpacity={0.7}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Retour"
           >
-            <FontAwesome name="chevron-left" size={16} color={isLight ? '#ffffff' : '#374151'} />
+            <Icon
+              name="chevron-left"
+              size={16}
+              color={isLight ? '#ffffff' : colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: titleSizes[size],
-              fontWeight: '700',
-              color: textColor,
-            }}
-            numberOfLines={1}
-          >
+        <View style={titleContainerStyle}>
+          <Text style={titleStyle} numberOfLines={1}>
             {title}
           </Text>
           {subtitle && (
-            <Text
-              style={{
-                fontSize: 14,
-                color: subtitleColor,
-                marginTop: 2,
-              }}
-              numberOfLines={1}
-            >
+            <Text style={subtitleStyle} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
@@ -89,7 +105,7 @@ export default function Header({
       </View>
 
       {/* Right Section */}
-      {rightAction && <View style={{ marginLeft: 16 }}>{rightAction}</View>}
+      {rightAction && <View style={rightSectionStyle}>{rightAction}</View>}
     </View>
   );
 
@@ -107,15 +123,7 @@ export default function Header({
   return (
     <>
       <StatusBar barStyle={variant === 'transparent' ? 'light-content' : 'dark-content'} />
-      <View
-        style={{
-          backgroundColor: variant === 'transparent' ? 'transparent' : '#ffffff',
-          borderBottomWidth: variant === 'default' ? 1 : 0,
-          borderBottomColor: '#f3f4f6',
-        }}
-      >
-        {content}
-      </View>
+      <View style={defaultWrapperStyle}>{content}</View>
     </>
   );
 }

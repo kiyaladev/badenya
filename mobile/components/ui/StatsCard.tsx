@@ -1,8 +1,7 @@
+import { useThemeStore } from '@/store/themeStore';
 import React from 'react';
-import { View, Text, ViewStyle } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-
-type IconName = keyof typeof FontAwesome.glyphMap;
+import { View, Text, TextStyle, ViewStyle } from 'react-native';
+import Icon, { IconName } from './Icon';
 
 interface StatsCardProps {
   title: string;
@@ -29,21 +28,22 @@ export default function StatsCard({
   iconBgColor = '#e0f2fe',
   variant = 'default',
 }: StatsCardProps) {
+  const colors = useThemeStore(state => state.colors);
   const getVariantStyles = (): ViewStyle => {
     switch (variant) {
       case 'outlined':
         return {
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: '#e5e7eb',
+          borderColor: colors.border,
         };
       case 'filled':
         return {
-          backgroundColor: '#f9fafb',
+          backgroundColor: colors.surface,
         };
       default:
         return {
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.05,
@@ -54,14 +54,14 @@ export default function StatsCard({
   };
 
   const getTrendColor = () => {
-    if (!trend) return '#6b7280';
+    if (!trend) return colors.textSecondary;
     switch (trend.direction) {
       case 'up':
         return '#10b981';
       case 'down':
         return '#ef4444';
       default:
-        return '#6b7280';
+        return colors.textSecondary;
     }
   };
 
@@ -82,81 +82,74 @@ export default function StatsCard({
     padding: 16,
     ...getVariantStyles(),
   };
+  const topRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  };
+  const contentStyle: ViewStyle = { flex: 1 };
+  const titleStyle: TextStyle = {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 8,
+    fontWeight: '500',
+  };
+  const valueStyle: TextStyle = {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: trend || subtitle ? 8 : 0,
+  };
+  const trendRowStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center' };
+  const trendTextStyle: TextStyle = {
+    fontSize: 12,
+    color: getTrendColor(),
+    marginLeft: 4,
+    fontWeight: '500',
+  };
+  const trendLabelStyle: TextStyle = {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginLeft: 4,
+  };
+  const subtitleStyle: TextStyle = { fontSize: 12, color: colors.textSecondary };
+  const iconWrapperStyle: ViewStyle = {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: iconBgColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
 
   return (
     <View style={containerStyle}>
-      <View
-        style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}
-      >
-        <View style={{ flex: 1 }}>
+      <View style={topRowStyle}>
+        <View style={contentStyle}>
           {/* Title */}
-          <Text
-            style={{
-              fontSize: 13,
-              color: '#6b7280',
-              marginBottom: 8,
-              fontWeight: '500',
-            }}
-          >
-            {title}
-          </Text>
+          <Text style={titleStyle}>{title}</Text>
 
           {/* Value */}
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: '700',
-              color: '#111827',
-              marginBottom: trend || subtitle ? 8 : 0,
-            }}
-          >
-            {value}
-          </Text>
+          <Text style={valueStyle}>{value}</Text>
 
           {/* Trend or Subtitle */}
           {trend && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <FontAwesome name={getTrendIcon()} size={10} color={getTrendColor()} />
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: getTrendColor(),
-                  marginLeft: 4,
-                  fontWeight: '500',
-                }}
-              >
+            <View style={trendRowStyle}>
+              <Icon name={getTrendIcon()} size={10} color={getTrendColor()} />
+              <Text style={trendTextStyle}>
                 {trend.value > 0 ? '+' : ''}
                 {trend.value}%
               </Text>
-              {trend.label && (
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: '#9ca3af',
-                    marginLeft: 4,
-                  }}
-                >
-                  {trend.label}
-                </Text>
-              )}
+              {trend.label && <Text style={trendLabelStyle}>{trend.label}</Text>}
             </View>
           )}
-          {subtitle && !trend && <Text style={{ fontSize: 12, color: '#6b7280' }}>{subtitle}</Text>}
+          {subtitle && !trend && <Text style={subtitleStyle}>{subtitle}</Text>}
         </View>
 
         {/* Icon */}
         {icon && (
-          <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              backgroundColor: iconBgColor,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FontAwesome name={icon} size={20} color={iconColor} />
+          <View style={iconWrapperStyle}>
+            <Icon name={icon} size={20} color={iconColor} />
           </View>
         )}
       </View>
@@ -168,16 +161,21 @@ export default function StatsCard({
 export function StatItem({
   label,
   value,
-  color = '#111827',
+  color,
 }: {
   label: string;
   value: string | number;
   color?: string;
 }) {
+  const colors = useThemeStore(state => state.colors);
+  const containerStyle: ViewStyle = { alignItems: 'center' };
+  const valueStyle: TextStyle = { fontSize: 20, fontWeight: '700', color };
+  const labelStyle: TextStyle = { fontSize: 12, color: colors.textSecondary, marginTop: 2 };
+
   return (
-    <View style={{ alignItems: 'center' }}>
-      <Text style={{ fontSize: 20, fontWeight: '700', color }}>{value}</Text>
-      <Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</Text>
+    <View style={containerStyle}>
+      <Text style={valueStyle}>{value}</Text>
+      <Text style={labelStyle}>{label}</Text>
     </View>
   );
 }

@@ -1,37 +1,37 @@
 import { View, Text, ActivityIndicator } from 'react-native';
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/services/logger';
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { checkAuth, isAuthenticated } = useAuthStore();
+  const { checkAuth } = useAuthStore();
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Check if user is authenticated
-        await checkAuth();
-
-        // Wait a bit for better UX
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Navigate based on authentication status
-        if (isAuthenticated) {
-          router.replace('/(tabs)');
-        } else {
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const initializeApp = async () => {
+        try {
+          await checkAuth();
+          if (!active) return;
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (!active) return;
+          router.replace(
+            useAuthStore.getState().isAuthenticated ? '/(tabs)' : '/(auth)/onboarding'
+          );
+        } catch (error) {
+          if (!active) return;
+          logger.error('Splash', 'Error initializing app', error);
           router.replace('/(auth)/onboarding');
         }
-      } catch (error) {
-        logger.error('Splash', 'Error initializing app', error);
-        // On error, go to onboarding
-        router.replace('/(auth)/onboarding');
-      }
-    };
-
-    initializeApp();
-  }, []);
+      };
+      initializeApp();
+      return () => {
+        active = false;
+      };
+    }, [checkAuth, router])
+  );
 
   return (
     <View className="flex-1 items-center justify-center bg-primary-600">

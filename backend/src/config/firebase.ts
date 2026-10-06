@@ -16,31 +16,35 @@ export const initializeFirebase = (): void => {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-  // If GOOGLE_APPLICATION_CREDENTIALS is set, firebase-admin will auto-detect
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
-    firebaseInitialized = true;
-    logger.info('✅ Firebase Admin initialized via GOOGLE_APPLICATION_CREDENTIALS');
-    return;
-  }
+  try {
+    // If GOOGLE_APPLICATION_CREDENTIALS is set, firebase-admin will auto-detect
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+      firebaseInitialized = true;
+      logger.info('✅ Firebase Admin initialized via GOOGLE_APPLICATION_CREDENTIALS');
+      return;
+    }
 
-  // Fallback to individual env vars
-  if (projectId && clientEmail && privateKey) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
-    firebaseInitialized = true;
-    logger.info('✅ Firebase Admin initialized via env vars');
-    return;
-  }
+    // Fallback to individual env vars
+    if (projectId && clientEmail && privateKey && !privateKey.includes('YOUR_KEY_HERE')) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+      firebaseInitialized = true;
+      logger.info('✅ Firebase Admin initialized via env vars');
+      return;
+    }
 
-  logger.warn('⚠️  Firebase not configured — push notifications will be disabled');
+    logger.warn('⚠️  Firebase not configured — push notifications will be disabled');
+  } catch (error) {
+    logger.warn('⚠️  Firebase initialization failed (push notifications disabled):', error);
+  }
 };
 
 /**

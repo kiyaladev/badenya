@@ -1,75 +1,56 @@
-// Email service uses jest.resetModules() + dynamic import for each test to ensure clean module state.
+const sendMail = jest.fn();
+jest.mock('nodemailer', () => ({ createTransport: jest.fn(() => ({ sendMail, close: jest.fn() })) }));
+jest.mock('../../utils/logger', () => ({ __esModule: true, default: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } }));
+import { sendEmail, sendPasswordResetEmail, isEmailConfigured } from '../../services/email.service';
 
-// Mock nodemailer
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn().mockReturnValue({
-    sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' }),
-  }),
-}));
-
-// Mock logger
-jest.mock('../../utils/logger', () => ({
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
-}));
-
-describe('Email Service', () => {
-  const originalEnv = process.env;
-
+describe('Email delivery', () => {
+  const originalEnv = { ...process.env };
   beforeEach(() => {
-    jest.clearAllMocks();
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv }; delete process.env.SENDGRID_API_KEY;
+    delete process.env.SMTP_HOST; delete process.env.SMTP_USER; delete process.env.SMTP_PASSWORD;
+    sendMail.mockReset();
   });
-
-  afterAll(() => {
-    process.env = originalEnv;
+  afterAll(() => { process.env = originalEnv; });
+  const configured = () => { process.env.SMTP_HOST = 'smtp.test'; process.env.SMTP_USER = 'test'; process.env.SMTP_PASSWORD = 'test-password'; };
+  it('reports unavailable transport without pretending delivery succeeded', async () => {
+    expect(isEmailConfigured()).toBe(false);
+    expect(await sendEmail({ to: 'user@test.com', subject: 'test', html: 'test' })).toBe(false);
+    expect(sendMail).not.toHaveBeenCalled();
   });
-
-  describe('sendEmail', () => {
-    it('should log email when SMTP is not configured', async () => {
-      delete process.env.SMTP_HOST;
-      delete process.env.SMTP_USER;
-      delete process.env.SMTP_PASSWORD;
-
-      // Re-import to reset module state
-      jest.resetModules();
-      const { sendEmail: send } = await import('../../services/email.service');
-
-      const result = await send({
-        to: 'test@example.com',
-        subject: 'Test',
-        html: '<p>Test</p>',
-      });
-
-      expect(result).toBe(true);
-    });
+  it('awaits successful provider acceptance', async () => {
+    configured(); sendMail.mockResolvedValue({ accepted: ['user@test.com'], rejected: [] });
+    expect(await sendEmail({ to: 'user@test.com', subject: 'test', html: 'test' })).toBe(true);
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'user@test.com' }));
   });
-
-  describe('sendPasswordResetEmail', () => {
-    it('should call sendEmail with correct parameters', async () => {
-      jest.resetModules();
-      const { sendPasswordResetEmail: sendReset } = await import('../../services/email.service');
-
-      const result = await sendReset('test@example.com', 'abc123', 'Test User');
-
-      expect(result).toBe(true);
-    });
+  it('does not advertise or dispatch email with documentation placeholders', async () => {
+    for (const field of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD']) {
+      configured();
+      process.env[field] = field === 'SMTP_HOST' ? 'smtp.example.com' : 'YOUR_SMTP_VALUE';
+      expect(isEmailConfigured()).toBe(false);
+      expect(await sendEmail({ to: 'user@test.com', subject: 'test', html: 'test' })).toBe(false);
+    }
+    delete process.env.SMTP_HOST;
+    process.env.SENDGRID_API_KEY = 'your-sendgrid-key';
+    expect(isEmailConfigured()).toBe(false);
+    expect(sendMail).not.toHaveBeenCalled();
   });
-
-  describe('sendContactConfirmationEmail', () => {
-    it('should call sendEmail with correct parameters', async () => {
-      jest.resetModules();
-      const { sendContactConfirmationEmail: sendContact } = await import('../../services/email.service');
-
-      const result = await sendContact('test@example.com', 'Test User', 'Support');
-
-      expect(result).toBe(true);
-    });
+  it('uses configured SMTP when the SendGrid value is only an example', async () => {
+    configured(); process.env.SENDGRID_API_KEY = 'YOUR_SENDGRID_KEY';
+    sendMail.mockResolvedValue({ accepted: ['user@test.com'] });
+    expect(isEmailConfigured()).toBe(true);
+    expect(await sendEmail({ to: 'user@test.com', subject: 'test', html: 'test' })).toBe(true);
+  });
+  it('reports connection failure and recipient rejection', async () => {
+    configured(); sendMail.mockRejectedValueOnce(new Error('SMTP disconnected'));
+    expect(await sendEmail({ to: 'user@test.com', subject: 'test', html: 'test' })).toBe(false);
+    sendMail.mockResolvedValueOnce({ rejected: ['user@test.com'] });
+    expect(await sendEmail({ to: 'user@test.com', subject: 'test', html: 'test' })).toBe(false);
+  });
+  it('escapes user supplied markup and links to the configured reset screen', async () => {
+    configured(); process.env.APP_URL = 'https://badenya.naimba.com/'; sendMail.mockResolvedValue({ accepted: ['user@test.com'] });
+    await sendPasswordResetEmail('user@test.com', 'abc&123', '<img src=x onerror=alert(1)>');
+    const message = sendMail.mock.calls[0][0];
+    expect(message.html).toContain('&lt;img'); expect(message.html).not.toContain('<img');
+    expect(message.text).toContain('https://badenya.naimba.com/reset-password?token=abc%26123');
   });
 });

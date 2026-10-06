@@ -7,6 +7,7 @@ interface OfflineState {
   isConnected: boolean;
   pendingCount: number;
   isSyncing: boolean;
+  syncError: string | null;
 
   setConnected: (connected: boolean) => void;
   refreshPendingCount: () => Promise<void>;
@@ -17,6 +18,7 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
   isConnected: true,
   pendingCount: 0,
   isSyncing: false,
+  syncError: null,
 
   setConnected: (connected: boolean) => {
     set({ isConnected: connected });
@@ -38,24 +40,23 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
     const queue = await offlineService.getQueue();
     if (queue.length === 0) return;
 
-    set({ isSyncing: true });
+    set({ isSyncing: true, syncError: null });
     logger.info('Offline', `Processing ${queue.length} queued requests`);
 
     let processed = 0;
     for (const request of queue) {
+      if (request.accountId && request.accountId !== offlineService.getAccountId()) break;
       try {
         await executeRequest(request);
         processed++;
-      } catch (error) {
-        logger.error('Offline', `Failed to process queued request: ${request.method} ${request.url}`, error);
-        // Stop processing on failure (might be offline again)
-        break;
-      }
-      // Only dequeue after successful execution
-      try {
         await offlineService.dequeueRequest(request.id);
-      } catch (dequeueError) {
-        logger.error('Offline', `Failed to dequeue request ${request.id}, may retry`, dequeueError);
+      } catch (error) {
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        set({
+          syncError: `Synchronisation interrompue${status ? ` (${status})` : ''}. Les actions sont conservées ; vérifiez la connexion et réessayez.`,
+        });
+        logger.error('Offline', 'Queued request retained for review', error);
+        break;
       }
     }
 

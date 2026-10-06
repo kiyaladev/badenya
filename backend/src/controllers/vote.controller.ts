@@ -1,4 +1,6 @@
+import { entityId } from '../utils/membership';
 import { Request, Response } from 'express';
+import { IVote } from '../models/Vote';
 import { Vote, Group } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
@@ -7,11 +9,28 @@ import logger from '../utils/logger';
 
 const isUserGroupAdmin = async (groupId: mongoose.Types.ObjectId, userId: string): Promise<boolean> => {
   const group = await Group.findById(groupId);
-  if (!group) return false;
+  if (!group || !group.isActive || group.archivedAt) return false;
   const member = group.members.find(
-    (m) => m.userId.toString() === userId
+    (m) => entityId(m.userId) === userId && m.status === 'active'
   );
   return member?.role === 'admin';
+};
+
+// Anonymous polls disclose only aggregates. Hidden intermediate results disclose no
+// ballots (including timestamps/comments) or counts, even to their creator.
+export const serializeVote = (vote: IVote, userId: string) => {
+  const data = vote.toObject();
+  delete data.__v;
+  const ownVote = vote.votes.find(ballot => entityId(ballot.userId) === userId);
+  const hideResults = !vote.showIntermediateResults && !['closed', 'executed'].includes(vote.status);
+  return {
+    ...data,
+    votes: hideResults || vote.anonymousVoting ? [] : data.votes,
+    options: hideResults ? data.options.map((option: { id: string; label: string }) => ({ id: option.id, label: option.label })) : data.options,
+    result: hideResults ? undefined : data.result,
+    hasVoted: !!ownVote,
+    myOptionId: ownVote?.optionId,
+  };
 };
 
 // Create a new vote in a group
@@ -37,7 +56,7 @@ export const createVote = async (
 
     // Verify group exists
     const group = await Group.findById(groupId);
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -47,7 +66,7 @@ export const createVote = async (
 
     // Verify user is a member of the group
     const isMember = group.members.some(
-      (member) => member.userId.toString() === authReq.user.id
+      (member) => entityId(member.userId) === authReq.user.id && member.status === 'active'
     );
 
     if (!isMember) {
@@ -113,7 +132,7 @@ export const createVote = async (
     res.status(201).json({
       status: 'success',
       message: 'Vote created successfully',
-      data: { vote },
+      data: { vote: serializeVote(vote, authReq.user.id) },
     });
   } catch (error) {
     logger.error('Create vote error:', error);
@@ -137,7 +156,7 @@ export const getGroupVotes = async (
 
     // Verify group exists
     const group = await Group.findById(groupId);
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -147,7 +166,7 @@ export const getGroupVotes = async (
 
     // Verify user is a member of the group
     const isMember = group.members.some(
-      (member) => member.userId.toString() === authReq.user.id
+      (member) => entityId(member.userId) === authReq.user.id && member.status === 'active'
     );
 
     if (!isMember) {
@@ -177,7 +196,7 @@ export const getGroupVotes = async (
     res.status(200).json({
       status: 'success',
       data: {
-        votes,
+        votes: votes.map(vote => serializeVote(vote, authReq.user.id)),
         total: votes.length,
       },
     });
@@ -212,7 +231,7 @@ export const getVote = async (req: Request, res: Response): Promise<void> => {
 
     // Verify user is a member of the group
     const group = await Group.findById(vote.groupId);
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -221,7 +240,7 @@ export const getVote = async (req: Request, res: Response): Promise<void> => {
     }
 
     const isMember = group.members.some(
-      (member) => member.userId.toString() === authReq.user.id
+      (member) => entityId(member.userId) === authReq.user.id && member.status === 'active'
     );
 
     if (!isMember) {
@@ -232,20 +251,9 @@ export const getVote = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // If voting is anonymous, hide voter identities
-    const voteData = vote.toObject();
-    if (vote.anonymousVoting) {
-      voteData.votes = voteData.votes.map((v) => ({
-        userId: v.userId, // Keep userId but don't populate
-        optionId: v.optionId,
-        comment: v.comment,
-        votedAt: v.votedAt,
-      }));
-    }
-
     res.status(200).json({
       status: 'success',
-      data: { vote: voteData },
+      data: { vote: serializeVote(vote, authReq.user.id) },
     });
   } catch (error) {
     logger.error('Get vote error:', error);
@@ -276,7 +284,7 @@ export const castVote = async (req: Request, res: Response): Promise<void> => {
 
     // Verify user is a member of the group
     const group = await Group.findById(vote.groupId);
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: 'error',
         message: 'Group not found',
@@ -285,7 +293,7 @@ export const castVote = async (req: Request, res: Response): Promise<void> => {
     }
 
     const isMember = group.members.some(
-      (member) => member.userId.toString() === authReq.user.id
+      (member) => entityId(member.userId) === authReq.user.id && member.status === 'active'
     );
 
     if (!isMember) {
@@ -315,33 +323,33 @@ export const castVote = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Remove previous vote if exists and changing is allowed
-    if (vote.allowChangeVote) {
-      vote.votes = vote.votes.filter(
-        (v) => v.userId.toString() !== authReq.user.id
-      );
+    // Version-checked updates prevent concurrent voters overwriting each other.
+    let updatedVote = vote;
+    let saved = false;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      if (!updatedVote.canUserVote(authReq.user.id)) {
+        res.status(409).json({ status: 'error', message: 'Voting state changed; reload the poll' });
+        return;
+      }
+      updatedVote.votes = updatedVote.votes.filter(ballot => entityId(ballot.userId) !== authReq.user.id);
+      updatedVote.votes.push({ userId: new mongoose.Types.ObjectId(authReq.user.id), optionId, comment, votedAt: new Date() });
+      updatedVote.options.forEach(option => {
+        option.votes = updatedVote.votes.filter(ballot => ballot.optionId === option.id).length;
+      });
+      try { await updatedVote.save(); saved = true; break; }
+      catch (error) {
+        if (!(error instanceof mongoose.Error.VersionError)) throw error;
+        const freshVote = await Vote.findById(id);
+        if (!freshVote) { res.status(404).json({ status: 'error', message: 'Vote not found' }); return; }
+        updatedVote = freshVote;
+      }
     }
-
-    // Add new vote
-    vote.votes.push({
-      userId: new mongoose.Types.ObjectId(authReq.user.id),
-      optionId,
-      comment,
-      votedAt: new Date(),
-    });
-
-    // Update option vote count
-    const option = vote.options.find((opt) => opt.id === optionId);
-    if (option) {
-      option.votes = vote.votes.filter((v) => v.optionId === optionId).length;
-    }
-
-    await vote.save();
+    if (!saved) { res.status(409).json({ status: 'error', message: 'Concurrent update; retry your vote' }); return; }
 
     res.status(200).json({
       status: 'success',
       message: 'Vote cast successfully',
-      data: { vote },
+      data: { vote: serializeVote(updatedVote, authReq.user.id) },
     });
   } catch (error) {
     logger.error('Cast vote error:', error);
@@ -373,7 +381,10 @@ export const closeVote = async (
     }
 
     // Verify user is the creator or a group admin
-    const isCreator = vote.createdBy.toString() === authReq.user.id;
+    const group = await Group.findById(vote.groupId);
+    const activeMember = group?.isActive && !group.archivedAt && group.members.find(member => entityId(member.userId) === authReq.user.id && member.status === 'active');
+    if (!activeMember) { res.status(403).json({ status: 'error', message: 'Active group membership required' }); return; }
+    const isCreator = entityId(vote.createdBy) === authReq.user.id;
     const hasAdminAccess = isCreator || await isUserGroupAdmin(vote.groupId, authReq.user.id);
 
     if (!hasAdminAccess) {
@@ -385,12 +396,23 @@ export const closeVote = async (
     }
 
     // Close vote and calculate results
-    await vote.closeVote();
+    let closedVote = vote;
+    let closed = false;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try { await closedVote.closeVote(group?.members.filter(member => member.status === 'active').length || 0); closed = true; break; }
+      catch (error) {
+        if (!(error instanceof mongoose.Error.VersionError)) throw error;
+        const freshVote = await Vote.findById(id);
+        if (!freshVote) { res.status(404).json({ status: 'error', message: 'Vote not found' }); return; }
+        closedVote = freshVote;
+      }
+    }
+    if (!closed) { res.status(409).json({ status: 'error', message: 'Concurrent update; retry closing the poll' }); return; }
 
     res.status(200).json({
       status: 'success',
       message: 'Vote closed successfully',
-      data: { vote },
+      data: { vote: serializeVote(closedVote, authReq.user.id) },
     });
   } catch (error) {
     logger.error('Close vote error:', error);
@@ -422,7 +444,10 @@ export const deleteVote = async (
     }
 
     // Verify user is the creator or a group admin
-    const isCreator = vote.createdBy.toString() === authReq.user.id;
+    const group = await Group.findById(vote.groupId);
+    const activeMember = group?.isActive && !group.archivedAt && group.members.find(member => entityId(member.userId) === authReq.user.id && member.status === 'active');
+    if (!activeMember) { res.status(403).json({ status: 'error', message: 'Active group membership required' }); return; }
+    const isCreator = entityId(vote.createdBy) === authReq.user.id;
     const hasAdminAccess = isCreator || await isUserGroupAdmin(vote.groupId, authReq.user.id);
 
     if (!hasAdminAccess) {
@@ -442,7 +467,8 @@ export const deleteVote = async (
       return;
     }
 
-    await Vote.findByIdAndDelete(id);
+    const deleted = await Vote.findOneAndDelete({ _id: id, 'votes.0': { $exists: false } });
+    if (!deleted) { res.status(409).json({ status: 'error', message: 'The poll received a ballot and cannot be deleted' }); return; }
 
     res.status(200).json({
       status: 'success',

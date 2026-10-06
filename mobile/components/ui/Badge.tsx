@@ -5,7 +5,8 @@ type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'prim
 type BadgeSize = 'sm' | 'md' | 'lg';
 
 interface BadgeProps {
-  label: string;
+  label?: string;
+  children?: React.ReactNode;
   variant?: BadgeVariant;
   size?: BadgeSize;
   rounded?: boolean;
@@ -33,6 +34,7 @@ const sizeStyles: Record<
 
 export default function Badge({
   label,
+  children,
   variant = 'default',
   size = 'md',
   rounded = true,
@@ -40,6 +42,12 @@ export default function Badge({
 }: BadgeProps) {
   const colors = variantStyles[variant];
   const sizing = sizeStyles[size];
+  const iconStyle = { marginRight: 4 };
+  const textStyle = {
+    color: colors.text,
+    fontSize: sizing.fontSize,
+    fontWeight: '500' as const,
+  };
 
   const containerStyle: ViewStyle = {
     flexDirection: 'row',
@@ -53,16 +61,8 @@ export default function Badge({
 
   return (
     <View style={containerStyle}>
-      {icon && <View style={{ marginRight: 4 }}>{icon}</View>}
-      <Text
-        style={{
-          color: colors.text,
-          fontSize: sizing.fontSize,
-          fontWeight: '500',
-        }}
-      >
-        {label}
-      </Text>
+      {icon && <View style={iconStyle}>{icon}</View>}
+      <Text style={textStyle}>{label ?? children}</Text>
     </View>
   );
 }
@@ -77,15 +77,13 @@ export function StatusDot({
 }) {
   const colors = variantStyles[variant];
   const sizeMap = { sm: 6, md: 8, lg: 10 };
+  const dotSize = sizeMap[size];
+  const dotStyle = {
+    width: dotSize,
+    height: dotSize,
+    borderRadius: dotSize / 2,
+    backgroundColor: colors.text,
+  };
 
-  return (
-    <View
-      style={{
-        width: sizeMap[size],
-        height: sizeMap[size],
-        borderRadius: sizeMap[size] / 2,
-        backgroundColor: colors.text,
-      }}
-    />
-  );
+  return <View style={dotStyle} />;
 }

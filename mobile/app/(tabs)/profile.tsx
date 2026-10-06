@@ -1,15 +1,28 @@
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { Alert } from '@/services/dialog.service';
+import { getCapabilities, Capabilities } from '@/services/capabilities.service';
+import { themedStyles } from '@/utils/themedStyles';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Linking,
+  StyleSheet,
+  TextStyle,
+  ViewStyle,
+} from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { useGroupStore } from '@/store/groupStore';
-import { Avatar, Card, StatItem } from '@/components/ui';
+import { useThemeStore } from '@/store/themeStore';
+import { Avatar, Card, Icon, StatItem } from '@/components/ui';
+import type { IconName } from '@/components/ui';
 import userService from '@/services/user.service';
-
-type IconName = keyof typeof FontAwesome.glyphMap;
+import pushNotificationService from '@/services/push-notification.service';
 
 interface MenuItemProps {
   icon: IconName;
@@ -23,6 +36,78 @@ interface MenuItemProps {
   danger?: boolean;
 }
 
+const baseStyles = StyleSheet.create({
+  profileScroll: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  gradient: {
+    paddingBottom: 80,
+    alignItems: 'center',
+  },
+  name: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  email: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  editButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  editButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statsContainer: {
+    marginHorizontal: 20,
+    marginTop: -50,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#f3f4f6',
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  footerText: {
+    color: '#9ca3af',
+    fontSize: 13,
+  },
+  menuValue: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginRight: 8,
+  },
+});
+
 function MenuItem({
   icon,
   iconColor,
@@ -34,47 +119,49 @@ function MenuItem({
   rightElement,
   danger,
 }: MenuItemProps) {
+  const styles = themedStyles(
+    baseStyles,
+    useThemeStore(state => state.colors)
+  );
+  const itemStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: isLast ? 0 : 1,
+    borderBottomColor: '#f3f4f6',
+  };
+  const iconContainerStyle: ViewStyle = {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: iconBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  };
+  const labelStyle: TextStyle = {
+    flex: 1,
+    fontSize: 15,
+    color: danger ? '#ef4444' : useThemeStore(state => state.colors.text),
+    fontWeight: danger ? '500' : '400',
+  };
+
   return (
     <TouchableOpacity
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: '#f3f4f6',
-      }}
+      style={itemStyle}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress}
     >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: iconBg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 14,
-        }}
-      >
-        <FontAwesome name={icon} size={16} color={iconColor} />
+      <View style={iconContainerStyle}>
+        <Icon name={icon} size={16} color={iconColor} />
       </View>
-      <Text
-        style={{
-          flex: 1,
-          fontSize: 15,
-          color: danger ? '#ef4444' : '#111827',
-          fontWeight: danger ? '500' : '400',
-        }}
-      >
-        {label}
-      </Text>
+      <Text style={labelStyle}>{label}</Text>
       {rightElement || (
         <>
-          {value && <Text style={{ fontSize: 14, color: '#6b7280', marginRight: 8 }}>{value}</Text>}
-          {onPress && <FontAwesome name="chevron-right" size={12} color="#d1d5db" />}
+          {value && <Text style={styles.menuValue}>{value}</Text>}
+          {onPress && <Icon name="chevron-right" size={12} color="#d1d5db" />}
         </>
       )}
     </TouchableOpacity>
@@ -82,13 +169,75 @@ function MenuItem({
 }
 
 export default function ProfileScreen() {
+  const [capabilities, setCapabilities] = useState<Capabilities>({
+    ai: false,
+    push: false,
+    email: false,
+  });
+  useEffect(() => {
+    getCapabilities().then(setCapabilities);
+  }, []);
+  const styles = themedStyles(
+    baseStyles,
+    useThemeStore(state => state.colors)
+  );
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(true);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateProfile } = useAuthStore();
   const { groups } = useGroupStore();
+  const { mode: themeMode } = useThemeStore();
+
+  useEffect(() => {
+    setPushEnabled(user?.preferences?.notifications?.push !== false);
+    setEmailEnabled(user?.preferences?.notifications?.email !== false);
+  }, [user?.preferences]);
+
+  const persistNotificationPreference = async (key: 'push' | 'email', value: boolean) => {
+    const previousValue = key === 'push' ? pushEnabled : emailEnabled;
+    if (key === 'push') setPushEnabled(value);
+    else setEmailEnabled(value);
+
+    try {
+      if (key === 'push') {
+        if (value) {
+          const token = await pushNotificationService.registerForPushNotifications();
+          if (!token) throw new Error('Push notifications are not configured');
+        } else {
+          await pushNotificationService.unregisterFromPushNotifications();
+        }
+      }
+      await updateProfile({
+        preferences: {
+          ...user?.preferences,
+          notifications: {
+            ...user?.preferences?.notifications,
+            [key]: value,
+          },
+        },
+      });
+    } catch {
+      if (key === 'push') setPushEnabled(previousValue);
+      else setEmailEnabled(previousValue);
+      Alert.alert(
+        'Erreur',
+        key === 'push'
+          ? 'Les notifications push ne sont pas disponibles sur cette version.'
+          : 'Impossible de sauvegarder les notifications email.'
+      );
+    }
+  };
+
+  const openExternalPage = async (url: string, title: string) => {
+    try {
+      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
+      else Alert.alert('Lien indisponible', `Impossible d'ouvrir ${title.toLowerCase()}.`);
+    } catch {
+      Alert.alert('Erreur', `Impossible d'ouvrir ${title.toLowerCase()}.`);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter?', [
@@ -114,81 +263,65 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     let mounted = true;
-    userService.getUserStats().then((stats) => {
+    userService.getUserStats().then(stats => {
       if (mounted) {
         setTotalContributions(stats.totalContributions);
         setTotalVotes(stats.totalVotes);
       }
     });
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const fullName = user?.fullName || 'Utilisateur';
+  const gradientStyle: ViewStyle = {
+    ...styles.gradient,
+    paddingTop: insets.top + 24,
+  };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: '#f8fafc' }}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScrollView style={styles.profileScroll} showsVerticalScrollIndicator={false}>
       {/* Header with Gradient */}
       <LinearGradient
         colors={['#0284c7', '#0369a1']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 24, paddingBottom: 80, alignItems: 'center' }}
+        style={gradientStyle}
       >
-        <Avatar name={fullName} size="xl" backgroundColor="rgba(255,255,255,0.25)" />
-        <Text style={{ color: '#ffffff', fontSize: 22, fontWeight: '700', marginTop: 16 }}>
-          {fullName}
-        </Text>
-        <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, marginTop: 4 }}>
-          {user?.email || 'utilisateur@email.com'}
-        </Text>
+        <Avatar
+          name={fullName}
+          imageUrl={user?.avatar?.url}
+          size="xl"
+          backgroundColor="rgba(255,255,255,0.25)"
+        />
+        <Text style={styles.name}>{fullName}</Text>
+        <Text style={styles.email}>{user?.email || 'utilisateur@email.com'}</Text>
         <TouchableOpacity
-          style={{
-            marginTop: 16,
-            paddingHorizontal: 20,
-            paddingVertical: 10,
-            borderRadius: 20,
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.3)',
-          }}
+          style={styles.editButton}
           onPress={() => router.push('/(screens)/edit-profile')}
           activeOpacity={0.8}
         >
-          <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '600' }}>
-            Modifier le profil
-          </Text>
+          <Text style={styles.editButtonText}>Modifier le profil</Text>
         </TouchableOpacity>
       </LinearGradient>
 
       {/* Profile Stats */}
-      <View style={{ marginHorizontal: 20, marginTop: -50 }}>
+      <View style={styles.statsContainer}>
         <Card shadow="lg" padding="lg">
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+          <View style={styles.statsRow}>
             <StatItem label="Groupes" value={totalGroups} />
-            <View style={{ width: 1, backgroundColor: '#f3f4f6' }} />
+            <View style={styles.statDivider} />
             <StatItem label="Contributions" value={totalContributions} />
-            <View style={{ width: 1, backgroundColor: '#f3f4f6' }} />
+            <View style={styles.statDivider} />
             <StatItem label="Votes" value={totalVotes} />
           </View>
         </Card>
       </View>
 
       {/* Account Settings */}
-      <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: '#6b7280',
-            marginBottom: 10,
-            marginLeft: 4,
-          }}
-        >
-          COMPTE
-        </Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>COMPTE</Text>
         <Card padding="none" shadow="sm">
           <MenuItem
             icon="user"
@@ -210,35 +343,26 @@ export default function ProfileScreen() {
             iconBg="#ede9fe"
             label="Langue"
             value="Français"
-            onPress={() => {}}
+            onPress={() => router.push('/(screens)/settings')}
             isLast
           />
         </Card>
       </View>
 
       {/* Notifications Settings */}
-      <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: '#6b7280',
-            marginBottom: 10,
-            marginLeft: 4,
-          }}
-        >
-          NOTIFICATIONS
-        </Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
         <Card padding="none" shadow="sm">
           <MenuItem
             icon="bell"
             iconColor="#f59e0b"
             iconBg="#fef3c7"
-            label="Notifications push"
+            label={capabilities.push ? 'Notifications push' : 'Push indisponibles'}
             rightElement={
               <Switch
-                value={pushEnabled}
-                onValueChange={setPushEnabled}
+                value={capabilities.push && pushEnabled}
+                disabled={!capabilities.push}
+                onValueChange={value => persistNotificationPreference('push', value)}
                 trackColor={{ false: '#e5e7eb', true: '#0284c7' }}
                 thumbColor="#ffffff"
               />
@@ -248,11 +372,12 @@ export default function ProfileScreen() {
             icon="envelope"
             iconColor="#10b981"
             iconBg="#dcfce7"
-            label="Notifications email"
+            label={capabilities.email ? 'Notifications email' : 'Email indisponible'}
             rightElement={
               <Switch
-                value={emailEnabled}
-                onValueChange={setEmailEnabled}
+                value={capabilities.email && emailEnabled}
+                disabled={!capabilities.email}
+                onValueChange={value => persistNotificationPreference('email', value)}
                 trackColor={{ false: '#e5e7eb', true: '#0284c7' }}
                 thumbColor="#ffffff"
               />
@@ -263,73 +388,73 @@ export default function ProfileScreen() {
       </View>
 
       {/* Preferences */}
-      <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: '#6b7280',
-            marginBottom: 10,
-            marginLeft: 4,
-          }}
-        >
-          PRÉFÉRENCES
-        </Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>PRÉFÉRENCES</Text>
         <Card padding="none" shadow="sm">
           <MenuItem
             icon="money"
             iconColor="#16a34a"
             iconBg="#dcfce7"
             label="Devise"
-            value="XOF"
-            onPress={() => {}}
+            value={user?.preferences?.currency || 'Par groupe'}
+            onPress={() =>
+              Alert.alert(
+                'Devise',
+                'Chaque groupe conserve sa propre devise. Les devises ne sont pas additionnées.'
+              )
+            }
           />
           <MenuItem
             icon="moon-o"
             iconColor="#6366f1"
             iconBg="#e0e7ff"
             label="Thème"
-            value="Auto"
-            onPress={() => {}}
+            value={themeMode === 'dark' ? 'Sombre' : themeMode === 'light' ? 'Clair' : 'Auto'}
+            onPress={() => router.push('/(screens)/settings')}
             isLast
           />
         </Card>
       </View>
 
       {/* Other */}
-      <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: '#6b7280',
-            marginBottom: 10,
-            marginLeft: 4,
-          }}
-        >
-          AUTRE
-        </Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>AUTRE</Text>
         <Card padding="none" shadow="sm">
           <MenuItem
             icon="question-circle"
             iconColor="#0ea5e9"
             iconBg="#e0f2fe"
             label="Aide & Support"
-            onPress={() => {}}
+            onPress={() =>
+              openExternalPage(
+                process.env.EXPO_PUBLIC_SUPPORT_URL || 'mailto:support@badenya.app',
+                'le support'
+              )
+            }
           />
           <MenuItem
             icon="file-text-o"
             iconColor="#6b7280"
             iconBg="#f3f4f6"
             label="Conditions d'utilisation"
-            onPress={() => {}}
+            onPress={() =>
+              openExternalPage(
+                process.env.EXPO_PUBLIC_TERMS_URL || 'https://badenya.naimba.com/terms',
+                "les conditions d'utilisation"
+              )
+            }
           />
           <MenuItem
             icon="shield"
             iconColor="#6b7280"
             iconBg="#f3f4f6"
             label="Politique de confidentialité"
-            onPress={() => {}}
+            onPress={() =>
+              openExternalPage(
+                process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://badenya.naimba.com/privacy',
+                'la politique de confidentialité'
+              )
+            }
           />
           <MenuItem
             icon="sign-out"
@@ -344,8 +469,8 @@ export default function ProfileScreen() {
       </View>
 
       {/* Version */}
-      <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-        <Text style={{ color: '#9ca3af', fontSize: 13 }}>Badenya v1.0.0</Text>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Badenya v1.0.0</Text>
       </View>
     </ScrollView>
   );

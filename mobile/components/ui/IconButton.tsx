@@ -6,9 +6,7 @@ import {
   TouchableOpacityProps,
   ViewStyle,
 } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-
-type IconName = keyof typeof FontAwesome.glyphMap;
+import Icon, { IconName } from './Icon';
 type IconButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type IconButtonSize = 'sm' | 'md' | 'lg';
 
@@ -18,6 +16,7 @@ interface IconButtonProps extends Omit<TouchableOpacityProps, 'children'> {
   size?: IconButtonSize;
   loading?: boolean;
   badge?: number;
+  accessibilityLabel: string;
 }
 
 const sizeConfig: Record<IconButtonSize, { button: number; icon: number; badge: number }> = {
@@ -54,6 +53,7 @@ export default function IconButton({
   loading = false,
   disabled,
   badge,
+  accessibilityLabel,
   style,
   ...props
 }: IconButtonProps) {
@@ -71,37 +71,37 @@ export default function IconButton({
     borderColor: colors.border,
     position: 'relative',
   };
+  const badgeStyle: ViewStyle = {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: config.badge,
+    height: config.badge,
+    borderRadius: config.badge / 2,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  };
 
   return (
     <TouchableOpacity
       disabled={disabled || loading}
       style={[containerStyle, style as ViewStyle]}
       activeOpacity={0.7}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       {...props}
     >
       {loading ? (
         <ActivityIndicator size="small" color={colors.icon} />
       ) : (
-        <FontAwesome name={icon} size={config.icon} color={colors.icon} />
+        <Icon name={icon} size={config.icon} color={colors.icon} />
       )}
 
       {/* Badge */}
-      {typeof badge === 'number' && badge > 0 && (
-        <View
-          style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            minWidth: config.badge,
-            height: config.badge,
-            borderRadius: config.badge / 2,
-            backgroundColor: '#ef4444',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: 4,
-          }}
-        />
-      )}
+      {typeof badge === 'number' && badge > 0 && <View style={badgeStyle} />}
     </TouchableOpacity>
   );
 }

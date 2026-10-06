@@ -1,7 +1,8 @@
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { Alert } from '@/services/dialog.service';
+import { View, Text, ScrollView, Keyboard, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Button, Input } from '@/components/ui';
+import { Button, Icon, Input } from '@/components/ui';
 import authService from '@/services/auth.service';
 
 export default function ChangePasswordScreen() {
@@ -12,6 +13,10 @@ export default function ChangePasswordScreen() {
     newPassword: '',
     confirmPassword: '',
   });
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -44,6 +49,7 @@ export default function ChangePasswordScreen() {
   };
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
     if (!validateForm()) {
       Alert.alert('Erreur', 'Veuillez corriger les erreurs dans le formulaire');
       return;
@@ -73,19 +79,24 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Changer le mot de passe</Text>
-          <Text className="text-gray-600">
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+            Changer le mot de passe
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-300">
             Pour votre sécurité, choisissez un mot de passe fort
           </Text>
         </View>
 
         {/* Security Tips */}
-        <View className="bg-blue-50 p-4 rounded-lg mb-6">
-          <Text className="text-blue-800 text-sm font-semibold mb-2">💡 Conseils de sécurité</Text>
+        <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-6">
+          <View className="flex-row items-center mb-2">
+            <Icon name="lightbulb-o" size={16} color="#1e40af" />
+            <Text className="text-blue-800 text-sm font-semibold ml-2">Conseils de sécurité</Text>
+          </View>
           <Text className="text-blue-700 text-sm mb-1">• Au moins 8 caractères</Text>
           <Text className="text-blue-700 text-sm mb-1">
             • Mélange de lettres majuscules et minuscules
@@ -104,8 +115,17 @@ export default function ChangePasswordScreen() {
             onChangeText={text => setFormData({ ...formData, currentPassword: text })}
             placeholder="Entrez votre mot de passe actuel"
             error={errors.currentPassword}
-            secureTextEntry
+            secureTextEntry={!showCurrentPassword}
             autoCapitalize="none"
+            leftIcon={<Icon name="lock" size={18} color="#6b7280" />}
+            rightIcon={
+              <TouchableOpacity
+                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name={showCurrentPassword ? 'eye-slash' : 'eye'} size={18} color="#6b7280" />
+              </TouchableOpacity>
+            }
           />
         </View>
 
@@ -116,8 +136,17 @@ export default function ChangePasswordScreen() {
             onChangeText={text => setFormData({ ...formData, newPassword: text })}
             placeholder="Entrez votre nouveau mot de passe"
             error={errors.newPassword}
-            secureTextEntry
+            secureTextEntry={!showNewPassword}
             autoCapitalize="none"
+            leftIcon={<Icon name="lock" size={18} color="#6b7280" />}
+            rightIcon={
+              <TouchableOpacity
+                onPress={() => setShowNewPassword(!showNewPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name={showNewPassword ? 'eye-slash' : 'eye'} size={18} color="#6b7280" />
+              </TouchableOpacity>
+            }
           />
         </View>
 
@@ -128,8 +157,17 @@ export default function ChangePasswordScreen() {
             onChangeText={text => setFormData({ ...formData, confirmPassword: text })}
             placeholder="Confirmez votre nouveau mot de passe"
             error={errors.confirmPassword}
-            secureTextEntry
+            secureTextEntry={!showConfirmPassword}
             autoCapitalize="none"
+            leftIcon={<Icon name="lock" size={18} color="#6b7280" />}
+            rightIcon={
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name={showConfirmPassword ? 'eye-slash' : 'eye'} size={18} color="#6b7280" />
+              </TouchableOpacity>
+            }
           />
         </View>
 
@@ -147,10 +185,11 @@ export default function ChangePasswordScreen() {
         </View>
 
         {/* Warning */}
-        <View className="bg-yellow-50 p-4 rounded-lg">
+        <View className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg">
           <Text className="text-yellow-800 text-sm">
-            ⚠️ <Text className="font-semibold">Important:</Text> Après avoir changé votre mot de
-            passe, vous serez déconnecté de tous vos appareils pour des raisons de sécurité.
+            <Icon name="exclamation-triangle" size={14} color="#92400e" />{' '}
+            <Text className="font-semibold">Important:</Text> Après avoir changé votre mot de passe,
+            vous serez déconnecté de tous vos appareils pour des raisons de sécurité.
           </Text>
         </View>
       </View>

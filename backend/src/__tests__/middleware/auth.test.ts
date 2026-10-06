@@ -98,6 +98,7 @@ describe('Authentication Middleware', () => {
       const mockUser = {
         id: '123',
         email: 'test@example.com',
+        isActive: true,
         _id: '123',
       };
 

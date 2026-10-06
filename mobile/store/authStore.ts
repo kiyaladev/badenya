@@ -1,14 +1,16 @@
+import biometricService from '@/services/biometric.service';
+import { useGroupStore } from './groupStore';
+import { useTransactionStore } from './transactionStore';
+import { useProposalStore } from './proposalStore';
+import { useNotificationStore } from './notificationStore';
+import { useAIStore } from './aiStore';
+import { useVoteStore } from './voteStore';
 import { create } from 'zustand';
 import { getErrorMessage } from '../utils/errorHandler';
-import authService, { LoginData, RegisterData } from '../services/auth.service';
+import authService, { AuthUser, LoginData, RegisterData } from '../services/auth.service';
+import { getErrorStatus } from '@/utils/apiResponse';
 
-interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-}
+export type User = AuthUser;
 
 interface AuthState {
   user: User | null;
@@ -26,13 +28,25 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+let sessionCheckPromise: Promise<void> | null = null;
+
+function resetBusinessStores() {
+  useGroupStore.setState(useGroupStore.getInitialState());
+  useTransactionStore.setState(useTransactionStore.getInitialState());
+  useProposalStore.setState(useProposalStore.getInitialState());
+  useNotificationStore.setState(useNotificationStore.getInitialState());
+  useAIStore.setState(useAIStore.getInitialState());
+  useVoteStore.setState(useVoteStore.getInitialState());
+}
+
+export const useAuthStore = create<AuthState>(set => ({
   user: null,
   isLoading: false,
   isAuthenticated: false,
   error: null,
 
   login: async (data: LoginData) => {
+    resetBusinessStores();
     set({ isLoading: true, error: null });
     try {
       const response = await authService.login(data);
@@ -54,6 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   register: async (data: RegisterData) => {
+    resetBusinessStores();
     set({ isLoading: true, error: null });
     try {
       const response = await authService.register(data);
@@ -78,6 +93,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       await authService.logout();
+      resetBusinessStores();
+
       set({
         user: null,
         isAuthenticated: false,
@@ -93,18 +110,51 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   checkAuth: async () => {
-    set({ isLoading: true });
+    if (sessionCheckPromise) return sessionCheckPromise;
+    sessionCheckPromise = (async () => {
+      set({ isLoading: true });
+      try {
+        const isAuth = await authService.isAuthenticated();
+        if (!isAuth) {
+          set({ user: null, isAuthenticated: false, isLoading: false });
+          return;
+        }
+
+        if (await biometricService.isBiometricLoginEnabled()) {
+          const verified = await biometricService.authenticate();
+          if (!verified.success) {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: verified.error || 'Déverrouillage requis',
+            });
+            return;
+          }
+        }
+        set({ isAuthenticated: true });
+
+        try {
+          const user = await authService.getCurrentUser();
+          set({ user, isAuthenticated: true, isLoading: false });
+        } catch (error) {
+          if ([401, 403].includes(getErrorStatus(error) || 0)) {
+            await authService.clearStoredTokens();
+            resetBusinessStores();
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          } else {
+            // Keep the session available while offline; cached screens can still render.
+            set({ isAuthenticated: true, isLoading: false });
+          }
+        }
+      } catch {
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      }
+    })();
     try {
-      const isAuth = await authService.isAuthenticated();
-      set({
-        isAuthenticated: isAuth,
-        isLoading: false,
-      });
-    } catch {
-      set({
-        isAuthenticated: false,
-        isLoading: false,
-      });
+      await sessionCheckPromise;
+    } finally {
+      sessionCheckPromise = null;
     }
   },
 

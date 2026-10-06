@@ -1,12 +1,15 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image, Keyboard } from 'react-native';
+import { Alert } from '@/services/dialog.service';
+import { View, Text, ScrollView, TouchableOpacity, Image, Keyboard } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { Button, Input } from '@/components/ui';
+import { Button, Icon, Input } from '@/components/ui';
+import type { UpdateProfileData } from '@/services/auth.service';
 import {
   showImagePicker,
   saveImageLocally,
   deleteImageLocally,
+  uploadImage,
   ImageInfo,
 } from '@/services/upload.service';
 import logger from '@/services/logger';
@@ -91,17 +94,24 @@ export default function EditProfileScreen() {
       setLoading(true);
 
       // Prepare update data
-      const updateData: Record<string, string> = {
+      const updateData: UpdateProfileData = {
         ...formData,
       };
 
-      // Add avatar if selected
       if (avatar) {
-        updateData.avatar = avatar.uri;
+        const uploadedAvatar = await uploadImage(avatar);
+        updateData.avatar = {
+          url: uploadedAvatar.url,
+          filename: uploadedAvatar.filename,
+        };
       }
 
       // Call backend API to update profile
       await updateProfile(updateData);
+
+      if (avatar) {
+        await deleteImageLocally(avatar.uri);
+      }
 
       Alert.alert('Succès', 'Votre profil a été mis à jour', [
         {
@@ -118,12 +128,16 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Modifier le profil</Text>
-          <Text className="text-gray-600">Mettez à jour vos informations personnelles</Text>
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+            Modifier le profil
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-300">
+            Mettez à jour vos informations personnelles
+          </Text>
         </View>
 
         {/* Avatar Section */}
@@ -131,6 +145,12 @@ export default function EditProfileScreen() {
           {avatar ? (
             <Image
               source={{ uri: avatar.uri }}
+              className="w-24 h-24 rounded-full mb-3"
+              resizeMode="cover"
+            />
+          ) : user?.avatar?.url ? (
+            <Image
+              source={{ uri: user.avatar.url }}
               className="w-24 h-24 rounded-full mb-3"
               resizeMode="cover"
             />
@@ -195,11 +215,14 @@ export default function EditProfileScreen() {
         </View>
 
         {/* Additional Info */}
-        <View className="bg-blue-50 p-4 rounded-lg">
-          <Text className="text-blue-800 text-sm">
-            💡 <Text className="font-semibold">Note:</Text> Certaines informations comme votre email
-            peuvent nécessiter une vérification avant d'être modifiées.
-          </Text>
+        <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+          <View className="flex-row">
+            <Icon name="info-circle" size={14} color="#1e40af" />
+            <Text className="text-blue-800 text-sm ml-2 flex-1">
+              <Text className="font-semibold">Note:</Text> Certaines informations comme votre email
+              peuvent nécessiter une vérification avant d'être modifiées.
+            </Text>
+          </View>
         </View>
       </View>
     </ScrollView>

@@ -23,21 +23,10 @@ npm test -- --testPathPatterns="integration"
 npm test -- --testPathPatterns="middleware"
 ```
 
-## Current Test Stats
+## Test Status
 
-- **Total Tests:** 39
-- **Success Rate:** 100%
-- **Execution Time:** ~15-20 seconds
-- **Coverage:** 24.9% overall
-
-### Coverage by Component
-- Utils: 100% ✅
-- Routes: 100% ✅
-- Validation: 100% ✅
-- Middleware: 43.58%
-- Models: 67.44%
-- Controllers: 11.16% (needs work)
-- Services: 3.19% (needs work)
+Test counts and coverage change as the code evolves. Use the commands above
+to get the current results rather than relying on a snapshot in this guide.
 
 ## Test Files Location
 
@@ -59,9 +48,9 @@ backend/src/__tests__/
 ## Documentation
 
 - `backend/src/__tests__/README.md` - Testing guide
+- `../mobile/TESTING_SETUP.md` - Mobile test setup
+- `../mobile/RELEASE_TESTING.md` - Mobile release test checklist
 - `FIREBASE_SETUP.md` - Firebase configuration
-- `SESSION_SUMMARY_2025-10-10_PHASE1_AND_TESTING.md` - Session details
-- `FINAL_SESSION_SUMMARY_2025-10-10.md` - Complete summary
 
 ## Next Steps
 
@@ -73,12 +62,5 @@ backend/src/__tests__/
 
 ## Project Status
 
-- **Overall Progress:** 71.9% (228/317 tasks)
-- **Phase 1:** 100% ✅
-- **Phase 7:** 8.7% (testing started)
-- **Phases Complete:** 5 of 9
-
----
-
-**Last Updated:** 2025-10-10  
-**Testing Status:** Infrastructure ready, foundation complete
+See `STATUS_2025-10-12.md` for the current project status and known
+environment-dependent test limitations.

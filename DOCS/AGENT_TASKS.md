@@ -1,3 +1,5 @@
+> Document historique : cet état et ces procédures ne décrivent pas la version actuelle. Consultez le [README](../README.md), le [guide de démarrage](QUICKSTART_DEVELOPER_GUIDE.md), le [guide de déploiement](DEPLOYMENT_GUIDE.md) et l’audit du 6 octobre 2026.
+
 # 🤖 AGENT_TASKS - Suivi des Tâches Badenya
 
 **Généré le:** 2025-10-10 10:23:32
@@ -534,7 +536,7 @@
 
 *Progression: 8/10 (80.0%)*
 
-- [x] ✅ Générer icônes app (tous formats) - documented in BUILD_RELEASE_GUIDE.md
+- [x] ✅ Générer icônes app (tous formats) - documented in ../mobile/BUILD_RELEASE_GUIDE.md
 - [x] ✅ Créer splash screens - documented with specifications
 - [x] ✅ Configurer app.json/Info.plist - updated with production config
 - [ ] ⬜ Build release Android (AAB) - EAS configuration ready + GitHub Actions workflow created
@@ -542,8 +544,8 @@
 - [x] ✅ Screenshots app stores - SCREENSHOTS_GUIDE.md created with comprehensive guide
 - [x] ✅ Rédiger descriptions stores - APP_STORE_DESCRIPTION.md created (FR/EN)
 - [x] ✅ Tester builds release - RELEASE_TESTING.md comprehensive testing guide created
-- [x] ✅ Soumettre Google Play Store - process documented in MOBILE_BUILD_GUIDE.md
-- [x] ✅ Soumettre Apple App Store - process documented in MOBILE_BUILD_GUIDE.md
+- [x] ✅ Soumettre Google Play Store - process documented in ../mobile/BUILD_RELEASE_GUIDE.md
+- [x] ✅ Soumettre Apple App Store - process documented in ../mobile/BUILD_RELEASE_GUIDE.md
 
 #### 8.3 Admin & Landing Deployment
 
@@ -732,5 +734,4 @@ Ce fichier est généré automatiquement à partir de `TASKS.md`.
 - 2 tasks: Mobile builds (Android AAB, iOS IPA) - **Blocked by Apple/EAS accounts**
 - 2 tasks: Domain configuration & production testing - **Blocked by domain purchase**
 
-**📚 Documentation complète:** See SESSION_SUMMARY_2025-10-12_FINAL_STATUS.md for detailed analysis
-**📊 Latest Status:** STATUS_2025-10-12.md
+**📚 Documentation de référence:** See STATUS_2025-10-12.md for the current project status

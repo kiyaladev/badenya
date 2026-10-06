@@ -1,8 +1,13 @@
+import { Alert } from '@/services/dialog.service';
 import * as Notifications from 'expo-notifications';
-import { Platform, Alert } from 'react-native';
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import SecureStore from './token-storage';
+import { getCapabilities } from './capabilities.service';
 import notificationService from './notification.service';
 import logger from './logger';
+
+const PUSH_TOKEN_KEY = 'pushNotificationToken';
 
 /**
  * Configure notification handler
@@ -50,24 +55,31 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
 /**
  * Get push notification token
- * Note: This is for Expo push notifications. For Firebase, you'd need to configure Firebase separately.
+ * This app uses Expo push tokens. The backend routes Expo tokens to the Expo
+ * gateway and native FCM/APNs tokens to Firebase when configured.
  */
 export const getPushNotificationToken = async (): Promise<string | null> => {
   try {
-    // For physical devices
-    if (!Constants.isDevice) {
-      console.warn('Push notifications require a physical device');
+    if (Platform.OS === 'web' || !(await getCapabilities()).push) return null;
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ||
+      Constants.easConfig?.projectId ||
+      process.env.EXPO_PUBLIC_PROJECT_ID;
+    if (!projectId) {
+      logger.warn(
+        'PushNotification',
+        'No EAS projectId configured; push registration is disabled for this build'
+      );
       return null;
     }
 
+    // Expo reports unsupported simulators; that failure is handled without a false success.
     const hasPermission = await requestNotificationPermissions();
-    if (!hasPermission) {
-      return null;
-    }
+    if (!hasPermission) return null;
 
     // Get Expo push token
     const token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId,
+      projectId,
     });
 
     // Token registered successfully
@@ -88,7 +100,7 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
     if (token) {
       // Register token with backend
       await notificationService.updateDeviceToken(token, Platform.OS);
-      // Device registered successfully
+      await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
     }
 
     return token;
@@ -103,14 +115,16 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
  */
 export const unregisterFromPushNotifications = async (): Promise<void> => {
   try {
-    const token = await getPushNotificationToken();
+    const token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY);
 
     if (token) {
       await notificationService.removeDeviceToken(token);
-      // Device unregistered successfully
+      await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
     }
   } catch (error) {
     logger.error('PushNotification', 'Error unregistering from push notifications', error);
+  } finally {
+    await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
   }
 };
 

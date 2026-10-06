@@ -5,6 +5,7 @@ import Group from '../models/Group';
 import reportService from './report.service';
 import { IGroup, ITransaction } from '../models';
 import logger from '../utils/logger';
+import { isConfiguredValue } from '../utils/configuredValue';
 
 interface PopulatedUser {
   _id: string;
@@ -55,17 +56,18 @@ interface DataContext {
 /**
  * AI Service for generating insights using Google Gemini API
  */
-class AIService {
+export class AIService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: GenerativeModel | null = null;
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && apiKey !== 'your-gemini-api-key') {
+    const model = process.env.GEMINI_MODEL;
+    if (isConfiguredValue(apiKey) && isConfiguredValue(model)) {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      this.model = this.genAI.getGenerativeModel({ model: model.trim() });
     } else {
-      logger.warn('⚠️  Gemini API key not configured. AI features will be disabled.');
+      logger.warn('Gemini key or model not configured. AI features will be disabled.');
     }
   }
 
@@ -90,7 +92,7 @@ class AIService {
     }
 
     // Get group and transaction data
-    const group = await Group.findById(groupId);
+    const group = await this.getGroupForMember(groupId, userId);
     if (!group) {
       throw new Error('Group not found');
     }
@@ -139,15 +141,12 @@ class AIService {
   /**
    * Detect anomalies in transactions
    */
-  async detectAnomalies(groupId: string) {
+  async detectAnomalies(groupId: string, userId: string) {
     if (!this.isAvailable()) {
       throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
     }
 
-    const group = await Group.findById(groupId);
-    if (!group) {
-      throw new Error('Group not found');
-    }
+    const group = await this.getGroupForMember(groupId, userId);
 
     // Get last 3 months of transactions
     const threeMonthsAgo = new Date();
@@ -183,15 +182,12 @@ class AIService {
   /**
    * Generate personalized recommendations
    */
-  async generateRecommendations(groupId: string) {
+  async generateRecommendations(groupId: string, userId: string) {
     if (!this.isAvailable()) {
       throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
     }
 
-    const group = await Group.findById(groupId).populate('members.userId', 'fullName');
-    if (!group) {
-      throw new Error('Group not found');
-    }
+    const group = await this.getGroupForMember(groupId, userId, true);
 
     if (!this.model) {
       throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
@@ -211,6 +207,18 @@ class AIService {
     const text = response.text();
 
     return this.parseRecommendationsResponse(text);
+  }
+
+  private async getGroupForMember(groupId: string, userId: string, populate = false) {
+    const query = Group.findById(groupId);
+    const group = populate ? await query.populate('members.userId', 'fullName') : await query;
+    if (!group) throw new Error('Group not found');
+
+    const isMember = group.members.some(
+      member => member.userId.toString() === userId && member.status === 'active'
+    );
+    if (!isMember) throw new Error('You are not a member of this group');
+    return group;
   }
 
   /**

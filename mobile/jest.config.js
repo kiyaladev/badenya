@@ -1,11 +1,6 @@
 module.exports = {
+  preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
-  },
-  transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-navigation|@expo|expo|zustand)/)',
-  ],
   collectCoverageFrom: [
     'components/**/*.{ts,tsx}',
     'store/**/*.{ts,tsx}',
@@ -19,8 +14,8 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^@expo/vector-icons/FontAwesome$': '<rootDir>/__mocks__/FontAwesome.tsx',
     '\\.css$': 'identity-obj-proxy',
     '^react-native$': '<rootDir>/node_modules/react-native',
   },
-  testEnvironment: 'node',
 };

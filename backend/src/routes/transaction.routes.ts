@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import {
   createTransaction,
+  getMyTransactions,
   getGroupTransactions,
   getTransactionById,
   verifyTransaction,
@@ -13,7 +14,7 @@ import { validate } from '../middleware/validation';
 const router = Router();
 
 // All routes require authentication
-router.use(authenticate);
+
 
 /**
  * @swagger
@@ -246,34 +247,35 @@ const transactionIdValidation = [
 ];
 
 // Routes
+router.get('/transactions',authenticate,getMyTransactions);
 router.post(
-  '/groups/:groupId/transactions',
+  '/groups/:groupId/transactions', authenticate,
   groupIdValidation,
   createTransactionValidation,
   validate,
   createTransaction
 );
 router.get(
-  '/groups/:groupId/transactions',
+  '/groups/:groupId/transactions', authenticate,
   groupIdValidation,
   validate,
   getGroupTransactions
 );
 router.get(
-  '/transactions/:id',
+  '/transactions/:id', authenticate,
   transactionIdValidation,
   validate,
   getTransactionById
 );
 router.put(
-  '/transactions/:id/verify',
+  '/transactions/:id/verify', authenticate,
   transactionIdValidation,
   verifyTransactionValidation,
   validate,
   verifyTransaction
 );
 router.delete(
-  '/transactions/:id',
+  '/transactions/:id', authenticate,
   transactionIdValidation,
   cancelTransactionValidation,
   validate,

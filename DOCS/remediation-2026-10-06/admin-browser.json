@@ -1,0 +1,101 @@
+{
+  "bootstrapRequests": [
+    "/api/v1/auth/me",
+    "/api/v1/auth/refresh-token",
+    "/api/v1/auth/login",
+    "/api/v1/admin/groups",
+    "/api/v1/auth/me"
+  ],
+  "evidence": [
+    {
+      "path": "/dashboard",
+      "width": 375,
+      "viewport": 375,
+      "violations": []
+    },
+    {
+      "path": "/groups",
+      "width": 375,
+      "viewport": 375,
+      "violations": []
+    },
+    {
+      "path": "/groups/g",
+      "width": 375,
+      "viewport": 375,
+      "violations": []
+    },
+    {
+      "path": "/users",
+      "width": 375,
+      "viewport": 375,
+      "violations": []
+    },
+    {
+      "path": "/transactions",
+      "width": 375,
+      "viewport": 375,
+      "violations": []
+    },
+    {
+      "path": "/dashboard",
+      "width": 768,
+      "viewport": 768,
+      "violations": []
+    },
+    {
+      "path": "/groups",
+      "width": 768,
+      "viewport": 768,
+      "violations": []
+    },
+    {
+      "path": "/groups/g",
+      "width": 768,
+      "viewport": 768,
+      "violations": []
+    },
+    {
+      "path": "/users",
+      "width": 768,
+      "viewport": 768,
+      "violations": []
+    },
+    {
+      "path": "/transactions",
+      "width": 768,
+      "viewport": 768,
+      "violations": []
+    },
+    {
+      "path": "/dashboard",
+      "width": 1440,
+      "viewport": 1440,
+      "violations": []
+    },
+    {
+      "path": "/groups",
+      "width": 1440,
+      "viewport": 1440,
+      "violations": []
+    },
+    {
+      "path": "/groups/g",
+      "width": 1440,
+      "viewport": 1440,
+      "violations": []
+    },
+    {
+      "path": "/users",
+      "width": 1440,
+      "viewport": 1440,
+      "violations": []
+    },
+    {
+      "path": "/transactions",
+      "width": 1440,
+      "viewport": 1440,
+      "violations": []
+    }
+  ]
+}

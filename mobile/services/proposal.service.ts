@@ -1,4 +1,5 @@
 import api from './api';
+import { getEntityId } from '@/utils/apiResponse';
 
 export interface Proposal {
   _id: string;
@@ -61,17 +62,49 @@ export interface CreateProposalData {
 }
 
 export interface VoteOnProposalData {
-  decision: 'for' | 'against' | 'abstain';
+  vote: 'for' | 'against' | 'abstain';
   comment?: string;
 }
 
+function normalizeProposal(rawProposal: unknown): Proposal {
+  const raw = (rawProposal || {}) as Proposal & {
+    proposedBy?: unknown;
+    votes?: Array<Proposal['votes'][number] & { userId?: unknown }>;
+  };
+  const proposedBy =
+    raw.proposedBy && typeof raw.proposedBy === 'object'
+      ? (raw.proposedBy as { _id?: unknown; fullName?: unknown })
+      : undefined;
+
+  return {
+    ...raw,
+    _id: getEntityId(raw._id),
+    groupId: getEntityId(raw.groupId),
+    proposedBy: {
+      _id: getEntityId(proposedBy?._id ?? raw.proposedBy),
+      fullName: String(proposedBy?.fullName || 'Utilisateur'),
+    },
+    votes: (raw.votes || []).map(vote => ({
+      ...vote,
+      userId: getEntityId(vote.userId),
+    })),
+    amount: Number(raw.amount || 0),
+    currency: raw.currency || 'XOF',
+    attachments: raw.attachments || [],
+  };
+}
+
 class ProposalService {
+  async closeProposal(proposalId: string): Promise<Proposal> {
+    return normalizeProposal((await api.put(`/proposals/${proposalId}/close`)).data.data.proposal);
+  }
+
   /**
    * Get proposals for a specific group
    */
   async getGroupProposals(groupId: string): Promise<Proposal[]> {
     const response = await api.get(`/groups/${groupId}/proposals`);
-    return response.data.data.proposals;
+    return response.data.data.proposals.map(normalizeProposal);
   }
 
   /**
@@ -79,7 +112,7 @@ class ProposalService {
    */
   async getProposalById(proposalId: string): Promise<Proposal> {
     const response = await api.get(`/proposals/${proposalId}`);
-    return response.data.data.proposal;
+    return normalizeProposal(response.data.data.proposal);
   }
 
   /**
@@ -87,7 +120,7 @@ class ProposalService {
    */
   async createProposal(groupId: string, data: CreateProposalData): Promise<Proposal> {
     const response = await api.post(`/groups/${groupId}/proposals`, data);
-    return response.data.data.proposal;
+    return normalizeProposal(response.data.data.proposal);
   }
 
   /**
@@ -95,7 +128,7 @@ class ProposalService {
    */
   async voteOnProposal(proposalId: string, data: VoteOnProposalData): Promise<Proposal> {
     const response = await api.post(`/proposals/${proposalId}/vote`, data);
-    return response.data.data.proposal;
+    return normalizeProposal(response.data.data.proposal);
   }
 
   /**
@@ -103,7 +136,7 @@ class ProposalService {
    */
   async executeProposal(proposalId: string): Promise<Proposal> {
     const response = await api.post(`/proposals/${proposalId}/execute`);
-    return response.data.data.proposal;
+    return normalizeProposal(response.data.data.proposal);
   }
 
   /**

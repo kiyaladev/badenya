@@ -2,7 +2,8 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAIStore } from '@/store/aiStore';
-import { Loading } from '@/components/ui';
+import { Icon, Loading } from '@/components/ui';
+import type { IconName } from '@/components/ui';
 import { AIInsight, AITrend, AIPrediction } from '@/services/ai.service';
 
 export default function InsightDetailsScreen() {
@@ -27,56 +28,64 @@ export default function InsightDetailsScreen() {
       case 'down':
         return 'text-red-600';
       case 'stable':
-        return 'text-gray-600';
+        return 'text-gray-600 dark:text-gray-300';
     }
   };
 
   const getSeverityBg = (direction: 'up' | 'down' | 'stable') => {
     switch (direction) {
       case 'up':
-        return 'bg-green-50';
+        return 'bg-green-50 dark:bg-green-950';
       case 'down':
-        return 'bg-red-50';
+        return 'bg-red-50 dark:bg-red-950';
       case 'stable':
-        return 'bg-gray-50';
+        return 'bg-gray-50 dark:bg-gray-900';
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      savings: '💰',
-      expenses: '💸',
-      participation: '👥',
-      growth: '📈',
-      risk: '⚠️',
-      performance: '🎯',
+  const getCategoryIcon = (category: string): IconName => {
+    const icons: Record<string, IconName> = {
+      savings: 'money',
+      expenses: 'credit-card',
+      participation: 'users',
+      growth: 'line-chart',
+      risk: 'exclamation-triangle',
+      performance: 'bullseye',
     };
-    return icons[category] || '💡';
+    return icons[category] || 'lightbulb-o';
   };
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'text-green-600';
     if (confidence >= 0.5) return 'text-yellow-600';
-    return 'text-gray-600';
+    return 'text-gray-600 dark:text-gray-300';
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <View className="bg-white p-6 border-b border-gray-100">
-        <TouchableOpacity onPress={() => router.back()} className="mb-3">
-          <Text className="text-primary-600">← Retour</Text>
+      <View className="bg-white dark:bg-gray-800 p-6 border-b border-gray-100 dark:border-gray-700">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mb-3 flex-row items-center"
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <Icon name="arrow-left" size={16} color="#0284c7" />
+          <Text className="ml-2 text-primary-600">Retour</Text>
         </TouchableOpacity>
 
-        <Text className="text-2xl font-bold text-gray-900 mb-2">Rapport d'Insights IA</Text>
-        <Text className="text-gray-600">
+        <Text className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-2">
+          Rapport d'Insights IA
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-300">
           {new Date(currentInsight.createdAt).toLocaleDateString('fr-FR', {
             day: 'numeric',
             month: 'long',
             year: 'numeric',
           })}
         </Text>
-        <Text className="text-sm text-gray-500 mt-1">
+        <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Période: {new Date(currentInsight.periodStart).toLocaleDateString('fr-FR')} -{' '}
           {new Date(currentInsight.periodEnd).toLocaleDateString('fr-FR')}
         </Text>
@@ -86,26 +95,31 @@ export default function InsightDetailsScreen() {
       </View>
 
       {/* Summary */}
-      <View className="bg-white p-6 mx-4 mt-4 rounded-xl">
-        <Text className="text-lg font-semibold text-gray-900 mb-3">📊 Résumé</Text>
-        <Text className="text-gray-700 leading-6">{currentInsight.report.summary}</Text>
+      <View className="bg-white dark:bg-gray-800 p-6 mx-4 mt-4 rounded-xl">
+        <View className="flex-row items-center mb-3">
+          <Icon name="bar-chart" size={18} color="#111827" />
+          <Text className="ml-2 text-lg font-semibold text-gray-900 dark:text-gray-50">Résumé</Text>
+        </View>
+        <Text className="text-gray-700 dark:text-gray-200 leading-6">
+          {currentInsight.report.summary}
+        </Text>
 
-        <View className="flex-row justify-between mt-4 pt-4 border-t border-gray-100">
+        <View className="flex-row justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <View>
-            <Text className="text-xs text-gray-500">Cotisations</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400">Cotisations</Text>
             <Text className="text-lg font-bold text-green-600">
               +{currentInsight.report.totalContributions.toLocaleString()}
             </Text>
           </View>
           <View>
-            <Text className="text-xs text-gray-500">Dépenses</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400">Dépenses</Text>
             <Text className="text-lg font-bold text-red-600">
               -{currentInsight.report.totalExpenses.toLocaleString()}
             </Text>
           </View>
           <View>
-            <Text className="text-xs text-gray-500">Balance</Text>
-            <Text className="text-lg font-bold text-gray-900">
+            <Text className="text-xs text-gray-500 dark:text-gray-400">Balance</Text>
+            <Text className="text-lg font-bold text-gray-900 dark:text-gray-50">
               {currentInsight.report.netBalance.toLocaleString()}
             </Text>
           </View>
@@ -114,19 +128,27 @@ export default function InsightDetailsScreen() {
 
       {/* Insights */}
       {currentInsight.report.insights.length > 0 && (
-        <View className="bg-white p-6 mx-4 mt-4 rounded-xl">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">💡 Insights Clés</Text>
+        <View className="bg-white dark:bg-gray-800 p-6 mx-4 mt-4 rounded-xl">
+          <View className="flex-row items-center mb-4">
+            <Icon name="lightbulb-o" size={18} color="#111827" />
+            <Text className="ml-2 text-lg font-semibold text-gray-900 dark:text-gray-50">
+              Insights Clés
+            </Text>
+          </View>
 
           {currentInsight.report.insights.map((insight: AIInsight, index: number) => (
-            <View key={index} className="mb-4 pb-4 border-b border-gray-100 last:border-b-0">
+            <View
+              key={index}
+              className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+            >
               <View className="flex-row items-center mb-2">
-                <Text className="text-2xl mr-2">{getCategoryIcon(insight.category)}</Text>
-                <Text className="text-sm font-semibold text-gray-700 capitalize">
+                <Icon name={getCategoryIcon(insight.category)} size={20} color="#374151" />
+                <Text className="text-sm font-semibold text-gray-700 dark:text-gray-200 capitalize">
                   {insight.category}
                 </Text>
               </View>
-              <Text className="text-gray-700 mb-2">{insight.observation}</Text>
-              <View className="bg-blue-50 p-3 rounded-lg">
+              <Text className="text-gray-700 dark:text-gray-200 mb-2">{insight.observation}</Text>
+              <View className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
                 <Text className="text-xs text-blue-700 font-medium mb-1">Recommandation</Text>
                 <Text className="text-sm text-blue-800">{insight.recommendation}</Text>
               </View>
@@ -137,21 +159,47 @@ export default function InsightDetailsScreen() {
 
       {/* Trends */}
       {currentInsight.report.trends.length > 0 && (
-        <View className="bg-white p-6 mx-4 mt-4 rounded-xl">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">📈 Tendances</Text>
+        <View className="bg-white dark:bg-gray-800 p-6 mx-4 mt-4 rounded-xl">
+          <View className="flex-row items-center mb-4">
+            <Icon name="line-chart" size={18} color="#111827" />
+            <Text className="ml-2 text-lg font-semibold text-gray-900 dark:text-gray-50">
+              Tendances
+            </Text>
+          </View>
 
           {currentInsight.report.trends.map((trend: AITrend, index: number) => (
             <View key={index} className={`mb-3 p-4 rounded-lg ${getSeverityBg(trend.direction)}`}>
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="font-semibold text-gray-800">{trend.metric}</Text>
+                <Text className="font-semibold text-gray-800 dark:text-gray-100">
+                  {trend.metric}
+                </Text>
                 <View className="flex-row items-center">
+                  <Icon
+                    name={
+                      trend.direction === 'up'
+                        ? 'arrow-up'
+                        : trend.direction === 'down'
+                          ? 'arrow-down'
+                          : 'minus'
+                    }
+                    size={14}
+                    color={
+                      trend.direction === 'up'
+                        ? '#16a34a'
+                        : trend.direction === 'down'
+                          ? '#dc2626'
+                          : '#4b5563'
+                    }
+                  />
                   <Text className={`text-lg font-bold ${getSeverityColor(trend.direction)}`}>
                     {trend.change > 0 ? '+' : ''}
                     {trend.change.toFixed(1)}%
                   </Text>
                 </View>
               </View>
-              <Text className="text-gray-600">Valeur actuelle: {trend.value.toLocaleString()}</Text>
+              <Text className="text-gray-600 dark:text-gray-300">
+                Valeur actuelle: {trend.value.toLocaleString()}
+              </Text>
             </View>
           ))}
         </View>
@@ -159,13 +207,20 @@ export default function InsightDetailsScreen() {
 
       {/* Predictions */}
       {currentInsight.report.predictions.length > 0 && (
-        <View className="bg-white p-6 mx-4 mt-4 rounded-xl">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">🔮 Prédictions</Text>
+        <View className="bg-white dark:bg-gray-800 p-6 mx-4 mt-4 rounded-xl">
+          <View className="flex-row items-center mb-4">
+            <Icon name="bullseye" size={18} color="#111827" />
+            <Text className="ml-2 text-lg font-semibold text-gray-900 dark:text-gray-50">
+              Prédictions
+            </Text>
+          </View>
 
           {currentInsight.report.predictions.map((prediction: AIPrediction, index: number) => (
             <View key={index} className="mb-3 p-4 bg-purple-50 rounded-lg">
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="font-semibold text-gray-800">{prediction.metric}</Text>
+                <Text className="font-semibold text-gray-800 dark:text-gray-100">
+                  {prediction.metric}
+                </Text>
                 <View className="bg-purple-100 px-2 py-1 rounded">
                   <Text className="text-xs text-purple-700 font-medium">
                     {prediction.timeframe}
@@ -176,7 +231,7 @@ export default function InsightDetailsScreen() {
                 {prediction.predictedValue.toLocaleString()}
               </Text>
               <View className="flex-row items-center">
-                <View className="flex-1 bg-gray-200 h-2 rounded-full mr-2">
+                <View className="flex-1 bg-gray-200 dark:bg-gray-600 h-2 rounded-full mr-2">
                   <View
                     className="bg-purple-500 h-2 rounded-full"
                     style={{ width: `${prediction.confidence * 100}%` }}
@@ -192,9 +247,9 @@ export default function InsightDetailsScreen() {
       )}
 
       {/* Generated By */}
-      <View className="p-6 mx-4 mt-4 bg-gray-100 rounded-xl">
-        <Text className="text-xs text-gray-500">Généré par</Text>
-        <Text className="text-sm text-gray-700">
+      <View className="p-6 mx-4 mt-4 bg-gray-100 dark:bg-gray-700 rounded-xl">
+        <Text className="text-xs text-gray-500 dark:text-gray-400">Généré par</Text>
+        <Text className="text-sm text-gray-700 dark:text-gray-200">
           {currentInsight.generatedBy.fullName}
         </Text>
         {currentInsight.tokensUsed && (

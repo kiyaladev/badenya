@@ -1,0 +1,28 @@
+[Unit]
+Description=Badenya dedicated MongoDB replica set
+After=network.target
+
+[Service]
+Type=simple
+User=badenya-mongodb
+Group=badenya-mongodb
+ExecStart=/usr/bin/mongod --config=/etc/badenya-mongodb/mongod.yml
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=120
+LimitNOFILE=64000
+UMask=0077
+StateDirectory=badenya-mongodb
+StateDirectoryMode=0700
+LogsDirectory=badenya-mongodb
+LogsDirectoryMode=0700
+RuntimeDirectory=badenya-mongodb
+RuntimeDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/badenya-mongodb /var/log/badenya-mongodb /run/badenya-mongodb
+
+[Install]
+WantedBy=multi-user.target

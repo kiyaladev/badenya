@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Proposal } from '@/services/proposal.service';
+import { Icon } from '@/components/ui';
 
 interface VoteCardProps {
   proposal: Proposal;
@@ -12,17 +13,33 @@ function VoteCard({ proposal }: VoteCardProps) {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
-      pending: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-500' },
-      approved: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-500' },
-      rejected: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-500' },
-      executed: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-500' },
+      pending: {
+        bg: 'bg-yellow-50 dark:bg-yellow-950',
+        text: 'text-yellow-700',
+        border: 'border-yellow-500',
+      },
+      approved: {
+        bg: 'bg-green-50 dark:bg-green-950',
+        text: 'text-green-700',
+        border: 'border-green-500',
+      },
+      rejected: { bg: 'bg-red-50 dark:bg-red-950', text: 'text-red-700', border: 'border-red-500' },
+      executed: {
+        bg: 'bg-blue-50 dark:bg-blue-950',
+        text: 'text-blue-700',
+        border: 'border-blue-500',
+      },
     };
     return colors[status] || colors.pending;
   };
 
   const getPriorityBadge = (priority: string) => {
     const badges: Record<string, { bg: string; text: string; label: string }> = {
-      low: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Basse' },
+      low: {
+        bg: 'bg-gray-100 dark:bg-gray-700',
+        text: 'text-gray-700 dark:text-gray-200',
+        label: 'Basse',
+      },
       medium: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Moyenne' },
       high: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Haute' },
       critical: { bg: 'bg-red-100', text: 'text-red-700', label: 'Critique' },
@@ -56,7 +73,7 @@ function VoteCard({ proposal }: VoteCardProps) {
     }).format(amount);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
@@ -77,14 +94,16 @@ function VoteCard({ proposal }: VoteCardProps) {
   return (
     <TouchableOpacity
       onPress={handlePress}
-      className={`bg-white rounded-xl p-4 mb-3 shadow-sm border ${statusColors.border}`}
+      className={`bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm border ${statusColors.border}`}
       activeOpacity={0.7}
     >
       {/* Header */}
       <View className="flex-row items-start justify-between mb-3">
         <View className="flex-1 mr-3">
-          <Text className="text-gray-800 font-bold text-lg mb-1">{proposal.title}</Text>
-          <Text className="text-gray-600 text-sm" numberOfLines={2}>
+          <Text className="text-gray-800 dark:text-gray-100 font-bold text-lg mb-1">
+            {proposal.title}
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-300 text-sm" numberOfLines={2}>
             {proposal.description}
           </Text>
         </View>
@@ -92,10 +111,10 @@ function VoteCard({ proposal }: VoteCardProps) {
         {/* Status Badge */}
         <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
           <Text className={`text-xs font-medium ${statusColors.text}`}>
-            {proposal.status === 'pending' && '⏳ En cours'}
-            {proposal.status === 'approved' && '✅ Approuvé'}
-            {proposal.status === 'rejected' && '❌ Rejeté'}
-            {proposal.status === 'executed' && '✓ Exécuté'}
+            {proposal.status === 'pending' && 'En cours'}
+            {proposal.status === 'approved' && 'Approuvé'}
+            {proposal.status === 'rejected' && 'Rejeté'}
+            {proposal.status === 'executed' && 'Exécuté'}
           </Text>
         </View>
       </View>
@@ -103,7 +122,7 @@ function VoteCard({ proposal }: VoteCardProps) {
       {/* Amount & Priority */}
       <View className="flex-row items-center justify-between mb-3">
         <View>
-          <Text className="text-gray-500 text-xs mb-1">Montant</Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs mb-1">Montant</Text>
           <Text className="text-primary-600 font-bold text-lg">
             {formatAmount(proposal.amount)}
           </Text>
@@ -118,33 +137,41 @@ function VoteCard({ proposal }: VoteCardProps) {
       {isActive && (
         <View className="mb-3">
           <View className="flex-row justify-between mb-1">
-            <Text className="text-gray-600 text-xs">Progression du vote</Text>
-            <Text className="text-gray-800 text-xs font-medium">{progress}%</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-xs">Progression du vote</Text>
+            <Text className="text-gray-800 dark:text-gray-100 text-xs font-medium">
+              {progress}%
+            </Text>
           </View>
-          <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <View className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
             <View className="h-full bg-primary-600" style={{ width: `${progress}%` }} />
           </View>
         </View>
       )}
 
       {/* Vote Stats */}
-      <View className="flex-row items-center justify-between mb-3 pb-3 border-b border-gray-100">
+      <View className="flex-row items-center justify-between mb-3 pb-3 border-b border-gray-100 dark:border-gray-700">
         <View className="flex-row items-center">
           <View className="flex-row items-center mr-4">
-            <Text className="text-green-600 text-sm mr-1">👍</Text>
-            <Text className="text-gray-700 text-sm font-medium">{stats.for}</Text>
+            <Icon name="thumbs-up" size={14} color="#16a34a" />
+            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              {stats.for}
+            </Text>
           </View>
           <View className="flex-row items-center mr-4">
-            <Text className="text-red-600 text-sm mr-1">👎</Text>
-            <Text className="text-gray-700 text-sm font-medium">{stats.against}</Text>
+            <Icon name="thumbs-down" size={14} color="#dc2626" />
+            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              {stats.against}
+            </Text>
           </View>
           <View className="flex-row items-center">
-            <Text className="text-gray-500 text-sm mr-1">⊝</Text>
-            <Text className="text-gray-700 text-sm font-medium">{stats.abstain}</Text>
+            <Icon name="minus-circle" size={14} color="#6b7280" />
+            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+              {stats.abstain}
+            </Text>
           </View>
         </View>
 
-        <Text className="text-gray-500 text-xs">
+        <Text className="text-gray-500 dark:text-gray-400 text-xs">
           {proposal.votes?.length || 0} vote{(proposal.votes?.length || 0) > 1 ? 's' : ''}
         </Text>
       </View>
@@ -152,13 +179,15 @@ function VoteCard({ proposal }: VoteCardProps) {
       {/* Footer */}
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
-          <Text className="text-gray-500 text-xs">Catégorie: {proposal.category}</Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+            Catégorie: {proposal.category}
+          </Text>
         </View>
 
-        {proposal.endDate && (
-          <Text className="text-gray-500 text-xs">
+        {proposal.votingDeadline && (
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">
             {isActive ? 'Fin: ' : 'Terminé: '}
-            {formatDate(proposal.endDate)}
+            {formatDate(proposal.votingDeadline)}
           </Text>
         )}
       </View>
