@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useAuthStore } from '../authStore';
 import authService from '../../services/auth.service';
+import biometricService from '../../services/biometric.service';
 
 // Mock the auth service
 jest.mock('../../services/auth.service', () => ({
@@ -10,6 +11,14 @@ jest.mock('../../services/auth.service', () => ({
     register: jest.fn(),
     logout: jest.fn(),
     isAuthenticated: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/biometric.service', () => ({
+  __esModule: true,
+  default: {
+    isBiometricLoginEnabled: jest.fn().mockResolvedValue(false),
+    authenticate: jest.fn(),
   },
 }));
 
@@ -214,6 +223,23 @@ describe('AuthStore', () => {
 
       expect(result.current.isAuthenticated).toBe(false);
       expect(result.current.isLoading).toBe(false);
+    });
+
+    it('asks for biometric unlock only once per app launch', async () => {
+      (authService.isAuthenticated as jest.Mock).mockResolvedValue(true);
+      (biometricService.isBiometricLoginEnabled as jest.Mock).mockResolvedValue(true);
+      (biometricService.authenticate as jest.Mock).mockResolvedValue({ success: true });
+
+      const { result } = renderHook(() => useAuthStore());
+      await act(async () => {
+        await result.current.checkAuth();
+      });
+      await act(async () => {
+        await result.current.checkAuth();
+      });
+
+      expect(biometricService.authenticate).toHaveBeenCalledTimes(1);
+      expect(result.current.isAuthenticated).toBe(true);
     });
   });
 
