@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -48,36 +47,26 @@ export default function ContactPage() {
     });
   };
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 },
-  };
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
       <div className="bg-gradient-to-br from-blue-50 to-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-12">
+          <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Contactez-nous
             </h1>
             <p className="text-xl text-gray-600">
               Une question ? Une suggestion ? Nous sommes là pour vous aider
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="max-w-2xl mx-auto">
             {/* Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white p-8 rounded-xl shadow-lg"
-            >
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Envoyez-nous un message</h2>
+            <div className="bg-white p-8 rounded-xl shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Envoyez-nous un message</h2>
+              <p className="text-gray-600 mb-6">Une question sur votre compte, vos groupes ou vos données ? N’envoyez ni mot de passe ni informations bancaires.</p>
               {submitted ? (
                 <div className="text-center py-8">
                   <p className="text-green-600 text-xl font-semibold mb-2">Message enregistré !</p>
@@ -138,7 +127,6 @@ export default function ContactPage() {
                   >
                     <option value="">Sélectionnez un sujet</option>
                     <option value="support">Support technique</option>
-                    <option value="sales">Questions commerciales</option>
                     <option value="partnership">Partenariat</option>
                     <option value="other">Autre</option>
                   </select>
@@ -174,20 +162,8 @@ export default function ContactPage() {
                 )}
               </form>
               )}
-            </motion.div>
+            </div>
 
-            {/* Contact Information */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="space-y-8"
-            >
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-8 rounded-xl text-white">
-                <h2 className="text-2xl font-bold mb-6">Informations de contact</h2>
-                <p className="leading-relaxed">Utilisez ce formulaire pour une question sur votre compte, vos groupes ou vos données. Votre message est enregistré pour être traité par l’équipe. N’envoyez pas de mot de passe ni d’informations bancaires sensibles.</p>
-              </div>
-            </motion.div>
           </div>
         </div>
       </div>
