@@ -10,6 +10,16 @@ L’[audit du 6 octobre 2026](DOCS/AUDIT_APPLICATION_2026-10-06.md) décrit les 
 
 Les modifications du dépôt ne sont pas automatiquement publiées. La configuration email, push et IA ainsi que les essais sur appareils doivent être vérifiés dans l’environnement cible. Les opérations financières atomiques nécessitent un replica set MongoDB ; le MongoDB standalone actuellement observé doit être migré vers une instance dédiée avant activation de ces opérations.
 
+## Domaines
+
+| Domaine | Application |
+| --- | --- |
+| `https://badenya-api.naimba.com` | API Express (`backend`), PM2 sur `127.0.0.1:5054` derrière Nginx |
+| `https://badenya.naimba.com` | Export web Expo (`mobile/dist`) |
+| À configurer | Administration (`admin`) et site public (`landing-page`) : builds distincts, virtual hosts à définir ; l’administration doit rester sur le même site que l’API (cookies `SameSite=Strict`) |
+
+Détails dans le [guide de déploiement](DOCS/DEPLOYMENT_GUIDE.md).
+
 ## Documentation de référence
 
 - [Démarrage et vérification](DOCS/QUICKSTART_DEVELOPER_GUIDE.md)

@@ -27,9 +27,9 @@ Le périmètre reprend toutes les tâches et recommandations de [l’audit initi
 
 ## Preuves et résultats
 
-Les résultats machine sont conservés dans [remediation-2026-10-06](remediation-2026-10-06/), les captures du site dans [remediation-landing-2026-10-06](remediation-landing-2026-10-06/) et celles du mobile dans [mobile/audit-evidence-2026-10-06](../mobile/audit-evidence-2026-10-06/). Les tests automatisés et axe ne remplacent pas les essais sur téléphone ni une revue complète au lecteur d’écran.
+Les résultats machine sont conservés dans [remediation-2026-10-06](archive/remediation-2026-10-06/), les captures du site dans [remediation-landing-2026-10-06](archive/remediation-landing-2026-10-06/) et celles du mobile dans [mobile/audit-evidence-2026-10-06](archive/audit-evidence-2026-10-06/). Les tests automatisés et axe ne remplacent pas les essais sur téléphone ni une revue complète au lecteur d’écran.
 
-Les tests finaux totalisent **484 tests distincts réussis** : backend216, administration47, site public12, mobile209. Les réexécutions ciblées ne sont pas comptées deux fois. Compilations, lint, preuves navigateur et livraison sont consignés dans [validation.json](remediation-2026-10-06/validation.json). Les anciennes preuves d’audit décrivent la version avant correction ; elles ne constituent pas les résultats de la livraison.
+Les tests finaux totalisent **484 tests distincts réussis** : backend216, administration47, site public12, mobile209. Les réexécutions ciblées ne sont pas comptées deux fois. Compilations, lint, preuves navigateur et livraison sont consignés dans [validation.json](archive/remediation-2026-10-06/validation.json). Les anciennes preuves d’audit décrivent la version avant correction ; elles ne constituent pas les résultats de la livraison.
 
 Le bundle mobile final a passé 13 contrôles Chromium avec l’API réelle sur une base fictive : contribution, pagination, clôture/exécution, deux versements, nouveau cycle et admission approuvée. Les six vues de groupe en clair/sombre aux largeurs 375/768/1440 ne débordent pas ; aucune erreur JavaScript, et les 57 requêtes API ont été redirigées exclusivement vers le serveur de test. Aucun contrôle axe complet du mobile ni mesure de performance en production n’est revendiqué.
 
@@ -37,7 +37,7 @@ L’artefact versionné est préparé dans `/tmp/badenya-releases/remediation-20
 
 ## Activation et validations restantes
 
-- La préparation de migration est vérifiée : modèles MongoDB/systemd validés et sauvegarde préliminaire privée restaurée dans un replica set temporaire authentifié ; 12 collections et 41 documents BSON concordent. Voir [migration-preflight.json](remediation-2026-10-06/migration-preflight.json). Aucun service de production n’a été installé ou modifié.
+- La préparation de migration est vérifiée : modèles MongoDB/systemd validés et sauvegarde préliminaire privée restaurée dans un replica set temporaire authentifié ; 12 collections et 41 documents BSON concordent. Voir [migration-preflight.json](archive/remediation-2026-10-06/migration-preflight.json). Aucun service de production n’a été installé ou modifié.
 - La base de production observée est **standalone**. Les écritures transactionnelles refusent 503 sans modification partielle. Exécuter la migration dédiée suivant [le runbook MongoDB](MONGODB_REPLICA_SET_RUNBOOK.md) avant activation ; aucun service Mongo partagé n’a été modifié.
 - Configurer et vérifier SMTP, Firebase/EAS et Gemini pour les services souhaités. Les valeurs d’exemple sont refusées comme configuration disponible ; Gemini nécessite aussi `GEMINI_MODEL`, et son indicateur suit l’état du service réellement utilisé. Aucun secret ni accès fournisseur n’a été fourni pendant ces vérifications. Contact et newsletter restent persistants même sans email ; une réinitialisation ne prétend pas envoyer un email absent.
 - Vérifier réception email/push et biométrie sur Android/iOS physiques, puis préparer un build de distribution signé. L’APK debug existant n’est pas une livraison validée.

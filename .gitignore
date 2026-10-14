@@ -70,3 +70,4 @@ backend/uploads/**/*
 # Extracted zip artifacts
 badenya-main/
 badenya-main.zip
+*.zip

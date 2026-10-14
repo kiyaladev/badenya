@@ -1,10 +1,22 @@
-name: Prepare production release
+name: Prepare release
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [production, staging]
+        default: production
+      api_url:
+        description: Full API URL including /api/v1
+        required: true
+        default: https://badenya-api.naimba.com/api/v1
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ inputs.environment }}
+    env:
+      RELEASE_ID: ${{ inputs.environment == 'production' && github.sha || format('staging-{0}', github.sha) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,19 +29,22 @@ jobs:
       - run: npm ci
       - run: npm ci
         working-directory: mobile
-      - run: npm run test:unit --workspace=backend -- --runInBand
-      - run: npm run test:integration --workspace=backend -- --runInBand
-      - run: npm test --workspace=admin -- --runInBand
-      - run: npm test --workspace=landing-page -- --runInBand
-      - run: npm run test:ci
+      - if: inputs.environment == 'production'
+        run: |
+          npm run test:unit --workspace=backend -- --runInBand
+          npm run test:integration --workspace=backend -- --runInBand
+          npm test --workspace=admin -- --runInBand
+          npm test --workspace=landing-page -- --runInBand
+      - if: inputs.environment == 'production'
+        run: npm run test:ci
         working-directory: mobile
-      - run: bash scripts/prepare-release.sh "${{ github.sha }}"
+      - run: bash scripts/prepare-release.sh "$RELEASE_ID"
         env:
           BADENYA_ARTIFACT_DIR: ${{ runner.temp }}/badenya-releases
-          VITE_API_URL: https://badenya-api.naimba.com/api/v1
-          EXPO_PUBLIC_API_URL: https://badenya-api.naimba.com/api/v1
+          VITE_API_URL: ${{ inputs.api_url }}
+          EXPO_PUBLIC_API_URL: ${{ inputs.api_url }}
       - uses: actions/upload-artifact@v4
         with:
-          name: badenya-${{ github.sha }}
-          path: ${{ runner.temp }}/badenya-releases/${{ github.sha }}
+          name: badenya-${{ env.RELEASE_ID }}
+          path: ${{ runner.temp }}/badenya-releases/${{ env.RELEASE_ID }}
           if-no-files-found: error

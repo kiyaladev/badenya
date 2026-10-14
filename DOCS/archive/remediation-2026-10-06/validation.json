@@ -43,8 +43,8 @@
     "suites": 25,
     "typescript": "passed",
     "lint": "passed",
-    "testsReport": "../../mobile/audit-evidence-2026-10-06/tests.json",
-    "dependenciesReport": "../../mobile/audit-evidence-2026-10-06/dependencies.json",
+    "testsReport": "../audit-evidence-2026-10-06/tests.json",
+    "dependenciesReport": "../audit-evidence-2026-10-06/dependencies.json",
     "residualVulnerabilities": {
       "info": 0,
       "low": 0,
@@ -71,7 +71,7 @@
         "light",
         "dark"
       ],
-      "proof": "../../mobile/audit-evidence-2026-10-06/evidence.json",
+      "proof": "../audit-evidence-2026-10-06/evidence.json",
       "accessibilityScope": "Role-based UI controls and public headings; no full screen-reader or axe audit"
     }
   },

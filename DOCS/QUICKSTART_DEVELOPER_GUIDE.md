@@ -38,3 +38,24 @@ npm run test:mobile
 ```
 
 Les tests d’intégration utilisent des instances MongoDB temporaires. Un export web doit aussi être ouvert dans un navigateur pour vérifier la connexion, la navigation et les erreurs JavaScript. La compilation seule ne valide pas ces parcours. Les essais email, push, IA et biométrie nécessitent leurs services et appareils configurés.
+
+## Variables d’environnement
+
+Partir des fichiers `.env.example` (`backend/`, `mobile/`) ; ne jamais commiter de `.env`.
+
+- Backend : `MONGODB_URI` (base de développement dédiée), `JWT_SECRET` et `JWT_REFRESH_SECRET` (générer avec `openssl rand -base64 64`), `CORS_ORIGIN`, `APP_URL`, `PUBLIC_API_URL`, `AUTH_COOKIE_SAME_SITE`, SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`), IA (`GEMINI_API_KEY`, `GEMINI_MODEL`), envois (`UPLOAD_DIR`, `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES`).
+- Mobile : `EXPO_PUBLIC_API_URL` ; sur un appareil physique, remplacer `localhost` par l’IP LAN de la machine.
+- Admin et site public : `VITE_API_URL`.
+
+## Notifications push (Firebase)
+
+Le backend envoie les push via Firebase Admin si `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` et `FIREBASE_PRIVATE_KEY` sont définis (console Firebase > Paramètres du projet > Comptes de service > Générer une clé privée ; conserver les `\n` dans la clé). Sans ces variables, les notifications restent consultables dans l’application mais aucun push n’est envoyé. Côté mobile, placer `google-services.json` / `GoogleService-Info.plist` hors du dépôt et les référencer dans `app.json` pour un build natif. Tester sur un appareil réel : l’émulateur ne valide pas la réception.
+
+## Tests ciblés
+
+```sh
+npm test --workspace=backend -- path/to/file.test.ts   # un fichier
+npm test --workspace=backend -- -t "nom du test"        # un test
+npm run test:coverage --workspace=backend               # couverture
+npm --prefix mobile test -- --watch                     # mobile en continu
+```
