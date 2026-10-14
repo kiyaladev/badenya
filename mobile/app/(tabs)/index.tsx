@@ -89,13 +89,6 @@ const baseStyles = StyleSheet.create({
   statIconGroups: {
     backgroundColor: '#dcfce7',
   },
-  statIconMembers: {
-    backgroundColor: '#dbeafe',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#f3f4f6',
-  },
   statLabel: {
     fontSize: 12,
     color: '#6b7280',
@@ -227,21 +220,21 @@ export default function HomeScreen() {
   const quickActions = [
     {
       icon: 'plus-circle' as const,
-      label: 'Nouveau Groupe',
+      label: 'Nouveau groupe',
       route: '/(screens)/create-group',
       bgColor: '#dbeafe',
       iconColor: '#2563eb',
     },
     {
       icon: 'money' as const,
-      label: 'Contribution',
+      label: 'Cotisation',
       route: '/(screens)/add-contribution',
       bgColor: '#dcfce7',
       iconColor: '#16a34a',
     },
     {
-      icon: 'bar-chart' as const,
-      label: 'Historique',
+      icon: 'exchange' as const,
+      label: 'Transactions',
       route: '/(tabs)/transactions',
       bgColor: '#fef3c7',
       iconColor: '#d97706',
@@ -303,20 +296,10 @@ export default function HomeScreen() {
           <View style={styles.balanceStats}>
             <View style={styles.statColumn}>
               <View style={[styles.statIcon, styles.statIconGroups]}>
-                <Icon name="arrow-up" size={16} color="#16a34a" />
+                <Icon name="users" size={16} color="#16a34a" />
               </View>
               <Text style={styles.statLabel}>Groupes</Text>
               <Text style={styles.statValue}>{groups.length}</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statColumn}>
-              <View style={[styles.statIcon, styles.statIconMembers]}>
-                <Icon name="users" size={16} color="#2563eb" />
-              </View>
-              <Text style={styles.statLabel}>Membres</Text>
-              <Text style={styles.statValue}>
-                {groups.reduce((sum, g) => sum + (g.members?.length || 0), 0)}
-              </Text>
             </View>
           </View>
         </Card>

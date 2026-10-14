@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { Loading, SkeletonItem, SkeletonCard, SkeletonList } from '../ui/Loading';
+import { Loading } from '../ui/Loading';
 
 describe('Loading Components', () => {
   describe('Loading', () => {
@@ -34,44 +34,6 @@ describe('Loading Components', () => {
       const { queryByText } = render(<Loading />);
       // There should be no text if not provided
       expect(queryByText('Loading')).toBeNull();
-    });
-  });
-
-  describe('SkeletonItem', () => {
-    it('should render skeleton item', () => {
-      const { getByTestId } = render(<SkeletonItem testID="skeleton" />);
-      expect(getByTestId('skeleton')).toBeTruthy();
-    });
-
-    it('should render with custom height', () => {
-      const { getByTestId } = render(<SkeletonItem height={100} testID="skeleton" />);
-      const skeleton = getByTestId('skeleton');
-      expect(skeleton.props.style.height).toBe(100);
-    });
-
-    it('should render with default height', () => {
-      const { getByTestId } = render(<SkeletonItem testID="skeleton" />);
-      const skeleton = getByTestId('skeleton');
-      expect(skeleton.props.style.height).toBe(80);
-    });
-  });
-
-  describe('SkeletonCard', () => {
-    it('should render skeleton card', () => {
-      const { getByTestId } = render(<SkeletonCard testID="skeleton-card" />);
-      expect(getByTestId).toBeDefined();
-    });
-  });
-
-  describe('SkeletonList', () => {
-    it('should render default number of skeleton cards', () => {
-      render(<SkeletonList count={3} />);
-      // Should render 3 skeleton cards by default
-    });
-
-    it('should render custom number of skeleton cards', () => {
-      render(<SkeletonList count={5} />);
-      // Should render 5 skeleton cards
     });
   });
 });

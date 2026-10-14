@@ -90,18 +90,12 @@ function RootLayoutNav() {
   const router = useRouter();
   const { isAuthenticated, checkAuth, user } = useAuthStore();
   const insets = useSafeAreaInsets();
-  const { isConnected, pendingCount, isSyncing, syncError, setConnected } = useOfflineStore();
+  const { isConnected, setConnected } = useOfflineStore();
   const offlineBannerStyle: ViewStyle = {
     ...styles.syncBanner,
     paddingTop: insets.top + 4,
     backgroundColor: '#f59e0b',
   };
-  const syncingBannerStyle: ViewStyle = {
-    ...styles.syncBanner,
-    paddingTop: insets.top + 4,
-    backgroundColor: '#0284c7',
-  };
-
   useEffect(() => {
     setColorScheme(themeMode === 'auto' ? 'system' : themeMode);
   }, [setColorScheme, themeMode]);
@@ -181,17 +175,6 @@ function RootLayoutNav() {
             <Text style={styles.bannerText}>
               Mode hors-ligne — Consultation des données enregistrées ; une connexion est nécessaire
               pour modifier
-            </Text>
-          </View>
-        )}
-        {isConnected && (isSyncing || pendingCount > 0 || syncError) && (
-          <View style={syncingBannerStyle}>
-            <Icon name="refresh" size={14} color="#ffffff" style={styles.bannerIcon} />
-            <Text style={styles.bannerText}>
-              {syncError ||
-                (isSyncing
-                  ? 'Synchronisation en cours...'
-                  : `${pendingCount} action(s) en attente de synchronisation`)}
             </Text>
           </View>
         )}

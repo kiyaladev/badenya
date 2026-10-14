@@ -180,10 +180,6 @@ export default function ChangePasswordScreen() {
           />
         </View>
 
-        <View className="mb-6">
-          <Button title="Annuler" onPress={() => router.back()} variant="secondary" />
-        </View>
-
         {/* Warning */}
         <View className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg">
           <Text className="text-yellow-800 text-sm">

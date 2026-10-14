@@ -66,24 +66,3 @@ export default function Badge({
     </View>
   );
 }
-
-// Dot indicator badge (for notifications/status)
-export function StatusDot({
-  variant = 'default',
-  size = 'md',
-}: {
-  variant?: BadgeVariant;
-  size?: 'sm' | 'md' | 'lg';
-}) {
-  const colors = variantStyles[variant];
-  const sizeMap = { sm: 6, md: 8, lg: 10 };
-  const dotSize = sizeMap[size];
-  const dotStyle = {
-    width: dotSize,
-    height: dotSize,
-    borderRadius: dotSize / 2,
-    backgroundColor: colors.text,
-  };
-
-  return <View style={dotStyle} />;
-}

@@ -2,61 +2,48 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
-import { Group, GROUP_TYPE_LABELS } from '@/services/group.service';
+import type { Group } from '@/services/group.service';
+import { GROUP_TYPE_ICONS, getGroupTypeLabel } from '@/constants/labels';
 import { Icon } from '@/components/ui';
 
 interface GroupCardProps {
   group: Group;
-  variant?: 'default' | 'compact';
 }
 
 // Group type configuration
 const groupTypeConfig = {
   tontine: {
-    label: 'Tontine',
-    icon: 'refresh' as const,
     bgColor: '#fae8ff',
     textColor: '#a21caf',
     iconColor: '#c026d3',
   },
   association: {
-    label: 'Association',
-    icon: 'bank' as const,
     bgColor: '#dcfce7',
     textColor: '#166534',
     iconColor: '#10b981',
   },
   family: {
-    label: 'Famille',
-    icon: 'home' as const,
     bgColor: '#dbeafe',
     textColor: '#1e40af',
     iconColor: '#3b82f6',
   },
   friends: {
-    label: 'Amis',
-    icon: 'users' as const,
     bgColor: '#fef3c7',
     textColor: '#92400e',
     iconColor: '#f59e0b',
   },
   project: {
-    label: 'Projet',
-    icon: 'flag' as const,
     bgColor: '#ffedd5',
     textColor: '#c2410c',
     iconColor: '#f97316',
   },
 };
 
-function GroupCard({ group, variant = 'default' }: GroupCardProps) {
+function GroupCard({ group }: GroupCardProps) {
   const router = useRouter();
   const colors = useThemeStore(state => state.colors);
-  const isCompact = variant === 'compact';
 
   const typeConfig = groupTypeConfig[group.type as keyof typeof groupTypeConfig] || {
-    label: group.type,
-    icon: 'users' as const,
     bgColor: '#f3f4f6',
     textColor: '#374151',
     iconColor: '#6b7280',
@@ -73,7 +60,7 @@ function GroupCard({ group, variant = 'default' }: GroupCardProps) {
   const cardStyle: ViewStyle = {
     backgroundColor: colors.card,
     borderRadius: 16,
-    padding: isCompact ? 14 : 16,
+    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -166,13 +153,17 @@ function GroupCard({ group, variant = 'default' }: GroupCardProps) {
         <View style={headerContentStyle}>
           {/* Group Icon */}
           <View style={iconContainerStyle}>
-            <Icon name={typeConfig.icon} size={20} color={typeConfig.iconColor} />
+            <Icon
+              name={GROUP_TYPE_ICONS[group.type] ?? 'users'}
+              size={20}
+              color={typeConfig.iconColor}
+            />
           </View>
           <View style={titleContainerStyle}>
             <Text style={titleStyle} numberOfLines={1}>
               {group.name}
             </Text>
-            {group.description && !isCompact && (
+            {group.description && (
               <Text style={descriptionStyle} numberOfLines={1}>
                 {group.description}
               </Text>
@@ -182,7 +173,7 @@ function GroupCard({ group, variant = 'default' }: GroupCardProps) {
 
         {/* Badge */}
         <View style={badgeStyle}>
-          <Text style={badgeTextStyle}>{GROUP_TYPE_LABELS[group.type] || typeConfig.label}</Text>
+          <Text style={badgeTextStyle}>{getGroupTypeLabel(group.type)}</Text>
         </View>
       </View>
 

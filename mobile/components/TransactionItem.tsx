@@ -4,6 +4,12 @@ import { useRouter } from 'expo-router';
 import { Transaction } from '@/services/transaction.service';
 import { Icon } from '@/components/ui';
 import type { IconName } from '@/components/ui';
+import {
+  getCategoryLabel,
+  getPaymentMethodLabel,
+  getTransactionStatusLabel,
+  getTransactionTypeLabel,
+} from '@/constants/labels';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -27,21 +33,6 @@ function TransactionItem({ transaction }: TransactionItemProps) {
     }
   };
 
-  const getTypeLabel = () => {
-    switch (transaction.type) {
-      case 'contribution':
-        return 'Contribution';
-      case 'expense':
-        return 'Dépense';
-      case 'refund':
-        return 'Remboursement';
-      case 'adjustment':
-        return 'Ajustement';
-      default:
-        return transaction.type;
-    }
-  };
-
   const getStatusColor = () => {
     switch (transaction.status) {
       case 'completed':
@@ -54,21 +45,6 @@ function TransactionItem({ transaction }: TransactionItemProps) {
         return 'text-gray-500 dark:text-gray-400';
       default:
         return 'text-gray-600 dark:text-gray-300';
-    }
-  };
-
-  const getStatusLabel = () => {
-    switch (transaction.status) {
-      case 'completed':
-        return 'Complété';
-      case 'pending':
-        return 'En attente';
-      case 'failed':
-        return 'Échoué';
-      case 'cancelled':
-        return 'Annulé';
-      default:
-        return transaction.status;
     }
   };
 
@@ -112,7 +88,7 @@ function TransactionItem({ transaction }: TransactionItemProps) {
         {/* Transaction Info */}
         <View className="flex-1">
           <Text className="text-gray-800 dark:text-gray-100 font-medium mb-1">
-            {transaction.description || getTypeLabel()}
+            {transaction.description || getTransactionTypeLabel(transaction.type)}
           </Text>
           <View className="flex-row items-center">
             <Text className="text-gray-600 dark:text-gray-300 text-xs mr-2">{formatDate()}</Text>
@@ -120,13 +96,15 @@ function TransactionItem({ transaction }: TransactionItemProps) {
               <>
                 <View className="w-1 h-1 bg-gray-400 rounded-full mr-2" />
                 <Text className="text-gray-600 dark:text-gray-300 text-xs">
-                  {transaction.category}
+                  {getCategoryLabel(transaction.category)}
                 </Text>
               </>
             )}
           </View>
           {transaction.status !== 'completed' && (
-            <Text className={`text-xs mt-1 ${getStatusColor()}`}>{getStatusLabel()}</Text>
+            <Text className={`text-xs mt-1 ${getStatusColor()}`}>
+              {getTransactionStatusLabel(transaction.status)}
+            </Text>
           )}
         </View>
 
@@ -135,13 +113,7 @@ function TransactionItem({ transaction }: TransactionItemProps) {
           {formatAmount()}
           {transaction.paymentMethod && (
             <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-              {transaction.paymentMethod.type === 'mobile_money'
-                ? 'Mobile'
-                : transaction.paymentMethod.type === 'bank_transfer'
-                  ? 'Banque'
-                  : transaction.paymentMethod.type === 'card'
-                    ? 'Carte'
-                    : 'Cash'}
+              {getPaymentMethodLabel(transaction.paymentMethod.type)}
             </Text>
           )}
         </View>

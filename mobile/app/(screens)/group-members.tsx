@@ -1,24 +1,28 @@
 import { Alert } from '@/services/dialog.service';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGroupStore } from '@/store/groupStore';
 import { useAuthStore } from '@/store/authStore';
 import groupService, { GroupMember } from '@/services/group.service';
-import { Icon, Loading } from '@/components/ui';
+import { Button, Icon, Loading } from '@/components/ui';
+
+type JoinRequest = Awaited<ReturnType<typeof groupService.joinRequests>>[number];
 
 export default function GroupMembersScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
 
   const { groups, isLoading, fetchGroups } = useGroupStore();
   const { user } = useAuthStore();
 
   const group = groups.find(g => g._id === groupId);
   const currentUserId = user?._id || user?.id;
-  const isCurrentUserAdmin = group?.members.some(
-    m => m.userId === currentUserId && m.role === 'admin'
-  );
+  const currentRole = group?.members.find(m => m.userId === currentUserId)?.role;
+  const isCurrentUserAdmin = currentRole === 'admin';
+  const canManageMembers = currentRole === 'admin' || currentRole === 'treasurer';
 
   useEffect(() => {
     if (groupId) {
@@ -26,8 +30,30 @@ export default function GroupMembersScreen() {
     }
   }, [groupId]);
 
+  const loadRequests = async () => {
+    try {
+      const all = await groupService.joinRequests(groupId!);
+      setRequests(all.filter(request => !request.status || request.status === 'pending'));
+    } catch {
+      setRequests([]);
+    }
+  };
+
   const loadData = async () => {
-    await fetchGroups();
+    await Promise.all([fetchGroups(), canManageMembers ? loadRequests() : Promise.resolve()]);
+  };
+
+  useEffect(() => {
+    if (groupId && canManageMembers) void loadRequests();
+  }, [groupId, canManageMembers]);
+
+  const reviewRequest = async (requestId: string, decision: 'approve' | 'reject') => {
+    try {
+      await groupService.reviewJoinRequest(groupId!, requestId, decision);
+      await Promise.all([loadRequests(), fetchGroups()]);
+    } catch {
+      Alert.alert('Erreur', 'La demande reste inchangée.');
+    }
   };
 
   const onRefresh = async () => {
@@ -71,79 +97,50 @@ export default function GroupMembersScreen() {
   const handleMemberAction = (member: GroupMember) => {
     if (!isCurrentUserAdmin || member.userId === currentUserId) return;
 
-    Alert.alert(
-      `Gérer ${member.fullName || 'le membre'}`,
-      `Rôle actuel : ${getRoleLabel(member.role)}`,
-      [
-        {
-          text: 'Définir comme Administrateur',
-          onPress: async () => {
-            try {
-              await groupService.updateMemberRole(groupId!, member.userId, 'admin');
-              await fetchGroups();
-              Alert.alert('Succès', 'Rôle mis à jour');
-            } catch (err: unknown) {
-              const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le rôle');
-            }
-          },
-        },
-        {
-          text: 'Définir comme Trésorier',
-          onPress: async () => {
-            try {
-              await groupService.updateMemberRole(groupId!, member.userId, 'treasurer');
-              await fetchGroups();
-              Alert.alert('Succès', 'Rôle mis à jour');
-            } catch (err: unknown) {
-              const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le rôle');
-            }
-          },
-        },
-        {
-          text: 'Définir comme Membre standard',
-          onPress: async () => {
-            try {
-              await groupService.updateMemberRole(groupId!, member.userId, 'member');
-              await fetchGroups();
-              Alert.alert('Succès', 'Rôle mis à jour');
-            } catch (err: unknown) {
-              const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le rôle');
-            }
-          },
-        },
-        {
-          text: 'Retirer du groupe',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Confirmer le retrait',
-              `Voulez-vous vraiment retirer ${member.fullName || 'ce membre'} du groupe ?`,
-              [
-                { text: 'Annuler', style: 'cancel' },
-                {
-                  text: 'Retirer',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await groupService.removeMember(groupId!, member.userId);
-                      await fetchGroups();
-                      Alert.alert('Succès', 'Membre retiré avec succès');
-                    } catch (err: unknown) {
-                      const error = err as { message?: string };
-                      Alert.alert('Erreur', error.message || 'Impossible de retirer le membre');
-                    }
-                  },
+    const changeRole = async (role: GroupMember['role']) => {
+      try {
+        await groupService.updateMemberRole(groupId!, member.userId, role);
+        await fetchGroups();
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le rôle');
+      }
+    };
+    const roleOptions = (['admin', 'treasurer', 'member'] as const)
+      .filter(role => role !== member.role)
+      .map(role => ({ text: getRoleLabel(role), onPress: () => changeRole(role) }));
+
+    Alert.alert(member.fullName || 'Membre', `Rôle actuel : ${getRoleLabel(member.role)}`, [
+      ...roleOptions,
+      {
+        text: 'Retirer du groupe',
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert(
+            'Confirmer le retrait',
+            `Voulez-vous vraiment retirer ${member.fullName || 'ce membre'} du groupe ?`,
+            [
+              { text: 'Annuler', style: 'cancel' },
+              {
+                text: 'Retirer',
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await groupService.removeMember(groupId!, member.userId);
+                    await fetchGroups();
+                    Alert.alert('Succès', 'Membre retiré avec succès');
+                  } catch (err: unknown) {
+                    const error = err as { message?: string };
+                    Alert.alert('Erreur', error.message || 'Impossible de retirer le membre');
+                  }
                 },
-              ]
-            );
-          },
+              },
+            ]
+          );
         },
-        { text: 'Annuler', style: 'cancel' },
-      ]
-    );
+      },
+      { text: 'Annuler', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -151,9 +148,56 @@ export default function GroupMembersScreen() {
       className="flex-1 bg-gray-50 dark:bg-gray-900"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <View className="px-6 mt-6">
+      <View className="px-6 mt-6 mb-6">
+        {canManageMembers && (
+          <Button
+            title="Inviter"
+            iconName="user-plus"
+            onPress={() => router.push(`/(screens)/add-members?groupId=${groupId}`)}
+            className="mb-6"
+          />
+        )}
+
+        {requests.length > 0 && (
+          <View className="mb-6">
+            <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-3">
+              Demandes en attente ({requests.length})
+            </Text>
+            <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
+              {requests.map((request, index) => (
+                <View
+                  key={request._id}
+                  className={`px-4 py-4 ${
+                    index !== requests.length - 1
+                      ? 'border-b border-gray-100 dark:border-gray-700'
+                      : ''
+                  }`}
+                >
+                  <Text className="text-gray-800 dark:text-gray-100 font-medium mb-3">
+                    {request.userId?.fullName || request.userId?.email || 'Utilisateur'}
+                  </Text>
+                  <View className="flex-row">
+                    <Button
+                      title="Approuver"
+                      size="sm"
+                      onPress={() => reviewRequest(request._id, 'approve')}
+                      className="mr-2"
+                    />
+                    <Button
+                      title="Refuser"
+                      size="sm"
+                      variant="outline"
+                      onPress={() => reviewRequest(request._id, 'reject')}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-4">
-          Membres du groupe ({group.members.length})
+          Membres ({group.members.length})
         </Text>
 
         {group.members.length > 0 ? (

@@ -195,7 +195,7 @@ export default function EditProfileScreen() {
             label="Téléphone *"
             value={formData.phone}
             onChangeText={text => setFormData({ ...formData, phone: text })}
-            placeholder="+223 XX XX XX XX"
+            placeholder="+225 07 XX XX XX XX"
             error={errors.phone}
             keyboardType="phone-pad"
           />
@@ -208,10 +208,6 @@ export default function EditProfileScreen() {
             onPress={handleSubmit}
             disabled={loading}
           />
-        </View>
-
-        <View className="mb-6">
-          <Button title="Annuler" onPress={() => router.back()} variant="secondary" />
         </View>
 
         {/* Additional Info */}

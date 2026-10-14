@@ -4,7 +4,6 @@ import { useTransactionStore } from './transactionStore';
 import { useProposalStore } from './proposalStore';
 import { useNotificationStore } from './notificationStore';
 import { useAIStore } from './aiStore';
-import { useVoteStore } from './voteStore';
 import { create } from 'zustand';
 import { getErrorMessage } from '../utils/errorHandler';
 import authService, { AuthUser, LoginData, RegisterData } from '../services/auth.service';
@@ -36,7 +35,6 @@ function resetBusinessStores() {
   useProposalStore.setState(useProposalStore.getInitialState());
   useNotificationStore.setState(useNotificationStore.getInitialState());
   useAIStore.setState(useAIStore.getInitialState());
-  useVoteStore.setState(useVoteStore.getInitialState());
 }
 
 export const useAuthStore = create<AuthState>(set => ({

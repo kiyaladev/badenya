@@ -1,13 +1,10 @@
 import { Alert } from '@/services/dialog.service';
-import { getCapabilities, Capabilities } from '@/services/capabilities.service';
 import { themedStyles } from '@/utils/themedStyles';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Switch,
-  Linking,
   StyleSheet,
   TextStyle,
   ViewStyle,
@@ -22,7 +19,6 @@ import { useThemeStore } from '@/store/themeStore';
 import { Avatar, Card, Icon, StatItem } from '@/components/ui';
 import type { IconName } from '@/components/ui';
 import userService from '@/services/user.service';
-import pushNotificationService from '@/services/push-notification.service';
 
 interface MenuItemProps {
   icon: IconName;
@@ -169,75 +165,15 @@ function MenuItem({
 }
 
 export default function ProfileScreen() {
-  const [capabilities, setCapabilities] = useState<Capabilities>({
-    ai: false,
-    push: false,
-    email: false,
-  });
-  useEffect(() => {
-    getCapabilities().then(setCapabilities);
-  }, []);
   const styles = themedStyles(
     baseStyles,
     useThemeStore(state => state.colors)
   );
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { user, logout, updateProfile } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { groups } = useGroupStore();
-  const { mode: themeMode } = useThemeStore();
-
-  useEffect(() => {
-    setPushEnabled(user?.preferences?.notifications?.push !== false);
-    setEmailEnabled(user?.preferences?.notifications?.email !== false);
-  }, [user?.preferences]);
-
-  const persistNotificationPreference = async (key: 'push' | 'email', value: boolean) => {
-    const previousValue = key === 'push' ? pushEnabled : emailEnabled;
-    if (key === 'push') setPushEnabled(value);
-    else setEmailEnabled(value);
-
-    try {
-      if (key === 'push') {
-        if (value) {
-          const token = await pushNotificationService.registerForPushNotifications();
-          if (!token) throw new Error('Push notifications are not configured');
-        } else {
-          await pushNotificationService.unregisterFromPushNotifications();
-        }
-      }
-      await updateProfile({
-        preferences: {
-          ...user?.preferences,
-          notifications: {
-            ...user?.preferences?.notifications,
-            [key]: value,
-          },
-        },
-      });
-    } catch {
-      if (key === 'push') setPushEnabled(previousValue);
-      else setEmailEnabled(previousValue);
-      Alert.alert(
-        'Erreur',
-        key === 'push'
-          ? 'Les notifications push ne sont pas disponibles sur cette version.'
-          : 'Impossible de sauvegarder les notifications email.'
-      );
-    }
-  };
-
-  const openExternalPage = async (url: string, title: string) => {
-    try {
-      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
-      else Alert.alert('Lien indisponible', `Impossible d'ouvrir ${title.toLowerCase()}.`);
-    } catch {
-      Alert.alert('Erreur', `Impossible d'ouvrir ${title.toLowerCase()}.`);
-    }
-  };
 
   const handleLogout = () => {
     Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter?', [
@@ -312,149 +248,21 @@ export default function ProfileScreen() {
           <View style={styles.statsRow}>
             <StatItem label="Groupes" value={totalGroups} />
             <View style={styles.statDivider} />
-            <StatItem label="Contributions" value={totalContributions} />
+            <StatItem label="Cotisations" value={totalContributions} />
             <View style={styles.statDivider} />
             <StatItem label="Votes" value={totalVotes} />
           </View>
         </Card>
       </View>
 
-      {/* Account Settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>COMPTE</Text>
         <Card padding="none" shadow="sm">
-          <MenuItem
-            icon="user"
-            iconColor="#0284c7"
-            iconBg="#e0f2fe"
-            label="Modifier le profil"
-            onPress={() => router.push('/(screens)/edit-profile')}
-          />
           <MenuItem
             icon="cog"
             iconColor="#6b7280"
             iconBg="#f3f4f6"
             label="Paramètres"
             onPress={() => router.push('/(screens)/settings')}
-          />
-          <MenuItem
-            icon="globe"
-            iconColor="#8b5cf6"
-            iconBg="#ede9fe"
-            label="Langue"
-            value="Français"
-            onPress={() => router.push('/(screens)/settings')}
-            isLast
-          />
-        </Card>
-      </View>
-
-      {/* Notifications Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
-        <Card padding="none" shadow="sm">
-          <MenuItem
-            icon="bell"
-            iconColor="#f59e0b"
-            iconBg="#fef3c7"
-            label={capabilities.push ? 'Notifications push' : 'Push indisponibles'}
-            rightElement={
-              <Switch
-                value={capabilities.push && pushEnabled}
-                disabled={!capabilities.push}
-                onValueChange={value => persistNotificationPreference('push', value)}
-                trackColor={{ false: '#e5e7eb', true: '#0284c7' }}
-                thumbColor="#ffffff"
-              />
-            }
-          />
-          <MenuItem
-            icon="envelope"
-            iconColor="#10b981"
-            iconBg="#dcfce7"
-            label={capabilities.email ? 'Notifications email' : 'Email indisponible'}
-            rightElement={
-              <Switch
-                value={capabilities.email && emailEnabled}
-                disabled={!capabilities.email}
-                onValueChange={value => persistNotificationPreference('email', value)}
-                trackColor={{ false: '#e5e7eb', true: '#0284c7' }}
-                thumbColor="#ffffff"
-              />
-            }
-            isLast
-          />
-        </Card>
-      </View>
-
-      {/* Preferences */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>PRÉFÉRENCES</Text>
-        <Card padding="none" shadow="sm">
-          <MenuItem
-            icon="money"
-            iconColor="#16a34a"
-            iconBg="#dcfce7"
-            label="Devise"
-            value={user?.preferences?.currency || 'Par groupe'}
-            onPress={() =>
-              Alert.alert(
-                'Devise',
-                'Chaque groupe conserve sa propre devise. Les devises ne sont pas additionnées.'
-              )
-            }
-          />
-          <MenuItem
-            icon="moon-o"
-            iconColor="#6366f1"
-            iconBg="#e0e7ff"
-            label="Thème"
-            value={themeMode === 'dark' ? 'Sombre' : themeMode === 'light' ? 'Clair' : 'Auto'}
-            onPress={() => router.push('/(screens)/settings')}
-            isLast
-          />
-        </Card>
-      </View>
-
-      {/* Other */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>AUTRE</Text>
-        <Card padding="none" shadow="sm">
-          <MenuItem
-            icon="question-circle"
-            iconColor="#0ea5e9"
-            iconBg="#e0f2fe"
-            label="Aide & Support"
-            onPress={() =>
-              openExternalPage(
-                process.env.EXPO_PUBLIC_SUPPORT_URL || 'mailto:support@badenya.app',
-                'le support'
-              )
-            }
-          />
-          <MenuItem
-            icon="file-text-o"
-            iconColor="#6b7280"
-            iconBg="#f3f4f6"
-            label="Conditions d'utilisation"
-            onPress={() =>
-              openExternalPage(
-                process.env.EXPO_PUBLIC_TERMS_URL || 'https://badenya.naimba.com/terms',
-                "les conditions d'utilisation"
-              )
-            }
-          />
-          <MenuItem
-            icon="shield"
-            iconColor="#6b7280"
-            iconBg="#f3f4f6"
-            label="Politique de confidentialité"
-            onPress={() =>
-              openExternalPage(
-                process.env.EXPO_PUBLIC_PRIVACY_URL || 'https://badenya.naimba.com/privacy',
-                'la politique de confidentialité'
-              )
-            }
           />
           <MenuItem
             icon="sign-out"

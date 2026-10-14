@@ -14,8 +14,10 @@ import {
   ImageInfo,
 } from '@/services/upload.service';
 import logger from '@/services/logger';
+import { PAYMENT_METHOD_LABELS, MOBILE_MONEY_OPERATOR_LABELS } from '@/constants/labels';
 
-type PaymentMethodType = 'cash' | 'mobile_money' | 'bank_transfer' | 'card';
+// Backend enum has no 'other' value: "Autre" is stored as 'bank_transfer'.
+type PaymentMethodType = 'cash' | 'mobile_money' | 'bank_transfer';
 
 export default function AddContributionScreen() {
   const router = useRouter();
@@ -26,6 +28,7 @@ export default function AddContributionScreen() {
   const draftIdentity = useRef({ signature: '', key: '' });
   const [selectedGroupId, setSelectedGroupId] = useState<string>(routeGroupId || '');
   const [isUploading, setIsUploading] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const [formData, setFormData] = useState({
     amount: '',
@@ -51,7 +54,7 @@ export default function AddContributionScreen() {
       if (matched?.contributionAmount && !formData.amount) {
         setFormData(prev => ({ ...prev, amount: String(matched.contributionAmount) }));
       }
-    } else if (!selectedGroupId && groups.length > 0) {
+    } else if (!selectedGroupId && groups.length === 1) {
       setSelectedGroupId(groups[0]._id);
       if (groups[0].contributionAmount && !formData.amount) {
         setFormData(prev => ({ ...prev, amount: String(groups[0].contributionAmount) }));
@@ -61,7 +64,6 @@ export default function AddContributionScreen() {
 
   const mobileMoneyProviders: Array<{
     id: 'wave' | 'orange_money' | 'mtn_momo' | 'moov_money';
-    name: string;
     activeBorder: string;
     activeBg: string;
     activeText: string;
@@ -69,7 +71,6 @@ export default function AddContributionScreen() {
   }> = [
     {
       id: 'wave',
-      name: 'Wave',
       activeBorder: 'border-sky-500',
       activeBg: 'bg-sky-50',
       activeText: 'text-sky-700',
@@ -77,7 +78,6 @@ export default function AddContributionScreen() {
     },
     {
       id: 'orange_money',
-      name: 'Orange Money',
       activeBorder: 'border-orange-500',
       activeBg: 'bg-orange-50',
       activeText: 'text-orange-700',
@@ -85,7 +85,6 @@ export default function AddContributionScreen() {
     },
     {
       id: 'mtn_momo',
-      name: 'MTN MoMo',
       activeBorder: 'border-amber-500',
       activeBg: 'bg-amber-50',
       activeText: 'text-amber-700',
@@ -93,7 +92,6 @@ export default function AddContributionScreen() {
     },
     {
       id: 'moov_money',
-      name: 'Moov Money',
       activeBorder: 'border-emerald-500',
       activeBg: 'bg-emerald-50',
       activeText: 'text-emerald-700',
@@ -102,10 +100,9 @@ export default function AddContributionScreen() {
   ];
 
   const paymentMethods: Array<{ value: PaymentMethodType; label: string; icon: IconName }> = [
-    { value: 'mobile_money', label: 'Mobile Money (Wave, Orange, MTN...)', icon: 'mobile' },
-    { value: 'cash', label: 'Espèces', icon: 'money' },
-    { value: 'bank_transfer', label: 'Virement bancaire', icon: 'bank' },
-    { value: 'card', label: 'Carte bancaire', icon: 'credit-card' },
+    { value: 'mobile_money', label: PAYMENT_METHOD_LABELS.mobile_money, icon: 'mobile' },
+    { value: 'cash', label: PAYMENT_METHOD_LABELS.cash, icon: 'money' },
+    { value: 'bank_transfer', label: PAYMENT_METHOD_LABELS.bank_transfer, icon: 'ellipsis-h' },
   ];
 
   const validateForm = (): boolean => {
@@ -243,7 +240,7 @@ export default function AddContributionScreen() {
         await deleteImageLocally(attachment.uri);
       }
 
-      Alert.alert('Succès', 'Contribution enregistrée avec succès!', [
+      Alert.alert('Succès', 'Cotisation enregistrée', [
         {
           text: 'OK',
           onPress: () => router.back(),
@@ -251,7 +248,7 @@ export default function AddContributionScreen() {
       ]);
     } catch (err: unknown) {
       const error = err as { message?: string };
-      Alert.alert('Erreur', error.message || "Impossible d'enregistrer la contribution");
+      Alert.alert('Erreur', error.message || "Impossible d'enregistrer la cotisation");
     } finally {
       setIsUploading(false);
     }
@@ -269,7 +266,7 @@ export default function AddContributionScreen() {
         <EmptyState
           icon="users"
           title="Aucun groupe disponible"
-          description="Vous devez appartenir à au moins un groupe pour effectuer une contribution."
+          description="Vous devez appartenir à au moins un groupe pour verser une cotisation."
           actionLabel="Créer un groupe"
           onAction={() => router.replace('/(screens)/create-group')}
         />
@@ -282,22 +279,12 @@ export default function AddContributionScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-            Faire une contribution
-          </Text>
-          <Text className="text-gray-600 dark:text-gray-300">
-            Enregistrez votre contribution au groupe
-          </Text>
-        </View>
-
         {/* Group Selector */}
         <View className="mb-5">
           <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
             Groupe destinataire *
           </Text>
-          {routeGroupId && selectedGroup ? (
+          {(routeGroupId || groups.length === 1) && selectedGroup ? (
             <View className="bg-primary-50 dark:bg-gray-800 border border-primary-200 rounded-xl p-4 flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
                 <View className="w-10 h-10 rounded-full bg-primary-600 items-center justify-center mr-3">
@@ -388,17 +375,6 @@ export default function AddContributionScreen() {
           />
         </View>
 
-        {/* Description */}
-        <View className="mb-4">
-          <Input
-            label="Description (optionnel)"
-            value={formData.description}
-            onChangeText={text => setFormData({ ...formData, description: text })}
-            placeholder="Ex: Cotisation mensuelle janvier"
-            multiline
-          />
-        </View>
-
         {/* Payment Method */}
         <View className="mb-6">
           <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium mb-3">
@@ -466,7 +442,7 @@ export default function AddContributionScreen() {
                           : 'text-gray-700 dark:text-gray-200 font-medium'
                       }`}
                     >
-                      {provider.name}
+                      {MOBILE_MONEY_OPERATOR_LABELS[provider.id]}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -482,82 +458,100 @@ export default function AddContributionScreen() {
           </View>
         )}
 
-        {/* Attachments */}
-        <View className="mb-6">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
-              Justificatifs (optionnel)
-            </Text>
-            <TouchableOpacity
-              onPress={handleAddAttachment}
-              className="flex-row items-center"
-              disabled={isLoading}
-            >
-              <View className="flex-row items-center">
-                <Icon name="paperclip" size={16} color="#0284c7" />
-                <Text className="text-primary-600 font-medium ml-2">Ajouter</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+        {/* Optional details */}
+        <TouchableOpacity
+          className="flex-row items-center mb-4"
+          onPress={() => setShowDetails(value => !value)}
+        >
+          <Icon name={showDetails ? 'chevron-down' : 'chevron-right'} size={12} color="#0284c7" />
+          <Text className="text-primary-600 font-medium ml-2">Plus de détails</Text>
+        </TouchableOpacity>
+        {showDetails && (
+          <>
+            {/* Description */}
+            <View className="mb-4">
+              <Input
+                label="Description (optionnel)"
+                value={formData.description}
+                onChangeText={text => setFormData({ ...formData, description: text })}
+                placeholder="Ex: Cotisation mensuelle janvier"
+                multiline
+              />
+            </View>
 
-          {attachments.length > 0 && (
-            <View className="space-y-2">
-              {attachments.map((attachment, index) => (
-                <View
-                  key={index}
-                  className="bg-white dark:bg-gray-800 rounded-lg p-3 flex-row items-center border border-gray-200 dark:border-gray-600"
+            {/* Attachments */}
+            <View className="mb-6">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-gray-700 dark:text-gray-200 text-sm font-medium">
+                  Justificatifs (optionnel)
+                </Text>
+                <TouchableOpacity
+                  onPress={handleAddAttachment}
+                  className="flex-row items-center"
+                  disabled={isLoading}
                 >
-                  <Image
-                    source={{ uri: attachment.uri }}
-                    className="w-12 h-12 rounded mr-3"
-                    resizeMode="cover"
-                  />
-                  <View className="flex-1">
-                    <Text
-                      className="text-gray-800 dark:text-gray-100 font-medium"
-                      numberOfLines={1}
-                    >
-                      {attachment.name}
-                    </Text>
-                    {attachment.size && (
-                      <Text className="text-gray-600 dark:text-gray-300 text-xs">
-                        {(attachment.size / 1024 / 1024).toFixed(2)} MB
-                      </Text>
-                    )}
+                  <View className="flex-row items-center">
+                    <Icon name="paperclip" size={16} color="#0284c7" />
+                    <Text className="text-primary-600 font-medium ml-2">Ajouter</Text>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveAttachment(index)}
-                    className="p-2"
-                    disabled={isLoading}
-                  >
-                    <Icon name="times" size={18} color="#dc2626" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          )}
+                </TouchableOpacity>
+              </View>
 
-          {attachments.length === 0 && (
-            <View className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-dashed border-gray-300">
-              <Text className="text-gray-600 dark:text-gray-300 text-center text-sm">
-                Ajoutez des photos de reçus ou justificatifs (optionnel)
-              </Text>
+              {attachments.length > 0 && (
+                <View className="space-y-2">
+                  {attachments.map((attachment, index) => (
+                    <View
+                      key={index}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-3 flex-row items-center border border-gray-200 dark:border-gray-600"
+                    >
+                      <Image
+                        source={{ uri: attachment.uri }}
+                        className="w-12 h-12 rounded mr-3"
+                        resizeMode="cover"
+                      />
+                      <View className="flex-1">
+                        <Text
+                          className="text-gray-800 dark:text-gray-100 font-medium"
+                          numberOfLines={1}
+                        >
+                          {attachment.name}
+                        </Text>
+                        {attachment.size && (
+                          <Text className="text-gray-600 dark:text-gray-300 text-xs">
+                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                          </Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveAttachment(index)}
+                        className="p-2"
+                        disabled={isLoading}
+                      >
+                        <Icon name="times" size={18} color="#dc2626" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {attachments.length === 0 && (
+                <View className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-dashed border-gray-300">
+                  <Text className="text-gray-600 dark:text-gray-300 text-center text-sm">
+                    Ajoutez des photos de reçus ou justificatifs (optionnel)
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          </>
+        )}
 
         {/* Submit Button */}
         <Button
-          title={isUploading ? 'Téléversement des pièces...' : 'Enregistrer la contribution'}
+          title={isUploading ? 'Téléversement des pièces...' : 'Enregistrer la cotisation'}
           onPress={handleSubmit}
           loading={isLoading}
           className="mb-6"
         />
-
-        {/* Cancel Button */}
-        <TouchableOpacity className="py-3" onPress={() => router.back()} disabled={isLoading}>
-          <Text className="text-center text-gray-600 dark:text-gray-300 font-medium">Annuler</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );

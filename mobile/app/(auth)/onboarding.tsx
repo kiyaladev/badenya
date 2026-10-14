@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_SEEN_KEY } from './splash';
 import { themedStyles } from '@/utils/themedStyles';
 import { useThemeStore } from '@/store/themeStore';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ViewStyle } from 'react-native';
@@ -24,7 +26,7 @@ const onboardingData = [
   },
   {
     title: 'Suivi en Temps Réel',
-    description: "Suivez vos contributions et l'évolution de votre épargne à tout moment",
+    description: "Suivez vos cotisations et l'évolution de votre épargne à tout moment",
     icon: 'line-chart' as IconName,
     gradient: ['#10b981', '#059669'] as const,
     iconBg: 'rgba(255,255,255,0.2)',
@@ -130,17 +132,20 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const finishOnboarding = () => {
+    AsyncStorage.setItem(ONBOARDING_SEEN_KEY, '1').catch(() => undefined);
+    router.replace('/(auth)/login');
+  };
+
   const handleNext = () => {
     if (currentPage < onboardingData.length - 1) {
       setCurrentPage(currentPage + 1);
     } else {
-      router.replace('/(auth)/login');
+      finishOnboarding();
     }
   };
 
-  const handleSkip = () => {
-    router.replace('/(auth)/login');
-  };
+  const handleSkip = finishOnboarding;
 
   const currentSlide = onboardingData[currentPage];
   const skipContainerStyle: ViewStyle = {

@@ -1,5 +1,5 @@
 import { Alert } from '@/services/dialog.service';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Share } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGroupStore } from '@/store/groupStore';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import userService, { User } from '@/services/user.service';
 import groupService from '@/services/group.service';
 import { Button, Icon, Loading } from '@/components/ui';
+import { shareGroupInvite } from '@/utils/shareInvite';
 
 export default function AddMembersScreen() {
   const router = useRouter();
@@ -16,48 +17,11 @@ export default function AddMembersScreen() {
 
   const group = groups.find(g => g._id === groupId);
 
-  const [requests, setRequests] = useState<Awaited<ReturnType<typeof groupService.joinRequests>>>(
-    []
-  );
-  useEffect(() => {
-    if (groupId)
-      groupService
-        .joinRequests(groupId)
-        .then(setRequests)
-        .catch(() => {});
-  }, [groupId]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-
-  const handleShareInvite = async () => {
-    if (!group) return;
-    let inviteCode = group.invitationCode;
-    try {
-      inviteCode = inviteCode || (await groupService.invitationCode(group._id));
-    } catch {
-      return Alert.alert(
-        'Invitation indisponible',
-        'Seul un administrateur peut obtenir le code du groupe.'
-      );
-    }
-    const message =
-      `Rejoignez mon groupe "${group.name}" sur l'application Badenya !\n\n` +
-      `Cotisation : ${group.contributionAmount.toLocaleString()} ${group.currency}\n` +
-      `Code du groupe : ${inviteCode}\n\n` +
-      `Téléchargez Badenya pour gérer vos tontines et épargnes solidaires.`;
-
-    try {
-      await Share.share({
-        message,
-        title: `Invitation au groupe ${group.name}`,
-      });
-    } catch {
-      // User cancelled
-    }
-  };
 
   useEffect(() => {
     if (!group) {
@@ -158,45 +122,9 @@ export default function AddMembersScreen() {
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
-        {requests
-          .filter(request => !request.status || request.status === 'pending')
-          .map(request => (
-            <View key={request._id} className="p-4 bg-white dark:bg-gray-800 mb-2">
-              <Text className="text-gray-800 dark:text-white font-bold">
-                Demande : {request.userId?.fullName || request.userId?.email || 'Membre'}
-              </Text>
-              <View className="flex-row mt-2">
-                {(['approve', 'reject'] as const).map(decision => (
-                  <TouchableOpacity
-                    key={decision}
-                    className="p-3 mr-3 bg-primary-600 rounded-lg"
-                    onPress={async () => {
-                      try {
-                        await groupService.reviewJoinRequest(groupId, request._id, decision);
-                        setRequests(await groupService.joinRequests(groupId));
-                        await fetchGroupById(groupId);
-                      } catch {
-                        Alert.alert('Erreur', 'La demande reste inchangée.');
-                      }
-                    }}
-                  >
-                    <Text className="text-white">
-                      {decision === 'approve' ? 'Approuver' : 'Refuser'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          ))}
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-            Ajouter des membres
-          </Text>
-          <Text className="text-gray-600 dark:text-gray-300">
-            Recherchez et ajoutez des membres au groupe {group.name}
-          </Text>
-        </View>
+        <Text className="text-gray-600 dark:text-gray-300 mb-4">
+          Recherchez par email ou téléphone pour ajouter des membres à {group.name}
+        </Text>
 
         {/* Search Box */}
         <View className="mb-6">
@@ -219,7 +147,7 @@ export default function AddMembersScreen() {
 
         {/* Share Invite Card */}
         <TouchableOpacity
-          onPress={handleShareInvite}
+          onPress={() => shareGroupInvite(group)}
           className="flex-row items-center justify-between bg-primary-50 dark:bg-gray-800 border border-primary-200 rounded-xl p-4 mb-5 active:bg-primary-100"
         >
           <View className="flex-row items-center flex-1 mr-3">
@@ -237,15 +165,6 @@ export default function AddMembersScreen() {
           </View>
           <Icon name="chevron-right" size={14} color="#0284c7" />
         </TouchableOpacity>
-
-        {/* Info */}
-        <View className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4">
-          <Text className="text-blue-800 text-sm">
-            <Icon name="lightbulb-o" size={14} color="#1d4ed8" />{' '}
-            <Text className="font-semibold">Astuce:</Text> Recherchez les utilisateurs par email ou
-            numéro de téléphone
-          </Text>
-        </View>
       </View>
 
       {/* Search Results */}

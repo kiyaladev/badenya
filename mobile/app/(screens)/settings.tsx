@@ -23,11 +23,10 @@ export default function SettingsScreen() {
     getCapabilities().then(setCapabilities);
   }, []);
   const router = useRouter();
-  const { user, logout, updateProfile } = useAuthStore();
+  const { user, updateProfile } = useAuthStore();
   const { mode: themeMode, setTheme } = useThemeStore();
 
   // Settings state
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
 
@@ -54,9 +53,6 @@ export default function SettingsScreen() {
     if (!preferences) return;
     setEmailNotifications(preferences.notifications?.email !== false);
     setPushNotifications(preferences.notifications?.push !== false);
-    setNotificationsEnabled(
-      preferences.notifications?.push !== false || preferences.notifications?.email !== false
-    );
     if (preferences.theme) setTheme(preferences.theme as ThemeMode);
   }, [setTheme, user?.preferences]);
 
@@ -97,18 +93,6 @@ export default function SettingsScreen() {
     });
   };
 
-  const handleAllNotificationsToggle = (value: boolean) => {
-    setNotificationsEnabled(value);
-    setEmailNotifications(value);
-    setPushNotifications(value);
-    persistPreferences({ notifications: { email: value, push: value } }).catch(() => {
-      setNotificationsEnabled(!value);
-      setEmailNotifications(!value);
-      setPushNotifications(!value);
-      Alert.alert('Erreur', 'Impossible de sauvegarder les préférences de notification.');
-    });
-  };
-
   const handlePushNotificationsToggle = async (value: boolean) => {
     try {
       if (value) {
@@ -144,24 +128,6 @@ export default function SettingsScreen() {
       logger.error('Settings', 'Error toggling push notifications', error);
       Alert.alert('Erreur', 'Impossible de modifier les paramètres de notification');
     }
-  };
-
-  const handleLogout = () => {
-    Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Déconnexion',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logout();
-            router.replace('/(auth)/login');
-          } catch {
-            Alert.alert('Erreur', 'Une erreur est survenue lors de la déconnexion');
-          }
-        },
-      },
-    ]);
   };
 
   const handleChangePassword = () => {
@@ -227,25 +193,6 @@ export default function SettingsScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="p-4">
-        {/* Account Section */}
-        <View className="mb-6">
-          <Text className="text-gray-600 dark:text-gray-300 text-sm font-semibold mb-3 px-2">
-            COMPTE
-          </Text>
-          <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
-            <TouchableOpacity
-              className="flex-row items-center justify-between p-4"
-              onPress={() => router.push('/(tabs)/profile')}
-            >
-              <View className="flex-row items-center">
-                <Icon name="user" size={20} color="#0284c7" style={settingsIconStyle} />
-                <Text className="text-gray-800 dark:text-gray-100 text-base">Mon profil</Text>
-              </View>
-              <Icon name="chevron-right" size={14} color="#9ca3af" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Security Section */}
         <View className="mb-6">
           <Text className="text-gray-600 dark:text-gray-300 text-sm font-semibold mb-3 px-2">
@@ -298,54 +245,35 @@ export default function SettingsScreen() {
           <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
             <View className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
               <View className="flex-row items-center flex-1">
-                <Icon name="bell" size={20} color="#f59e0b" style={settingsIconStyle} />
+                <Icon name="envelope" size={20} color="#10b981" style={settingsIconStyle} />
                 <Text className="text-gray-800 dark:text-gray-100 text-base">
-                  Activer les notifications
+                  Notifications email
                 </Text>
               </View>
               <Switch
-                value={notificationsEnabled}
-                onValueChange={handleAllNotificationsToggle}
+                value={capabilities.email && emailNotifications}
+                disabled={!capabilities.email}
+                onValueChange={handleEmailNotificationsToggle}
                 trackColor={{ false: '#d1d5db', true: '#10b981' }}
                 thumbColor="#ffffff"
               />
             </View>
 
-            {notificationsEnabled && (
-              <>
-                <View className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-                  <View className="flex-row items-center flex-1">
-                    <Icon name="envelope" size={20} color="#10b981" style={settingsIconStyle} />
-                    <Text className="text-gray-800 dark:text-gray-100 text-base">
-                      Notifications email
-                    </Text>
-                  </View>
-                  <Switch
-                    value={capabilities.email && emailNotifications}
-                    disabled={!capabilities.email}
-                    onValueChange={handleEmailNotificationsToggle}
-                    trackColor={{ false: '#d1d5db', true: '#10b981' }}
-                    thumbColor="#ffffff"
-                  />
-                </View>
-
-                <View className="flex-row items-center justify-between p-4">
-                  <View className="flex-row items-center flex-1">
-                    <Icon name="mobile" size={20} color="#0284c7" style={settingsIconStyle} />
-                    <Text className="text-gray-800 dark:text-gray-100 text-base">
-                      Notifications push
-                    </Text>
-                  </View>
-                  <Switch
-                    value={capabilities.push && pushNotifications}
-                    disabled={!capabilities.push}
-                    onValueChange={handlePushNotificationsToggle}
-                    trackColor={{ false: '#d1d5db', true: '#10b981' }}
-                    thumbColor="#ffffff"
-                  />
-                </View>
-              </>
-            )}
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-row items-center flex-1">
+                <Icon name="mobile" size={20} color="#0284c7" style={settingsIconStyle} />
+                <Text className="text-gray-800 dark:text-gray-100 text-base">
+                  Notifications push
+                </Text>
+              </View>
+              <Switch
+                value={capabilities.push && pushNotifications}
+                disabled={!capabilities.push}
+                onValueChange={handlePushNotificationsToggle}
+                trackColor={{ false: '#d1d5db', true: '#10b981' }}
+                thumbColor="#ffffff"
+              />
+            </View>
           </View>
         </View>
 
@@ -355,7 +283,7 @@ export default function SettingsScreen() {
             PRÉFÉRENCES
           </Text>
           <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
-            <View className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+            <View className="flex-row items-center justify-between p-4">
               <View className="flex-row items-center flex-1">
                 <Icon name="moon-o" size={20} color="#6366f1" style={settingsIconStyle} />
                 <Text className="text-gray-800 dark:text-gray-100 text-base">Mode sombre</Text>
@@ -367,25 +295,6 @@ export default function SettingsScreen() {
                 thumbColor="#ffffff"
               />
             </View>
-
-            <TouchableOpacity
-              className="flex-row items-center justify-between p-4"
-              onPress={() => {
-                Alert.alert(
-                  'Langue de l’application',
-                  'Badenya est configuré en Français pour vous offrir la meilleure expérience utilisateur.'
-                );
-              }}
-            >
-              <View className="flex-row items-center">
-                <Icon name="globe" size={20} color="#8b5cf6" style={settingsIconStyle} />
-                <Text className="text-gray-800 dark:text-gray-100 text-base">Langue</Text>
-              </View>
-              <View className="flex-row items-center">
-                <Text className="text-gray-600 dark:text-gray-300 mr-2">Français</Text>
-                <Icon name="chevron-right" size={14} color="#9ca3af" />
-              </View>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -457,22 +366,12 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Danger Zone */}
+        {/* Account */}
         <View className="mb-8">
           <Text className="text-gray-600 dark:text-gray-300 text-sm font-semibold mb-3 px-2">
-            ZONE DANGEREUSE
+            COMPTE
           </Text>
           <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
-            <TouchableOpacity
-              className="p-4 border-b border-gray-100 dark:border-gray-700"
-              onPress={handleLogout}
-            >
-              <View className="flex-row items-center">
-                <Icon name="sign-out" size={20} color="#ef4444" style={settingsIconStyle} />
-                <Text className="text-gray-800 dark:text-gray-100 text-base">Se déconnecter</Text>
-              </View>
-            </TouchableOpacity>
-
             <TouchableOpacity className="p-4" onPress={handleDeleteAccount}>
               <View className="flex-row items-center">
                 <Icon name="trash" size={20} color="#dc2626" style={settingsIconStyle} />

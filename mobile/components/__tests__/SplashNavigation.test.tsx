@@ -2,7 +2,13 @@ import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import SplashScreen from '@/app/(auth)/splash';
 const mockReplace = jest.fn();
-const mockCheckAuth = jest.fn(async () => {});
+let resolveAuth: () => void = () => {};
+const mockCheckAuth = jest.fn(
+  () =>
+    new Promise<void>(resolve => {
+      resolveAuth = resolve;
+    })
+);
 let mockFocused = false;
 jest.mock('@/store/authStore', () => ({
   useAuthStore: Object.assign(() => ({ checkAuth: mockCheckAuth }), {
@@ -37,16 +43,23 @@ it('does not redirect a private deep link from an unfocused splash behind it', a
   expect(mockCheckAuth).not.toHaveBeenCalled();
   expect(mockReplace).not.toHaveBeenCalled();
 });
-it('cancels delayed splash navigation after focus moves to another route', async () => {
+it('cancels splash navigation after focus moves to another route', async () => {
   mockFocused = true;
   const view = render(<SplashScreen />);
-  await act(async () => {
-    await Promise.resolve();
-  });
   mockFocused = false;
   view.rerender(<SplashScreen />);
   await act(async () => {
-    jest.advanceTimersByTime(2000);
+    resolveAuth();
+    await Promise.resolve();
   });
   expect(mockReplace).not.toHaveBeenCalled();
+});
+it('sends an authenticated user straight to the tabs without delay', async () => {
+  mockFocused = true;
+  render(<SplashScreen />);
+  await act(async () => {
+    resolveAuth();
+    await Promise.resolve();
+  });
+  expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
 });

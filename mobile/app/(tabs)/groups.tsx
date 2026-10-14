@@ -1,27 +1,14 @@
 import { Alert } from '@/services/dialog.service';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  TextInput,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGroupStore } from '@/store/groupStore';
 import GroupCard from '@/components/GroupCard';
-import groupService, { GROUP_TYPE_LABELS, GroupType } from '@/services/group.service';
+import groupService, { type Group, type GroupType } from '@/services/group.service';
 import { getErrorMessage } from '@/utils/errorHandler';
 import { Icon, Loading, Badge } from '@/components/ui';
-
-const styles = StyleSheet.create({
-  fab: {
-    elevation: 5,
-  },
-});
+import { getFrequencyLabel, getGroupTypeLabel } from '@/constants/labels';
 
 interface PublicCommunityGroup {
   id: string;
@@ -31,11 +18,23 @@ interface PublicCommunityGroup {
   membersCount: number;
   contributionAmount: number;
   currency: string;
-  frequency: string;
-  city: string;
+  frequency: Group['frequency'];
 }
 
 const searchIconStyle = { marginRight: 8 };
+
+type GroupFilter = 'all' | 'tontine' | 'association' | 'other';
+const GROUP_FILTERS: Array<{ value: GroupFilter; label: string }> = [
+  { value: 'all', label: 'Tous' },
+  { value: 'tontine', label: 'Tontines' },
+  { value: 'association', label: 'Associations' },
+  { value: 'other', label: 'Autres' },
+];
+
+const matchesGroupFilter = (type: GroupType, filter: GroupFilter) =>
+  filter === 'all' ||
+  type === filter ||
+  (filter === 'other' && type !== 'tontine' && type !== 'association');
 
 export default function GroupsScreen() {
   const [publicGroups, setPublicGroups] = useState<PublicCommunityGroup[]>([]);
@@ -43,7 +42,7 @@ export default function GroupsScreen() {
   const [activeTab, setActiveTab] = useState<'my_groups' | 'discover'>('my_groups');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [selectedFilter, setSelectedFilter] = useState<GroupFilter>('all');
   const [inviteCode, setInviteCode] = useState('');
   const [joinedGroupIds, setJoinedGroupIds] = useState<Set<string>>(new Set());
 
@@ -66,8 +65,7 @@ export default function GroupsScreen() {
             membersCount: group.memberCount ?? group.members.length,
             contributionAmount: group.contributionAmount,
             currency: group.currency,
-            frequency: group.frequency,
-            city: '',
+            frequency: group.contributionSettings?.frequency ?? group.frequency,
           }))
         )
       )
@@ -115,17 +113,15 @@ export default function GroupsScreen() {
 
   const filteredGroups = groups.filter(group => {
     const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || group.type === selectedFilter;
+    const matchesFilter = matchesGroupFilter(group.type, selectedFilter);
     return matchesSearch && matchesFilter;
   });
 
-  const filteredPublicGroups = publicGroups.filter(group => {
-    return (
-      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const query = searchQuery.toLowerCase();
+  const filteredPublicGroups = publicGroups.filter(
+    group =>
+      group.name.toLowerCase().includes(query) || group.description.toLowerCase().includes(query)
+  );
 
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
@@ -134,9 +130,18 @@ export default function GroupsScreen() {
         className="bg-white dark:bg-gray-800 px-6 pb-2 border-b border-gray-200 dark:border-gray-600"
         style={{ paddingTop: insets.top + 16 }}
       >
-        <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-3">
-          Groupes & Tontines
-        </Text>
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100">Mes groupes</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(screens)/create-group')}
+            accessibilityRole="button"
+            accessibilityLabel="Créer un groupe"
+            className="flex-row items-center px-3 py-2 rounded-lg bg-primary-50 dark:bg-gray-700"
+          >
+            <Icon name="plus" size={14} color="#0284c7" />
+            <Text className="text-primary-700 font-semibold text-sm ml-1.5">Créer</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Top Segmented Tabs */}
         <View className="flex-row bg-gray-100 dark:bg-gray-700 p-1 rounded-xl mb-3">
@@ -151,7 +156,7 @@ export default function GroupsScreen() {
                 activeTab === 'my_groups' ? 'text-primary-700' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              Mes Groupes ({groups.length})
+              Mes groupes ({groups.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -165,7 +170,7 @@ export default function GroupsScreen() {
                 activeTab === 'discover' ? 'text-primary-700' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              Découvrir la Communauté
+              Découvrir
             </Text>
           </TouchableOpacity>
         </View>
@@ -179,7 +184,7 @@ export default function GroupsScreen() {
             placeholder={
               activeTab === 'my_groups'
                 ? 'Rechercher parmi mes groupes...'
-                : 'Rechercher par ville, nom, mots-clés...'
+                : 'Rechercher un groupe public...'
             }
             className="flex-1 text-sm text-gray-800 dark:text-gray-100 py-1"
           />
@@ -195,71 +200,27 @@ export default function GroupsScreen() {
             {/* Group Categories */}
             <View className="px-6 mt-4">
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <TouchableOpacity
-                  className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === 'all' ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-                  onPress={() => setSelectedFilter('all')}
-                >
-                  <Text
-                    className={`font-medium ${selectedFilter === 'all' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                  >
-                    Tous
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === 'tontine' ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-                  onPress={() => setSelectedFilter('tontine')}
-                >
-                  <Text
-                    className={`font-medium ${selectedFilter === 'tontine' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                  >
-                    Tontines
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === 'association' ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-                  onPress={() => setSelectedFilter('association')}
-                >
-                  <Text
-                    className={`font-medium ${selectedFilter === 'association' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                  >
-                    Associations
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === 'family' ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-                  onPress={() => setSelectedFilter('family')}
-                >
-                  <Text
-                    className={`font-medium ${selectedFilter === 'family' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                  >
-                    Famille
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === 'friends' ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-                  onPress={() => setSelectedFilter('friends')}
-                >
-                  <Text
-                    className={`font-medium ${selectedFilter === 'friends' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                  >
-                    Amis
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === 'project' ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-                  onPress={() => setSelectedFilter('project')}
-                >
-                  <Text
-                    className={`font-medium ${selectedFilter === 'project' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                  >
-                    Projets
-                  </Text>
-                </TouchableOpacity>
+                {GROUP_FILTERS.map(filter => {
+                  const active = selectedFilter === filter.value;
+                  return (
+                    <TouchableOpacity
+                      key={filter.value}
+                      className={`px-4 py-2 rounded-full mr-2 ${active ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+                      onPress={() => setSelectedFilter(filter.value)}
+                    >
+                      <Text
+                        className={`font-medium ${active ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                      >
+                        {filter.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
             </View>
 
             {/* Groups List */}
-            <View className="px-6 mt-6">
+            <View className="px-6 mt-6 mb-8">
               {isLoading && !refreshing ? (
                 <Loading />
               ) : filteredGroups.length === 0 ? (
@@ -289,30 +250,6 @@ export default function GroupsScreen() {
                 filteredGroups.map(group => <GroupCard key={group._id} group={group} />)
               )}
             </View>
-
-            {/* Discover Banner Link */}
-            {groups.length > 0 && (
-              <View className="px-6 mt-6 mb-8">
-                <View className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-primary-100 shadow-sm">
-                  <Text className="text-gray-800 dark:text-gray-100 text-base font-bold mb-1">
-                    Découvrir la communauté Badenya
-                  </Text>
-                  <Text className="text-gray-600 dark:text-gray-300 text-xs mb-3 leading-relaxed">
-                    Rejoignez des groupes d'épargne publics et des tontines actives dans votre pays
-                    ou région.
-                  </Text>
-                  <TouchableOpacity
-                    className="bg-primary-50 dark:bg-gray-800 border border-primary-200 px-4 py-2.5 rounded-lg flex-row items-center justify-center active:bg-primary-100"
-                    onPress={() => setActiveTab('discover')}
-                  >
-                    <Icon name="compass" size={16} color="#0284c7" />
-                    <Text className="text-primary-700 text-sm font-semibold ml-2">
-                      Explorer les groupes publics
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
           </>
         ) : (
           /* Discover & Join Screen */
@@ -375,7 +312,7 @@ export default function GroupsScreen() {
                     key={pGroup.id}
                     className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm mb-4"
                   >
-                    <View className="flex-row items-center justify-between mb-2">
+                    <View className="mb-2">
                       <Badge
                         variant={
                           pGroup.type === 'tontine'
@@ -386,14 +323,8 @@ export default function GroupsScreen() {
                         }
                         size="sm"
                       >
-                        {GROUP_TYPE_LABELS[pGroup.type]}
+                        {getGroupTypeLabel(pGroup.type)}
                       </Badge>
-                      <View className="flex-row items-center">
-                        <Icon name="map-marker" size={12} color="#6b7280" />
-                        <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                          {pGroup.city}
-                        </Text>
-                      </View>
                     </View>
 
                     <Text className="text-gray-900 dark:text-gray-50 font-bold text-base mb-1">
@@ -413,7 +344,7 @@ export default function GroupsScreen() {
                       <View>
                         <Text className="text-gray-400 text-xs">Fréquence</Text>
                         <Text className="text-gray-800 dark:text-gray-100 font-semibold text-sm">
-                          {pGroup.frequency}
+                          {getFrequencyLabel(pGroup.frequency)}
                         </Text>
                       </View>
                       <View>
@@ -456,15 +387,6 @@ export default function GroupsScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-primary-600 w-16 h-16 rounded-full items-center justify-center shadow-lg active:bg-primary-700"
-        style={styles.fab}
-        onPress={() => router.push('/(screens)/create-group')}
-      >
-        <Icon name="plus" size={24} color="#ffffff" />
-      </TouchableOpacity>
     </View>
   );
 }

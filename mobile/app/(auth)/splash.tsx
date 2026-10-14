@@ -2,7 +2,10 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from '@/services/logger';
+
+export const ONBOARDING_SEEN_KEY = '@badenya_onboarding_seen';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -15,11 +18,13 @@ export default function SplashScreen() {
         try {
           await checkAuth();
           if (!active) return;
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (useAuthStore.getState().isAuthenticated) {
+            router.replace('/(tabs)');
+            return;
+          }
+          const seen = await AsyncStorage.getItem(ONBOARDING_SEEN_KEY);
           if (!active) return;
-          router.replace(
-            useAuthStore.getState().isAuthenticated ? '/(tabs)' : '/(auth)/onboarding'
-          );
+          router.replace(seen ? '/(auth)/login' : '/(auth)/onboarding');
         } catch (error) {
           if (!active) return;
           logger.error('Splash', 'Error initializing app', error);

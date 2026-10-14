@@ -15,6 +15,7 @@ import { useGroupStore } from '@/store/groupStore';
 import { useAuthStore } from '@/store/authStore';
 import tontineService, { TontineSchedule } from '@/services/tontine.service';
 import { Button, Icon, Loading, Badge } from '@/components/ui';
+import { getFrequencyLabel } from '@/constants/labels';
 
 export default function TontineRoundsScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -133,7 +134,7 @@ export default function TontineRoundsScreen() {
       `*Badenya — Ordre des tours de la Tontine : ${group.name}*\n\n` +
       `Cycle : ${schedule.cycleNumber}\n` +
       `Montant de la cagnotte par tour : ${schedule.potAmount.toLocaleString()} ${group.currency}\n` +
-      `Fréquence : ${group.frequency === 'weekly' ? 'Hebdomadaire' : 'Mensuelle'}\n\n` +
+      `Fréquence : ${getFrequencyLabel(group.contributionSettings?.frequency ?? group.frequency)}\n\n` +
       `Calendrier des tours :\n${roundsText}\n\n` +
       `Géré en toute transparence sur l'application Badenya.`;
 
@@ -206,8 +207,8 @@ export default function TontineRoundsScreen() {
     >
       {/* Header Banner */}
       <View className="bg-primary-600 px-6 py-6">
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-white text-2xl font-bold">Tour de rôle</Text>
+        <View className="flex-row items-center justify-between mb-4">
+          <Text className="text-white text-base font-semibold flex-1 mr-3">{group.name}</Text>
           <TouchableOpacity
             onPress={handleShareSchedule}
             className="bg-primary-700 px-3 py-1.5 rounded-full flex-row items-center"
@@ -216,7 +217,6 @@ export default function TontineRoundsScreen() {
             <Text className="text-white font-medium text-xs ml-1.5">Partager</Text>
           </TouchableOpacity>
         </View>
-        <Text className="text-white text-sm opacity-90 mb-4">{group.name}</Text>
 
         <View className="flex-row justify-between bg-primary-700/50 rounded-xl p-4">
           <View>
@@ -320,15 +320,9 @@ export default function TontineRoundsScreen() {
       )}
       {/* Full Rotation List */}
       <View className="px-6 mt-6 mb-8">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold">
-            Ordre complet des tours
-          </Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400">
-            {schedule.rounds.filter(r => r.status === 'completed').length}/{schedule.rounds.length}{' '}
-            terminés
-          </Text>
-        </View>
+        <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-4">
+          Ordre complet des tours
+        </Text>
 
         <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm divide-y divide-gray-100">
           {schedule.rounds.map((round, index) => {

@@ -58,7 +58,6 @@ export interface CreateProposalData {
     name?: string;
     details?: string;
   };
-  votingDeadline: string;
 }
 
 export interface VoteOnProposalData {

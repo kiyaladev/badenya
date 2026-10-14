@@ -1,12 +1,14 @@
 import { Alert } from '@/services/dialog.service';
-import groupService from '@/services/group.service';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Share } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useGroupStore } from '@/store/groupStore';
 import { useTransactionStore } from '@/store/transactionStore';
 import { useAuthStore } from '@/store/authStore';
-import { Icon, Loading } from '@/components/ui';
+import { Button, Icon, Loading } from '@/components/ui';
+import type { IconName } from '@/components/ui';
+import { getFrequencyLabel, getGroupTypeLabel } from '@/constants/labels';
+import { shareGroupInvite } from '@/utils/shareInvite';
 import TransactionItem from '@/components/TransactionItem';
 
 export default function GroupDetailsScreen() {
@@ -20,34 +22,6 @@ export default function GroupDetailsScreen() {
 
   // Find the current group
   const group = groups.find(g => g._id === id);
-
-  const handleShareInvite = async () => {
-    if (!group) return;
-    let inviteCode = group.invitationCode;
-    try {
-      inviteCode = inviteCode || (await groupService.invitationCode(group._id));
-    } catch {
-      return Alert.alert(
-        'Invitation indisponible',
-        'Seul un administrateur peut obtenir le code du groupe.'
-      );
-    }
-    const message =
-      `Rejoignez mon groupe "${group.name}" sur l'application Badenya !\n\n` +
-      `Type : ${getTypeLabel(group.type)}\n` +
-      `Cotisation : ${group.contributionAmount.toLocaleString()} ${group.currency}\n` +
-      `Code du groupe : ${inviteCode}\n\n` +
-      `Téléchargez Badenya pour participer aux tontines et épargnes solidaires en toute sécurité.`;
-
-    try {
-      await Share.share({
-        message,
-        title: `Invitation au groupe ${group.name}`,
-      });
-    } catch {
-      // User cancelled
-    }
-  };
 
   useEffect(() => {
     if (id) {
@@ -94,24 +68,72 @@ export default function GroupDetailsScreen() {
       .filter(t => t.type === 'expense' && t.status === 'completed')
       .reduce((sum, t) => sum + t.amount, 0);
 
-  const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      tontine: 'Tontine',
-      association: 'Association',
-      family: 'Famille',
-      friends: 'Amis',
-      project: 'Projet',
-    };
-    return labels[type] || type;
-  };
-
   // Check if current user is admin or treasurer
   const currentUserId = user?._id || user?.id;
   const userMember = currentUserId
     ? group?.members.find(m => m.userId === currentUserId)
     : undefined;
   const isAdmin = userMember?.role === 'admin';
-  const canAddMembers = userMember?.role === 'admin' || userMember?.role === 'treasurer';
+
+  type Action = { icon: IconName; label: string; onPress: () => void };
+  const actions: Action[] = [
+    ...(group.type === 'tontine'
+      ? [
+          {
+            icon: 'refresh' as const,
+            label: 'Tour de rôle',
+            onPress: () => router.push(`/(screens)/tontine-rounds?groupId=${id}`),
+          },
+        ]
+      : []),
+    {
+      icon: 'file-text-o',
+      label: 'Propositions',
+      onPress: () => router.push(`/(screens)/proposals?groupId=${id}`),
+    },
+    {
+      icon: 'users',
+      label: 'Membres',
+      onPress: () => router.push(`/(screens)/group-members?groupId=${id}`),
+    },
+    {
+      icon: 'bar-chart',
+      label: 'Rapports',
+      onPress: () => router.push(`/(screens)/group-reports?groupId=${id}`),
+    },
+  ];
+  const adminActions: Action[] = isAdmin
+    ? [
+        {
+          icon: 'share-alt',
+          label: "Partager l'invitation",
+          onPress: () => shareGroupInvite(group),
+        },
+        {
+          icon: 'cog',
+          label: 'Modifier le groupe',
+          onPress: () => router.push(`/(screens)/edit-group?id=${id}`),
+        },
+      ]
+    : [];
+
+  const renderActionList = (items: Action[]) => (
+    <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
+      {items.map((action, index) => (
+        <TouchableOpacity
+          key={action.label}
+          onPress={action.onPress}
+          className={`flex-row items-center px-4 py-4 ${
+            index !== items.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''
+          }`}
+        >
+          <Icon name={action.icon} size={20} color="#0284c7" />
+          <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">{action.label}</Text>
+          <Icon name="chevron-right" size={14} color="#9ca3af" />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   return (
     <ScrollView
@@ -121,7 +143,7 @@ export default function GroupDetailsScreen() {
       <View className="bg-primary-600 p-6">
         <Text className="text-white text-2xl font-bold mb-2">{group.name}</Text>
         <Text className="text-white text-sm opacity-90">
-          {getTypeLabel(group.type)} • {group.members.length} membre
+          {getGroupTypeLabel(group.type)} • {group.members.length} membre
           {group.members.length > 1 ? 's' : ''}
         </Text>
         {group.description && (
@@ -151,6 +173,15 @@ export default function GroupDetailsScreen() {
         </View>
       </View>
 
+      {/* Primary action */}
+      <View className="px-6 mt-6">
+        <Button
+          title="Ajouter une cotisation"
+          iconName="plus"
+          onPress={() => router.push(`/(screens)/add-contribution?groupId=${id}`)}
+        />
+      </View>
+
       {/* Group Info */}
       <View className="px-6 mt-6">
         <View className="bg-white dark:bg-gray-800 rounded-xl p-4">
@@ -163,11 +194,7 @@ export default function GroupDetailsScreen() {
           <View className="flex-row justify-between mb-3">
             <Text className="text-gray-600 dark:text-gray-300">Fréquence</Text>
             <Text className="text-gray-800 dark:text-gray-100 font-medium">
-              {group.frequency === 'weekly'
-                ? 'Hebdomadaire'
-                : group.frequency === 'monthly'
-                  ? 'Mensuelle'
-                  : 'Personnalisée'}
+              {getFrequencyLabel(group.contributionSettings?.frequency ?? group.frequency)}
             </Text>
           </View>
           {group.nextContributionDate && (
@@ -181,128 +208,17 @@ export default function GroupDetailsScreen() {
         </View>
       </View>
 
-      {/* Tontine Rotation Banner */}
-      {group.type === 'tontine' && (
+      {/* Actions */}
+      <View className="px-6 mt-6">{renderActionList(actions)}</View>
+
+      {adminActions.length > 0 && (
         <View className="px-6 mt-6">
-          <TouchableOpacity
-            onPress={() => router.push(`/(screens)/tontine-rounds?groupId=${id}`)}
-            className="bg-primary-600 rounded-xl p-5 shadow-sm active:bg-primary-700"
-          >
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center mr-2.5">
-                  <Icon name="refresh" size={16} color="#ffffff" />
-                </View>
-                <Text className="text-white font-bold text-base">Tour de rôle de la Tontine</Text>
-              </View>
-              <Icon name="chevron-right" size={14} color="#ffffff" />
-            </View>
-            <Text className="text-white/90 text-xs leading-relaxed">
-              Consultez le calendrier des versements, le bénéficiaire du tour en cours et l'ordre
-              des membres.
-            </Text>
-          </TouchableOpacity>
+          <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-4">
+            Administration
+          </Text>
+          {renderActionList(adminActions)}
         </View>
       )}
-
-      {/* Quick Actions */}
-      <View className="px-6 mt-6">
-        <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-4">Actions</Text>
-        <View className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
-          {group.type === 'tontine' && (
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-              onPress={() => router.push(`/(screens)/tontine-rounds?groupId=${id}`)}
-            >
-              <Icon name="refresh" size={20} color="#0284c7" />
-              <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3 font-medium">
-                Tour de rôle (Tontine)
-              </Text>
-              <Icon name="chevron-right" size={14} color="#9ca3af" />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-            onPress={() => router.push(`/(screens)/add-contribution?groupId=${id}`)}
-          >
-            <Icon name="money" size={20} color="#0284c7" />
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">
-              Faire une contribution
-            </Text>
-            <Icon name="chevron-right" size={14} color="#9ca3af" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push(`/(screens)/proposals?groupId=${id}`)}
-            className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-          >
-            <Icon name="file-text-o" size={20} color="#0284c7" />
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">
-              Voir les propositions
-            </Text>
-            <Icon name="chevron-right" size={14} color="#9ca3af" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push(`/(screens)/group-members?groupId=${id}`)}
-            className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-          >
-            <Icon name="users" size={20} color="#0284c7" />
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">Membres du groupe</Text>
-            <Icon name="chevron-right" size={14} color="#9ca3af" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleShareInvite}
-            className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-          >
-            <Icon name="share-alt" size={20} color="#0284c7" />
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">
-              Partager l'invitation (WhatsApp / SMS)
-            </Text>
-            <Icon name="chevron-right" size={14} color="#9ca3af" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push(`/(screens)/group-reports?groupId=${id}`)}
-            className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-          >
-            <Icon name="bar-chart" size={20} color="#0284c7" />
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">
-              Rapports financiers
-            </Text>
-            <Icon name="chevron-right" size={14} color="#9ca3af" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push(`/(screens)/group-insights?groupId=${id}`)}
-            className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-          >
-            <Icon name="lightbulb-o" size={20} color="#0284c7" />
-            <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">Insights IA</Text>
-            <Icon name="chevron-right" size={14} color="#9ca3af" />
-          </TouchableOpacity>
-          {canAddMembers && (
-            <TouchableOpacity
-              onPress={() => router.push(`/(screens)/add-members?groupId=${id}`)}
-              className="flex-row items-center px-4 py-4 border-b border-gray-100 dark:border-gray-700"
-            >
-              <Icon name="user-plus" size={20} color="#0284c7" />
-              <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">
-                Ajouter des membres
-              </Text>
-              <Icon name="chevron-right" size={14} color="#9ca3af" />
-            </TouchableOpacity>
-          )}
-          {isAdmin && (
-            <TouchableOpacity
-              onPress={() => router.push(`/(screens)/edit-group?id=${id}`)}
-              className="flex-row items-center px-4 py-4"
-            >
-              <Icon name="cog" size={20} color="#0284c7" />
-              <Text className="flex-1 text-gray-800 dark:text-gray-100 ml-3">
-                Modifier le groupe
-              </Text>
-              <Icon name="chevron-right" size={14} color="#9ca3af" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
 
       {/* Recent Activity */}
       <View className="px-6 mt-6 mb-6">

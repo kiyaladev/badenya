@@ -4,11 +4,10 @@ import logger from './logger';
 
 let accountId: string | null = null;
 let accountVersion = 0;
-const queueKey = () => `@badenya_offline_queue:${accountId}`;
 export const discardLegacyData = async (): Promise<void> => {
   const keys = await AsyncStorage.getAllKeys();
   const legacy = keys.filter(
-    key => key === '@badenya_offline_queue' || key.startsWith('@badenya_cache_/')
+    key => key.startsWith('@badenya_offline_queue') || key.startsWith('@badenya_cache_/')
   );
   if (legacy.length) await AsyncStorage.multiRemove(legacy);
 };
@@ -22,16 +21,6 @@ export const requestKey = (url: string, params?: Record<string, unknown>) =>
   `${url}?${JSON.stringify(Object.entries(params || {}).sort(([a], [b]) => a.localeCompare(b)))}`;
 const CACHE_PREFIX = '@badenya_cache_';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-export interface QueuedRequest {
-  id: string;
-  method: 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  url: string;
-  data?: unknown;
-  createdAt: number;
-  accountId?: string;
-  idempotencyKey?: string;
-}
 
 interface CachedResponse {
   data: unknown;
@@ -58,67 +47,6 @@ export const onConnectivityChange = (callback: (isConnected: boolean) => void): 
     const connected = state.isConnected === true && state.isInternetReachable !== false;
     callback(connected);
   });
-};
-
-// --- Offline Queue ---
-
-/**
- * Add a request to the offline queue
- */
-export const enqueueRequest = async (
-  request: Omit<QueuedRequest, 'id' | 'createdAt'>
-): Promise<void> => {
-  try {
-    if (!accountId) throw new Error('Une session est requise pour la synchronisation');
-    const queue = await getQueue();
-    const entry: QueuedRequest = {
-      ...request,
-      accountId,
-      id: `${Date.now()}_${Math.random().toString(36).substring(2, 11)}_${Math.random().toString(36).substring(2, 11)}`,
-      createdAt: Date.now(),
-    };
-    queue.push(entry);
-    await AsyncStorage.setItem(queueKey(), JSON.stringify(queue));
-    logger.info('Offline', `Request queued: ${request.method} ${request.url}`);
-  } catch (error) {
-    logger.error('Offline', 'Failed to enqueue request', error);
-  }
-};
-
-/**
- * Get all queued requests
- */
-export const getQueue = async (): Promise<QueuedRequest[]> => {
-  try {
-    if (!accountId) return [];
-    const raw = await AsyncStorage.getItem(queueKey());
-    return raw
-      ? (JSON.parse(raw) as QueuedRequest[]).filter(item => item.accountId === accountId)
-      : [];
-  } catch {
-    return [];
-  }
-};
-
-/**
- * Remove a request from the queue
- */
-export const dequeueRequest = async (id: string): Promise<void> => {
-  try {
-    const queue = await getQueue();
-    const filtered = queue.filter(r => r.id !== id);
-    await AsyncStorage.setItem(queueKey(), JSON.stringify(filtered));
-  } catch (error) {
-    logger.error('Offline', 'Failed to dequeue request', error);
-  }
-};
-
-/**
- * Get pending queue count
- */
-export const getQueueCount = async (): Promise<number> => {
-  const queue = await getQueue();
-  return queue.length;
 };
 
 // --- Cache ---
@@ -172,18 +100,6 @@ export const clearCache = async (): Promise<void> => {
   }
 };
 
-/**
- * Clear the offline queue
- */
-export const clearQueue = async (): Promise<void> => {
-  try {
-    await AsyncStorage.removeItem(queueKey());
-    logger.info('Offline', 'Offline queue cleared');
-  } catch (error) {
-    logger.error('Offline', 'Failed to clear queue', error);
-  }
-};
-
 export default {
   discardLegacyData,
   getAccountId,
@@ -192,12 +108,7 @@ export default {
   requestKey,
   isOnline,
   onConnectivityChange,
-  enqueueRequest,
-  getQueue,
-  dequeueRequest,
-  getQueueCount,
   cacheResponse,
   getCachedResponse,
   clearCache,
-  clearQueue,
 };

@@ -46,7 +46,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       });
       return newInsight;
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Failed to generate insights');
+      const errorMessage = getErrorMessage(error, "Impossible de lancer l'analyse");
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
@@ -58,7 +58,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       const { reports } = await aiService.getGroupInsights(groupId, page);
       set({ insights: reports, isLoading: false });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch insights');
+      const errorMessage = getErrorMessage(error, 'Impossible de charger les analyses');
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -69,7 +69,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       const insight = await aiService.getInsightById(reportId);
       set({ currentInsight: insight, isLoading: false });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Failed to fetch insight');
+      const errorMessage = getErrorMessage(error, "Impossible de charger l'analyse");
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -80,7 +80,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       const result = await aiService.detectAnomalies(groupId);
       set({ anomalies: result, isLoading: false });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Failed to detect anomalies');
+      const errorMessage = getErrorMessage(error, 'Impossible de détecter les anomalies');
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -91,7 +91,7 @@ export const useAIStore = create<AIState>((set, get) => ({
       const result = await aiService.generateRecommendations(groupId);
       set({ recommendations: result, isLoading: false });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Failed to generate recommendations');
+      const errorMessage = getErrorMessage(error, 'Impossible de générer les recommandations');
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -106,7 +106,7 @@ export const useAIStore = create<AIState>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      const errorMessage = getErrorMessage(error, 'Failed to delete insight');
+      const errorMessage = getErrorMessage(error, "Impossible de supprimer l'analyse");
       set({ error: errorMessage, isLoading: false });
     }
   },

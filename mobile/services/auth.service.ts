@@ -158,7 +158,6 @@ class AuthService {
       logger.error('Auth', 'Logout API error', error);
     } finally {
       await offlineService.clearCache();
-      await offlineService.clearQueue();
       offlineService.setAccountId(null);
       await SecureStore.deleteItemAsync('accountId');
       // Clear tokens from secure storage
@@ -206,7 +205,6 @@ class AuthService {
 
   async clearStoredTokens(): Promise<void> {
     await offlineService.clearCache();
-    await offlineService.clearQueue();
     offlineService.setAccountId(null);
     await SecureStore.deleteItemAsync('accountId');
     await SecureStore.deleteItemAsync('accessToken');

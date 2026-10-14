@@ -3,13 +3,6 @@ import { getEntityId, unwrapApiData } from '@/utils/apiResponse';
 
 export const SUPPORTED_CURRENCIES = ['XOF', 'XAF', 'EUR', 'USD', 'GNF', 'CDF', 'MAD'] as const;
 export type GroupType = 'tontine' | 'association' | 'family' | 'friends' | 'project';
-export const GROUP_TYPE_LABELS: Record<GroupType, string> = {
-  tontine: 'Tontine',
-  association: 'Association',
-  family: 'Famille',
-  friends: 'Amis',
-  project: 'Projet',
-};
 export type ContributionFrequency = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 export interface Group {

@@ -9,11 +9,13 @@ import {
   Platform,
 } from 'react-native';
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import reportService, { ReportSummary } from '@/services/report.service';
-import { Button } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
+import { getCapabilities } from '@/services/capabilities.service';
 import { useGroupStore } from '@/store/groupStore';
 import logger from '@/services/logger';
+import { getCategoryLabel } from '@/constants/labels';
 
 type ReportPeriod = 'all' | 'month' | 'year' | 'custom';
 type DateField = 'start' | 'end';
@@ -63,7 +65,9 @@ const formatDate = (date: Date) =>
 
 export default function GroupReportsScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  const router = useRouter();
   const { groups } = useGroupStore();
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -106,6 +110,10 @@ export default function GroupReportsScreen() {
     }
     setCustomEndDate(date);
   };
+
+  useEffect(() => {
+    getCapabilities().then(c => setAiEnabled(c.ai));
+  }, []);
 
   useEffect(() => {
     if (groupId && (selectedPeriod !== 'custom' || customStartDate <= customEndDate)) {
@@ -179,13 +187,18 @@ export default function GroupReportsScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-            Rapports Financiers
-          </Text>
-          <Text className="text-gray-600 dark:text-gray-300">{group.name}</Text>
-        </View>
+        <Text className="text-gray-600 dark:text-gray-300 mb-4">{group.name}</Text>
+
+        {aiEnabled && (
+          <TouchableOpacity
+            onPress={() => router.push(`/(screens)/group-insights?groupId=${groupId}`)}
+            accessibilityRole="link"
+            className="flex-row items-center mb-6"
+          >
+            <Icon name="lightbulb-o" size={16} color="#0284c7" />
+            <Text className="text-primary-600 font-medium ml-2">Voir l'analyse IA du groupe</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Period Selector */}
         <View className="mb-6">
@@ -281,14 +294,14 @@ export default function GroupReportsScreen() {
 
               <View className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3 shadow-sm">
                 <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-gray-600 dark:text-gray-300">Total Contributions</Text>
+                  <Text className="text-gray-600 dark:text-gray-300">Total cotisations</Text>
                   <Text className="text-lg font-semibold text-green-600">
                     +{summary.totalContributions.toLocaleString()} {currency}
                   </Text>
                 </View>
 
                 <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-gray-600 dark:text-gray-300">Total Dépenses</Text>
+                  <Text className="text-gray-600 dark:text-gray-300">Total dépenses</Text>
                   <Text className="text-lg font-semibold text-red-600">
                     -{summary.totalExpenses.toLocaleString()} {currency}
                   </Text>
@@ -306,9 +319,7 @@ export default function GroupReportsScreen() {
                 <View className="border-t border-gray-200 dark:border-gray-600 my-2" />
 
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-gray-800 dark:text-gray-100 font-semibold">
-                    Balance Nette
-                  </Text>
+                  <Text className="text-gray-800 dark:text-gray-100 font-semibold">Solde</Text>
                   <Text
                     className={`text-xl font-bold ${summary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}
                   >
@@ -327,17 +338,20 @@ export default function GroupReportsScreen() {
             {summary.expensesByCategory.length > 0 && (
               <View className="mb-6">
                 <Text className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                  Dépenses par Catégorie
+                  Dépenses par catégorie
                 </Text>
                 <View className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
                   {summary.expensesByCategory.slice(0, 5).map((cat, index) => (
-                    <View key={cat.category} className="flex-row justify-between items-center mb-3">
+                    <View
+                      key={getCategoryLabel(cat.category)}
+                      className="flex-row justify-between items-center mb-3"
+                    >
                       <View className="flex-row items-center flex-1">
                         <View
                           className={`mr-2 h-3 w-3 rounded-full ${categoryDotClasses[index % categoryDotClasses.length]}`}
                         />
                         <Text className="text-gray-700 dark:text-gray-200 flex-1">
-                          {cat.category}
+                          {getCategoryLabel(cat.category)}
                         </Text>
                       </View>
                       <Text className="text-gray-900 dark:text-gray-50 font-medium">
@@ -353,7 +367,7 @@ export default function GroupReportsScreen() {
             {summary.contributionsByMember.length > 0 && (
               <View className="mb-6">
                 <Text className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                  Top Contributeurs
+                  Meilleurs cotisants
                 </Text>
                 <View className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
                   {summary.contributionsByMember.slice(0, 5).map((member, index) => (
@@ -381,7 +395,7 @@ export default function GroupReportsScreen() {
             {/* Download Actions */}
             <View className="mb-6">
               <Text className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                Télécharger et Partager
+                Télécharger et partager
               </Text>
 
               <Button

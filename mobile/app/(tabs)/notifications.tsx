@@ -38,19 +38,7 @@ export default function NotificationsScreen() {
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
 
-    Alert.alert(
-      'Tout marquer comme lu',
-      `Marquer ${unreadCount} notification${unreadCount > 1 ? 's' : ''} comme lue${unreadCount > 1 ? 's' : ''} ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Confirmer',
-          onPress: async () => {
-            await markAllAsRead();
-          },
-        },
-      ]
-    );
+    await markAllAsRead();
   };
 
   const handleMarkAsRead = async (id: string) => {

@@ -31,39 +31,4 @@ export function Loading({ size = 'large', text, fullScreen = false, testID }: Lo
   return content;
 }
 
-// Skeleton loading component for list items
-export function SkeletonItem({ height = 80, testID }: { height?: number; testID?: string }) {
-  const skeletonStyle = { height };
-
-  return (
-    <View
-      testID={testID}
-      className="bg-gray-200 dark:bg-gray-600 rounded-lg mb-3 animate-pulse"
-      style={skeletonStyle}
-    />
-  );
-}
-
-// Skeleton for card content
-export function SkeletonCard({ testID }: { testID?: string } = {}) {
-  return (
-    <View testID={testID} className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3">
-      <View className="bg-gray-200 dark:bg-gray-600 h-4 w-3/4 rounded mb-3" />
-      <View className="bg-gray-200 dark:bg-gray-600 h-3 w-1/2 rounded mb-2" />
-      <View className="bg-gray-200 dark:bg-gray-600 h-3 w-2/3 rounded" />
-    </View>
-  );
-}
-
-// Skeleton for list
-export function SkeletonList({ count = 3 }: { count?: number }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, index) => (
-        <SkeletonCard key={index} />
-      ))}
-    </>
-  );
-}
-
 export default Loading;

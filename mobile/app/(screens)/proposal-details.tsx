@@ -1,5 +1,5 @@
 import { Alert } from '@/services/dialog.service';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProposalStore } from '@/store/proposalStore';
@@ -8,14 +8,23 @@ import proposalService from '@/services/proposal.service';
 import { useGroupStore } from '@/store/groupStore';
 import { getErrorMessage } from '@/utils/errorHandler';
 import { Icon, Loading } from '@/components/ui';
+import { getCategoryLabel } from '@/constants/labels';
 
 export default function ProposalDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [refreshing, setRefreshing] = useState(false);
+  const [comment, setComment] = useState('');
+  const [isVoting, setIsVoting] = useState(false);
 
-  const { currentProposal, isLoading, fetchProposalById, executeProposal, cancelProposal } =
-    useProposalStore();
+  const {
+    currentProposal,
+    isLoading,
+    fetchProposalById,
+    executeProposal,
+    cancelProposal,
+    voteOnProposal,
+  } = useProposalStore();
   const { user } = useAuthStore();
   const groups = useGroupStore(state => state.groups);
   const fetchGroupById = useGroupStore(state => state.fetchGroupById);
@@ -43,26 +52,35 @@ export default function ProposalDetailsScreen() {
     setRefreshing(false);
   };
 
-  const handleVote = () => {
-    router.push(`/(screens)/vote?proposalId=${id}`);
+  const handleVote = async (vote: 'for' | 'against' | 'abstain') => {
+    setIsVoting(true);
+    try {
+      await voteOnProposal(id!, { vote, comment: comment.trim() || undefined });
+      setComment('');
+      Alert.alert('Succès', 'Votre vote a été enregistré');
+    } catch (error) {
+      Alert.alert('Erreur', getErrorMessage(error, "Impossible d'enregistrer votre vote"));
+    } finally {
+      setIsVoting(false);
+    }
   };
 
   const handleExecute = async () => {
     Alert.alert(
-      'Exécuter la proposition',
-      'Voulez-vous exécuter cette proposition et créer la transaction ?',
+      'Effectuer la dépense',
+      'Voulez-vous effectuer cette dépense et créer la transaction ?',
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: 'Retour', style: 'cancel' },
         {
-          text: 'Exécuter',
+          text: 'Effectuer',
           onPress: async () => {
             try {
               await executeProposal(id!);
-              Alert.alert('Succès', 'Proposition exécutée avec succès');
+              Alert.alert('Succès', 'Dépense effectuée');
               loadProposal();
             } catch (err: unknown) {
               const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || "Impossible d'exécuter la proposition");
+              Alert.alert('Erreur', error.message || "Impossible d'effectuer la dépense");
             }
           },
         },
@@ -72,17 +90,17 @@ export default function ProposalDetailsScreen() {
 
   const handleCancelProposal = () => {
     Alert.alert(
-      'Annuler la proposition',
-      'Êtes-vous sûr de vouloir annuler cette proposition ? Cette action est irréversible.',
+      'Retirer la proposition',
+      'Voulez-vous retirer cette proposition ? Elle ne pourra plus être votée ni dépensée.',
       [
         { text: 'Non', style: 'cancel' },
         {
-          text: 'Oui, annuler',
+          text: 'Oui, retirer',
           style: 'destructive',
           onPress: async () => {
             try {
               await cancelProposal(id!);
-              Alert.alert('Succès', 'Proposition annulée avec succès', [
+              Alert.alert('Succès', 'Proposition retirée', [
                 {
                   text: 'OK',
                   onPress: () => router.back(),
@@ -90,7 +108,7 @@ export default function ProposalDetailsScreen() {
               ]);
             } catch (err: unknown) {
               const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || "Impossible d'annuler la proposition");
+              Alert.alert('Erreur', error.message || 'Impossible de retirer la proposition');
             }
           },
         },
@@ -226,20 +244,12 @@ export default function ProposalDetailsScreen() {
             <Text className="text-gray-800 dark:text-gray-100">{proposal.description}</Text>
           </View>
 
-          {/* Category & Priority */}
-          <View className="flex-row">
-            <View className="flex-1 mr-2">
-              <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Catégorie</Text>
-              <Text className="text-gray-800 dark:text-gray-100 capitalize">
-                {proposal.category}
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Priorité</Text>
-              <Text className="text-gray-800 dark:text-gray-100 capitalize">
-                {proposal.priority}
-              </Text>
-            </View>
+          {/* Category */}
+          <View>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Catégorie</Text>
+            <Text className="text-gray-800 dark:text-gray-100">
+              {getCategoryLabel(proposal.category)}
+            </Text>
           </View>
         </View>
 
@@ -281,55 +291,6 @@ export default function ProposalDetailsScreen() {
               {proposal.result.totalVotes} vote(s) • {proposal.result.participationRate.toFixed(0)}%
               de participation
             </Text>
-          </View>
-        )}
-
-        {/* Votes List */}
-        {proposal.votes.length > 0 && (
-          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
-            <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-3">
-              Votes ({proposal.votes.length})
-            </Text>
-            {proposal.votes.map((vote, index) => (
-              <View
-                key={index}
-                className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700"
-              >
-                <View className="flex-1">
-                  <Text className="text-gray-800 dark:text-gray-100">Vote #{index + 1}</Text>
-                  {vote.comment && (
-                    <Text className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                      {vote.comment}
-                    </Text>
-                  )}
-                </View>
-                <View
-                  className={`px-3 py-1 rounded-full ${
-                    vote.decision === 'for'
-                      ? 'bg-green-50 dark:bg-green-950'
-                      : vote.decision === 'against'
-                        ? 'bg-red-50 dark:bg-red-950'
-                        : 'bg-gray-50 dark:bg-gray-900'
-                  }`}
-                >
-                  <Text
-                    className={`font-medium text-sm ${
-                      vote.decision === 'for'
-                        ? 'text-green-600'
-                        : vote.decision === 'against'
-                          ? 'text-red-600'
-                          : 'text-gray-600 dark:text-gray-300'
-                    }`}
-                  >
-                    {vote.decision === 'for'
-                      ? 'Pour'
-                      : vote.decision === 'against'
-                        ? 'Contre'
-                        : 'Abstention'}
-                  </Text>
-                </View>
-              </View>
-            ))}
           </View>
         )}
 
@@ -397,19 +358,43 @@ export default function ProposalDetailsScreen() {
                   }
                 }}
               >
-                <Text className="text-white text-center font-semibold">Clôturer le vote</Text>
+                <Text className="text-white text-center font-semibold">
+                  Clôturer le vote et compter les voix
+                </Text>
               </TouchableOpacity>
             )}
             {canVote && (
-              <TouchableOpacity
-                onPress={handleVote}
-                className="bg-primary-600 py-3 rounded-lg mb-3"
-              >
-                <View className="flex-row items-center justify-center">
-                  <Icon name="check-square-o" size={16} color="#ffffff" />
-                  <Text className="text-white font-semibold ml-2">Voter sur cette proposition</Text>
+              <View className="mb-3">
+                <Text className="text-gray-800 dark:text-gray-100 font-semibold mb-2">
+                  Votre vote
+                </Text>
+                <TextInput
+                  className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 mb-3 text-gray-800 dark:text-gray-100"
+                  placeholder="Commentaire (optionnel)"
+                  placeholderTextColor="#9ca3af"
+                  value={comment}
+                  onChangeText={setComment}
+                  maxLength={500}
+                />
+                <View className="flex-row">
+                  {(
+                    [
+                      { value: 'for', label: 'Pour', className: 'bg-green-600' },
+                      { value: 'against', label: 'Contre', className: 'bg-red-600' },
+                      { value: 'abstain', label: 'Abstention', className: 'bg-gray-500' },
+                    ] as const
+                  ).map((option, index) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      disabled={isVoting}
+                      onPress={() => handleVote(option.value)}
+                      className={`flex-1 py-3 rounded-lg ${option.className} ${index < 2 ? 'mr-2' : ''} ${isVoting ? 'opacity-50' : ''}`}
+                    >
+                      <Text className="text-white text-center font-semibold">{option.label}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              </TouchableOpacity>
+              </View>
             )}
 
             {canExecute && (
@@ -419,7 +404,7 @@ export default function ProposalDetailsScreen() {
               >
                 <View className="flex-row items-center justify-center">
                   <Icon name="play" size={16} color="#ffffff" />
-                  <Text className="text-white font-semibold ml-2">Exécuter la proposition</Text>
+                  <Text className="text-white font-semibold ml-2">Effectuer la dépense</Text>
                 </View>
               </TouchableOpacity>
             )}
@@ -431,7 +416,7 @@ export default function ProposalDetailsScreen() {
               >
                 <View className="flex-row items-center justify-center">
                   <Icon name="times-circle" size={16} color="#dc2626" />
-                  <Text className="text-red-600 font-semibold ml-2">Annuler la proposition</Text>
+                  <Text className="text-red-600 font-semibold ml-2">Retirer la proposition</Text>
                 </View>
               </TouchableOpacity>
             )}

@@ -1,7 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { useTransactionStore } from '@/store/transactionStore';
 import { useGroupStore } from '@/store/groupStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, Loading } from '@/components/ui';
@@ -17,7 +16,6 @@ export default function TransactionsScreen() {
   const insets = useSafeAreaInsets();
 
   const PAGE_SIZE = 15;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [pageTransactions, setPageTransactions] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -25,7 +23,6 @@ export default function TransactionsScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(false);
 
-  const { isLoading } = useTransactionStore();
   const { groups, fetchGroups } = useGroupStore();
 
   useEffect(() => {
@@ -61,7 +58,6 @@ export default function TransactionsScreen() {
       setPage(nextPage);
       setPages(data.pages);
       setTotal(data.total);
-      setVisibleCount(nextPage * PAGE_SIZE);
     } catch (error) {
       setFetchError(getErrorMessage(error));
     } finally {
@@ -73,57 +69,16 @@ export default function TransactionsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await loadTransactions();
-    setVisibleCount(PAGE_SIZE);
     setRefreshing(false);
   };
 
-  const handleTabChange = (tab: 'all' | 'contributions' | 'expenses') => {
-    setSelectedTab(tab);
-    setVisibleCount(PAGE_SIZE);
-  };
+  const handleTabChange = (tab: 'all' | 'contributions' | 'expenses') => setSelectedTab(tab);
 
   const selectedGroup = groups.find(g => g._id === selectedGroupId);
 
-  // Filter transactions by selected group if any
-  const groupFilteredTransactions = selectedGroupId
-    ? transactions.filter(t => t.groupId === selectedGroupId)
-    : transactions;
-
-  // Filter transactions based on selected tab
-  const filteredTransactions = groupFilteredTransactions.filter(t => {
-    if (selectedTab === 'all') return true;
-    if (selectedTab === 'contributions') return t.type === 'contribution';
-    if (selectedTab === 'expenses') return t.type === 'expense';
-    return true;
-  });
-
-  // Sort chronologically (newest first)
-  const sortedTransactions = [...filteredTransactions].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  const displayedTransactions = sortedTransactions.slice(0, visibleCount);
   const hasMore = page < pages;
 
-  // Calculate stats for current month
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
-  const monthTransactions = groupFilteredTransactions.filter(t => {
-    const date = new Date(t.createdAt);
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-  });
-
-  const monthContributions = monthTransactions
-    .filter(t => t.type === 'contribution' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const monthExpenses = monthTransactions
-    .filter(t => t.type === 'expense' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  if (isLoading && transactions.length === 0) {
+  if (pageLoading && transactions.length === 0 && !fetchError) {
     return <Loading />;
   }
 
@@ -187,7 +142,7 @@ export default function TransactionsScreen() {
                   : 'text-gray-600 dark:text-gray-300'
               }`}
             >
-              Contributions
+              Cotisations
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -211,42 +166,11 @@ export default function TransactionsScreen() {
         className="flex-1"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Stats Card */}
-        <View className="px-6 mt-6">
-          <View className="bg-white dark:bg-gray-800 rounded-xl p-6">
-            <Text className="text-gray-800 dark:text-gray-100 text-base font-bold mb-4">
-              Ce mois-ci · opérations chargées
-            </Text>
-            <View className="flex-row justify-between items-center mb-3">
-              <View className="flex-row items-center">
-                <View className="w-3 h-3 bg-green-500 rounded-full mr-2" />
-                <Text className="text-gray-700 dark:text-gray-200">Contributions</Text>
-              </View>
-              <Text className="text-gray-800 dark:text-gray-100 font-bold">
-                {selectedGroup
-                  ? `${monthContributions.toLocaleString()} ${selectedGroup.currency}`
-                  : 'Sélectionnez un groupe'}
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center">
-              <View className="flex-row items-center">
-                <View className="w-3 h-3 bg-red-500 rounded-full mr-2" />
-                <Text className="text-gray-700 dark:text-gray-200">Dépenses</Text>
-              </View>
-              <Text className="text-gray-800 dark:text-gray-100 font-bold">
-                {selectedGroup
-                  ? `${monthExpenses.toLocaleString()} ${selectedGroup.currency}`
-                  : 'Sélectionnez un groupe'}
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {/* Transactions List */}
-        {sortedTransactions.length > 0 ? (
+        {transactions.length > 0 ? (
           <View className="mt-6 mb-6">
             <View className="bg-white dark:bg-gray-800">
-              {displayedTransactions.map(transaction => (
+              {transactions.map(transaction => (
                 <TransactionItem key={transaction._id} transaction={transaction} />
               ))}
             </View>
@@ -275,7 +199,7 @@ export default function TransactionsScreen() {
                 {selectedTab === 'all'
                   ? 'Vos transactions apparaîtront ici'
                   : selectedTab === 'contributions'
-                    ? 'Aucune contribution pour le moment'
+                    ? 'Aucune cotisation pour le moment'
                     : 'Aucune dépense pour le moment'}
               </Text>
             </View>

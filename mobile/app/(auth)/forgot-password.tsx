@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import authService from '@/services/auth.service';
 import { Button, Input, Icon } from '@/components/ui';
 
-const baseStyles = StyleSheet.create({
+export const authFormStyles = StyleSheet.create({
   success: {
     flex: 1,
     backgroundColor: '#ffffff',
@@ -134,7 +134,7 @@ const baseStyles = StyleSheet.create({
 
 export default function ForgotPasswordScreen() {
   const styles = themedStyles(
-    baseStyles,
+    authFormStyles,
     useThemeStore(state => state.colors)
   );
   const [email, setEmail] = useState('');

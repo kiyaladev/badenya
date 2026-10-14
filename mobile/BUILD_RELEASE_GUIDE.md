@@ -432,7 +432,7 @@ eas submit --platform ios --profile production
 
 #### Step 2: Store Listing
 
-**Copy from APP_STORE_DESCRIPTION.md:**
+**Copy from the store listing:**
 - Short description (80 chars)
 - Full description (4000 chars)
 - Screenshots (see requirements in description file)
@@ -472,7 +472,7 @@ eas build:download --platform android --profile production
 1. Go to Production → Releases
 2. Create new release
 3. Upload AAB file
-4. Add release notes (from APP_STORE_DESCRIPTION.md)
+4. Add release notes (from the store listing)
 5. Review and rollout
 
 #### Step 6: Submit for Review
@@ -500,7 +500,7 @@ eas build:download --platform android --profile production
 
 #### Step 2: App Information
 
-**From APP_STORE_DESCRIPTION.md:**
+**From the store listing:**
 - Name: Badenya - Épargne Collaborative
 - Subtitle: Gérez vos tontines et épargnes en groupe
 - Category: Finance
@@ -513,7 +513,7 @@ eas build:download --platform android --profile production
 
 #### Step 4: Prepare for Submission
 
-**Screenshots:** (from APP_STORE_DESCRIPTION.md)
+**Screenshots:** (from the store listing)
 - 6.7" Display: 1290x2796 (iPhone 14 Pro Max)
 - 6.5" Display: 1284x2778 (iPhone 11 Pro Max)
 - 5.5" Display: 1242x2208 (iPhone 8 Plus)

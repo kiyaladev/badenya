@@ -15,6 +15,12 @@ import { useTransactionStore } from '@/store/transactionStore';
 import { useGroupStore } from '@/store/groupStore';
 import { Icon, Loading } from '@/components/ui';
 import type { IconName } from '@/components/ui/Icon';
+import {
+  getOperatorLabel,
+  getPaymentMethodLabel,
+  getTransactionStatusLabel,
+  getTransactionTypeLabel,
+} from '@/constants/labels';
 
 export default function TransactionDetailsScreen() {
   const router = useRouter();
@@ -55,26 +61,22 @@ export default function TransactionDetailsScreen() {
   };
 
   const handleVerify = async () => {
-    Alert.alert(
-      'Vérifier la transaction',
-      'Voulez-vous marquer cette transaction comme vérifiée ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Vérifier',
-          onPress: async () => {
-            try {
-              await verifyTransaction(id!);
-              Alert.alert('Succès', 'Transaction vérifiée avec succès');
-              loadTransaction();
-            } catch (err: unknown) {
-              const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || 'Impossible de vérifier la transaction');
-            }
-          },
+    Alert.alert('Confirmer la réception', 'Confirmez-vous avoir bien reçu ce montant ?', [
+      { text: 'Retour', style: 'cancel' },
+      {
+        text: 'Confirmer',
+        onPress: async () => {
+          try {
+            await verifyTransaction(id!);
+            Alert.alert('Succès', 'Réception confirmée');
+            loadTransaction();
+          } catch (err: unknown) {
+            const error = err as { message?: string };
+            Alert.alert('Erreur', error.message || 'Impossible de confirmer la réception');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleCancel = async () => {
@@ -144,20 +146,7 @@ export default function TransactionDetailsScreen() {
     }
   };
 
-  const getStatusLabel = () => {
-    switch (transaction.status) {
-      case 'completed':
-        return 'Complétée';
-      case 'pending':
-        return 'En attente';
-      case 'failed':
-        return 'Échouée';
-      case 'cancelled':
-        return 'Annulée';
-      default:
-        return transaction.status;
-    }
-  };
+  const getStatusLabel = () => getTransactionStatusLabel(transaction.status);
 
   const getTypeIcon = (): IconName => {
     switch (transaction.type) {
@@ -174,20 +163,7 @@ export default function TransactionDetailsScreen() {
     }
   };
 
-  const getTypeLabel = () => {
-    switch (transaction.type) {
-      case 'contribution':
-        return 'Contribution';
-      case 'expense':
-        return 'Dépense';
-      case 'refund':
-        return 'Remboursement';
-      case 'adjustment':
-        return 'Ajustement';
-      default:
-        return transaction.type;
-    }
-  };
+  const getTypeLabel = () => getTransactionTypeLabel(transaction.type);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('fr-FR', {
@@ -283,17 +259,9 @@ export default function TransactionDetailsScreen() {
             </View>
           )}
 
-          {/* Category */}
-          {transaction.category && (
-            <View className="mb-4">
-              <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Catégorie</Text>
-              <Text className="text-gray-800 dark:text-gray-100">{transaction.category}</Text>
-            </View>
-          )}
-
           {/* Initiated By */}
           <View className="mb-4">
-            <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Initié par</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Auteur</Text>
             <Text className="text-gray-800 dark:text-gray-100">
               {transaction.initiatedBy.fullName}
             </Text>
@@ -303,21 +271,14 @@ export default function TransactionDetailsScreen() {
           {transaction.paymentMethod && (
             <View className="mb-4">
               <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">
-                Méthode de paiement
+                Mode de paiement
               </Text>
-              <View className="flex-row items-center">
-                <Text className="text-gray-800 dark:text-gray-100 mr-2">
-                  {transaction.paymentMethod.type === 'cash' && 'Espèces'}
-                  {transaction.paymentMethod.type === 'mobile_money' && 'Mobile Money'}
-                  {transaction.paymentMethod.type === 'bank_transfer' && 'Virement'}
-                  {transaction.paymentMethod.type === 'card' && 'Carte'}
-                </Text>
-                {transaction.paymentMethod.provider && (
-                  <Text className="text-gray-600 dark:text-gray-300">
-                    ({transaction.paymentMethod.provider})
-                  </Text>
-                )}
-              </View>
+              <Text className="text-gray-800 dark:text-gray-100">
+                {getPaymentMethodLabel(transaction.paymentMethod.type)}
+                {transaction.paymentMethod.provider
+                  ? ` · ${getOperatorLabel(transaction.paymentMethod.provider)}`
+                  : ''}
+              </Text>
               {transaction.paymentMethod.reference && (
                 <Text className="text-gray-600 dark:text-gray-300 text-sm mt-1">
                   Réf: {transaction.paymentMethod.reference}
@@ -328,37 +289,18 @@ export default function TransactionDetailsScreen() {
 
           {/* Dates */}
           <View className="mb-4">
-            <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Date de création</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Date</Text>
             <Text className="text-gray-800 dark:text-gray-100">
               {formatDate(transaction.createdAt)}
             </Text>
           </View>
-
-          {transaction.processedAt && (
-            <View className="mb-4">
-              <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">
-                Date de traitement
-              </Text>
-              <Text className="text-gray-800 dark:text-gray-100">
-                {formatDate(transaction.processedAt)}
-              </Text>
-            </View>
-          )}
-
-          {/* Notes */}
-          {transaction.metadata?.notes && (
-            <View className="mb-4">
-              <Text className="text-gray-600 dark:text-gray-300 text-sm mb-1">Notes</Text>
-              <Text className="text-gray-800 dark:text-gray-100">{transaction.metadata.notes}</Text>
-            </View>
-          )}
         </View>
 
         {/* Attachments */}
         {transaction.attachments && transaction.attachments.length > 0 && (
           <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
             <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-3">
-              Pièces jointes
+              Justificatifs
             </Text>
             {transaction.attachments.map((attachment, index) => (
               <TouchableOpacity
@@ -395,8 +337,6 @@ export default function TransactionDetailsScreen() {
         {/* Actions */}
         {(canVerify || canCancel) && (
           <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
-            <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-3">Actions</Text>
-
             {canVerify && (
               <TouchableOpacity
                 onPress={handleVerify}
@@ -404,7 +344,7 @@ export default function TransactionDetailsScreen() {
               >
                 <View className="flex-row items-center justify-center">
                   <Icon name="check" size={16} color="#ffffff" />
-                  <Text className="text-white font-semibold ml-2">Vérifier la transaction</Text>
+                  <Text className="text-white font-semibold ml-2">Confirmer la réception</Text>
                 </View>
               </TouchableOpacity>
             )}

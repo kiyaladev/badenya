@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Proposal } from '@/services/proposal.service';
 import { Icon } from '@/components/ui';
+import { getCategoryLabel } from '@/constants/labels';
 
 interface VoteCardProps {
   proposal: Proposal;
@@ -31,20 +32,6 @@ function VoteCard({ proposal }: VoteCardProps) {
       },
     };
     return colors[status] || colors.pending;
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    const badges: Record<string, { bg: string; text: string; label: string }> = {
-      low: {
-        bg: 'bg-gray-100 dark:bg-gray-700',
-        text: 'text-gray-700 dark:text-gray-200',
-        label: 'Basse',
-      },
-      medium: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Moyenne' },
-      high: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Haute' },
-      critical: { bg: 'bg-red-100', text: 'text-red-700', label: 'Critique' },
-    };
-    return badges[priority] || badges.medium;
   };
 
   const calculateProgress = () => {
@@ -86,7 +73,6 @@ function VoteCard({ proposal }: VoteCardProps) {
   };
 
   const statusColors = getStatusColor(proposal.status);
-  const priorityBadge = getPriorityBadge(proposal.priority);
   const progress = calculateProgress();
   const stats = getVoteStats();
   const isActive = proposal.status === 'pending';
@@ -119,17 +105,13 @@ function VoteCard({ proposal }: VoteCardProps) {
         </View>
       </View>
 
-      {/* Amount & Priority */}
-      <View className="flex-row items-center justify-between mb-3">
+      {/* Amount */}
+      <View className="mb-3">
         <View>
           <Text className="text-gray-500 dark:text-gray-400 text-xs mb-1">Montant</Text>
           <Text className="text-primary-600 font-bold text-lg">
             {formatAmount(proposal.amount)}
           </Text>
-        </View>
-
-        <View className={`px-3 py-1 rounded-full ${priorityBadge.bg}`}>
-          <Text className={`text-xs font-medium ${priorityBadge.text}`}>{priorityBadge.label}</Text>
         </View>
       </View>
 
@@ -180,7 +162,7 @@ function VoteCard({ proposal }: VoteCardProps) {
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-gray-500 dark:text-gray-400 text-xs">
-            Catégorie: {proposal.category}
+            Catégorie : {getCategoryLabel(proposal.category)}
           </Text>
         </View>
 
