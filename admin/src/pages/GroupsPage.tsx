@@ -4,7 +4,6 @@ import Pagination from '../components/Pagination';
 import { groupTypeLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
@@ -13,7 +12,6 @@ import { useArchiveGroupAction } from '../hooks/useAdminActions';
 
 export default function GroupsPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,12 +43,8 @@ export default function GroupsPage() {
   }, [currentPage, debouncedSearch, typeFilter]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     loadGroups();
-  }, [isAuthenticated, navigate, loadGroups]);
+  }, [loadGroups]);
 
   useEffect(() => {
     setCurrentPage(1);

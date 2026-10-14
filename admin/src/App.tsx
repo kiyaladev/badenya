@@ -4,7 +4,6 @@ import { useAuthStore } from './store/authStore';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UsersPage from './pages/UsersPage';
-import UserDetailsPage from './pages/UserDetailsPage';
 import GroupsPage from './pages/GroupsPage';
 import GroupDetailsPage from './pages/GroupDetailsPage';
 import PublicInboxPage from './pages/PublicInboxPage';
@@ -28,7 +27,6 @@ export default function App() {
     <Route path="/login" element={<LoginPage />} />
     <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
     <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-    <Route path="/users/:id" element={<ProtectedRoute><UserDetailsPage /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
     <Route path="/groups/:id" element={<ProtectedRoute><GroupDetailsPage /></ProtectedRoute>} />
     <Route path="/inbox" element={<ProtectedRoute><PublicInboxPage /></ProtectedRoute>} />

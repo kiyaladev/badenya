@@ -2,8 +2,7 @@ import { ErrorMessage } from '../components/Feedback';
 import Pagination from '../components/Pagination';
 import { roleLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+
 import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
@@ -11,8 +10,6 @@ import AdminLayout from '../components/AdminLayout';
 import { useUserStatusActions } from '../hooks/useAdminActions';
 
 export default function UsersPage() {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +39,8 @@ export default function UsersPage() {
   }, [currentPage, debouncedSearch]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     loadUsers();
-  }, [isAuthenticated, navigate, loadUsers]);
+  }, [loadUsers]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -142,12 +135,6 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => navigate(`/users/${user._id}`)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Détails
-                      </button>
                       {user.isActive ? (
                         <button
                           onClick={() => requestSuspend(user._id)}

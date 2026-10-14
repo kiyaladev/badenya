@@ -4,16 +4,13 @@ import { ErrorMessage } from '../components/Feedback';
 import Pagination from '../components/Pagination';
 import { transactionStatusLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+
 import adminService, { type Transaction } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
 import AdminLayout from '../components/AdminLayout';
 
 export default function TransactionsPage() {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +53,8 @@ export default function TransactionsPage() {
   }, [currentPage, debouncedSearch, statusFilter, typeFilter]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     loadTransactions();
-  }, [isAuthenticated, navigate, loadTransactions]);
+  }, [loadTransactions]);
 
   const handleFlagTransaction = async (transactionId: string) => {
     const reason = flagReason.trim();

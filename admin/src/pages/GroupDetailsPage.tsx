@@ -4,7 +4,6 @@ import { ErrorMessage } from '../components/Feedback';
 import { groupTypeLabels, roleLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import AdminLayout from '../components/AdminLayout';
@@ -13,7 +12,6 @@ import { useArchiveGroupAction } from '../hooks/useAdminActions';
 export default function GroupDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,14 +33,10 @@ export default function GroupDetailsPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     if (id) {
       loadGroup();
     }
-  }, [isAuthenticated, navigate, id, loadGroup]);
+  }, [id, loadGroup]);
 
   const showNotification = useCallback((notif: { type: 'success' | 'error'; message: string }) => {
     setNotification(notif);

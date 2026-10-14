@@ -56,21 +56,6 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/chargement/i)).toBeInTheDocument();
   });
 
-  it('should redirect to login when not authenticated', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      user: null,
-      isAuthenticated: false,
-      logout: mockLogout,
-    });
-
-    render(
-      <BrowserRouter>
-        <DashboardPage />
-      </BrowserRouter>
-    );
-
-    expect(mockNavigate).toHaveBeenCalledWith('/login');
-  });
 
   it('should display dashboard content after loading', async () => {
     render(

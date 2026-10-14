@@ -1,26 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+
 import adminService, { type DashboardStats } from '../services/adminService';
 import AdminLayout from '../components/AdminLayout';
 import { getErrorMessage } from '../utils/errorHandler';
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
     loadStats();
-  }, [isAuthenticated, navigate]);
+  }, []);
 
   const loadStats = async () => {
     try {
