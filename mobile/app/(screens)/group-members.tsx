@@ -1,21 +1,28 @@
 import { Alert } from '@/services/dialog.service';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useGroupStore } from '@/store/groupStore';
 import { useAuthStore } from '@/store/authStore';
 import groupService, { GroupMember } from '@/services/group.service';
+import userService, { User } from '@/services/user.service';
+import { shareGroupInvite } from '@/utils/shareInvite';
 import { Button, Icon, Loading } from '@/components/ui';
 
 type JoinRequest = Awaited<ReturnType<typeof groupService.joinRequests>>[number];
 
 export default function GroupMembersScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [requests, setRequests] = useState<JoinRequest[]>([]);
 
-  const { groups, isLoading, fetchGroups } = useGroupStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+
+  const { groups, isLoading, fetchGroups, fetchGroupById } = useGroupStore();
   const { user } = useAuthStore();
 
   const group = groups.find(g => g._id === groupId);
@@ -53,6 +60,76 @@ export default function GroupMembersScreen() {
       await Promise.all([loadRequests(), fetchGroups()]);
     } catch {
       Alert.alert('Erreur', 'La demande reste inchangée.');
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await userService.searchUsers(searchQuery.trim());
+
+      // Filter out users who are already members
+      const existingMemberIds = new Set(group?.members.map(m => m.userId) || []);
+      const filteredResults = results.filter(result => !existingMemberIds.has(result._id));
+
+      setSearchResults(filteredResults);
+
+      if (filteredResults.length === 0 && results.length > 0) {
+        Alert.alert('Info', 'Tous les utilisateurs trouvés sont déjà membres du groupe');
+      } else if (filteredResults.length === 0) {
+        Alert.alert('Aucun résultat', 'Aucun utilisateur trouvé avec cette recherche');
+      }
+    } catch {
+      Alert.alert('Erreur', 'Impossible de rechercher des utilisateurs');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUsers);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUsers(newSelection);
+  };
+
+  const handleAddMembers = async () => {
+    if (selectedUsers.size === 0) {
+      Alert.alert('Attention', 'Veuillez sélectionner au moins un utilisateur');
+      return;
+    }
+
+    setIsAdding(true);
+
+    try {
+      const count = selectedUsers.size;
+      await Promise.all(
+        Array.from(selectedUsers).map(userId => groupService.addMember(groupId!, userId))
+      );
+
+      // Refresh group data
+      await fetchGroupById(groupId!);
+
+      setSelectedUsers(new Set());
+      setSearchResults([]);
+      setSearchQuery('');
+      Alert.alert(
+        'Succès',
+        `${count} membre${count > 1 ? 's' : ''} ajouté${count > 1 ? 's' : ''} avec succès`
+      );
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      Alert.alert('Erreur', error.message || "Impossible d'ajouter les membres");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -149,15 +226,6 @@ export default function GroupMembersScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View className="px-6 mt-6 mb-6">
-        {canManageMembers && (
-          <Button
-            title="Inviter"
-            iconName="user-plus"
-            onPress={() => router.push(`/(screens)/add-members?groupId=${groupId}`)}
-            className="mb-6"
-          />
-        )}
-
         {requests.length > 0 && (
           <View className="mb-6">
             <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-3">
@@ -263,6 +331,116 @@ export default function GroupMembersScreen() {
             <Text className="text-gray-600 dark:text-gray-300 text-sm text-center">
               Les membres du groupe apparaîtront ici
             </Text>
+          </View>
+        )}
+        {canManageMembers && (
+          <View className="mt-8">
+            <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-4">Inviter</Text>
+
+            {/* Share Invite Card */}
+            <TouchableOpacity
+              onPress={() => shareGroupInvite(group)}
+              className="flex-row items-center justify-between bg-primary-50 dark:bg-gray-800 border border-primary-200 rounded-xl p-4 mb-5 active:bg-primary-100"
+            >
+              <View className="flex-row items-center flex-1 mr-3">
+                <View className="w-10 h-10 bg-primary-600 rounded-full items-center justify-center mr-3">
+                  <Icon name="share-alt" size={16} color="#ffffff" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-primary-900 dark:text-primary-100 font-bold text-sm">
+                    Inviter via WhatsApp ou SMS
+                  </Text>
+                  <Text className="text-primary-700 dark:text-primary-200 text-xs">
+                    Partagez directement le code et le lien d'invitation
+                  </Text>
+                </View>
+              </View>
+              <Icon name="chevron-right" size={14} color="#0284c7" />
+            </TouchableOpacity>
+
+            <Text className="text-gray-600 dark:text-gray-300 mb-3">
+              Ou recherchez par email ou téléphone pour ajouter des membres à {group.name}
+            </Text>
+
+            {/* Search Box */}
+            <View className="mb-4">
+              <View className="flex-row items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 mb-2">
+                <Icon name="search" size={18} color="#9ca3af" />
+                <TextInput
+                  className="flex-1 text-gray-800 dark:text-gray-100 py-2 ml-2"
+                  placeholder="Email ou téléphone..."
+                  placeholderTextColor="#9ca3af"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  onSubmitEditing={handleSearch}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+              <Button onPress={handleSearch} disabled={isSearching || !searchQuery.trim()}>
+                {isSearching ? 'Recherche...' : 'Rechercher'}
+              </Button>
+            </View>
+
+            {isSearching && (
+              <View className="py-8">
+                <Loading />
+              </View>
+            )}
+
+            {!isSearching && searchResults.length > 0 && (
+              <>
+                <Text className="text-gray-700 dark:text-gray-200 font-semibold mb-3">
+                  {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} trouvé
+                  {searchResults.length > 1 ? 's' : ''}
+                </Text>
+
+                {searchResults.map(result => (
+                  <TouchableOpacity
+                    key={result._id}
+                    onPress={() => toggleUserSelection(result._id)}
+                    className={`bg-white dark:bg-gray-800 p-4 rounded-lg mb-3 border-2 ${
+                      selectedUsers.has(result._id)
+                        ? 'border-primary-600 bg-primary-50 dark:bg-gray-800'
+                        : 'border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-1">
+                        <Text className="text-gray-800 dark:text-gray-100 font-semibold text-base mb-1">
+                          {result.fullName}
+                        </Text>
+                        <View className="flex-row items-center mb-1">
+                          <Icon name="envelope" size={13} color="#6b7280" />
+                          <Text className="text-gray-600 dark:text-gray-300 text-sm ml-2">
+                            {result.email}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center">
+                          <Icon name="mobile" size={13} color="#6b7280" />
+                          <Text className="text-gray-600 dark:text-gray-300 text-sm ml-2">
+                            {result.phone}
+                          </Text>
+                        </View>
+                      </View>
+                      {selectedUsers.has(result._id) && (
+                        <View className="bg-primary-600 w-8 h-8 rounded-full items-center justify-center">
+                          <Icon name="check" size={16} color="#ffffff" />
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+
+                {selectedUsers.size > 0 && (
+                  <Button onPress={handleAddMembers} disabled={isAdding} className="mt-2">
+                    {isAdding
+                      ? 'Ajout en cours...'
+                      : `Ajouter ${selectedUsers.size} membre${selectedUsers.size > 1 ? 's' : ''}`}
+                  </Button>
+                )}
+              </>
+            )}
           </View>
         )}
       </View>

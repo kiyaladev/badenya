@@ -16,7 +16,6 @@ export default function ScreensLayout() {
         <Stack.Screen name="create-group" options={{ title: 'Nouveau groupe' }} />
         <Stack.Screen name="edit-group" options={{ title: 'Modifier le groupe' }} />
         <Stack.Screen name="group-members" options={{ title: 'Membres' }} />
-        <Stack.Screen name="add-members" options={{ title: 'Ajouter des membres' }} />
         <Stack.Screen name="proposals" options={{ title: 'Propositions' }} />
         <Stack.Screen name="proposal-details" options={{ title: 'Proposition' }} />
         <Stack.Screen name="create-proposal" options={{ title: 'Nouvelle proposition' }} />
@@ -27,7 +26,6 @@ export default function ScreensLayout() {
         <Stack.Screen name="insight-details" options={{ title: 'Analyse' }} />
         <Stack.Screen name="transactions" options={{ headerShown: false }} />
         <Stack.Screen name="notifications" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ title: 'Paramètres' }} />
         <Stack.Screen name="tontine-rounds" options={{ title: 'Tour de rôle' }} />
         <Stack.Screen name="edit-profile" options={{ title: 'Modifier le profil' }} />
         <Stack.Screen name="change-password" options={{ title: 'Changer le mot de passe' }} />
