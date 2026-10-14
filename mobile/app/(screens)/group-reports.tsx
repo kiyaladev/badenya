@@ -66,7 +66,11 @@ const formatDate = (date: Date) =>
 export default function GroupReportsScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const router = useRouter();
-  const { groups } = useGroupStore();
+  const { groups, fetchGroups } = useGroupStore();
+
+  useEffect(() => {
+    if (groups.length === 0) fetchGroups();
+  }, []);
   const [aiEnabled, setAiEnabled] = useState(false);
 
   const [loading, setLoading] = useState(false);

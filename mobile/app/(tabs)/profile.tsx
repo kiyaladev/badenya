@@ -109,7 +109,11 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const { user, logout, updateProfile } = useAuthStore();
-  const { groups } = useGroupStore();
+  const { groups, fetchGroups } = useGroupStore();
+
+  useEffect(() => {
+    if (groups.length === 0) fetchGroups();
+  }, []);
   const { mode: themeMode, setTheme } = useThemeStore();
 
   const [capabilities, setCapabilities] = useState<Capabilities>({

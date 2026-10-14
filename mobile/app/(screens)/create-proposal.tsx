@@ -151,9 +151,6 @@ export default function CreateProposalScreen() {
       <View className="px-6 py-6">
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-            Nouvelle proposition
-          </Text>
           <Text className="text-gray-600 dark:text-gray-300">
             Créez une proposition pour le groupe {group.name}
           </Text>
