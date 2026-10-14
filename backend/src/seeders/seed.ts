@@ -4,12 +4,10 @@ import mongoose from "mongoose";
 import {
   AIReport,
   Group,
-  Invitation,
   Notification,
   Proposal,
   Transaction,
   User,
-  Vote,
 } from "../models";
 import { hashPassword } from "../utils/password";
 import logger from "../utils/logger";
@@ -345,7 +343,6 @@ const createProposalsAndVotes = async (
   users: Record<SeedUserKey, mongoose.Types.ObjectId>,
 ): Promise<void> => {
   await Proposal.deleteMany({ groupId: { $in: groupIds } });
-  await Vote.deleteMany({ groupId: { $in: groupIds } });
 
   await Proposal.create({
     groupId: groupIds[0],
@@ -394,30 +391,6 @@ const createProposalsAndVotes = async (
     },
   });
 
-  await Vote.create({
-    groupId: groupIds[0],
-    title: "Choisir le jour de la prochaine réunion",
-    description:
-      "Votez pour le créneau qui convient au plus grand nombre de membres.",
-    createdBy: users.admin,
-    type: "simple",
-    quorumPercentage: 50,
-    options: [
-      { id: "saturday", label: "Samedi matin", votes: 2 },
-      { id: "sunday", label: "Dimanche après-midi", votes: 1 },
-    ],
-    votes: [
-      { userId: users.admin, optionId: "saturday", votedAt: daysAgo(1) },
-      { userId: users.fatou, optionId: "saturday", votedAt: daysAgo(1) },
-      { userId: users.moussa, optionId: "sunday", votedAt: daysAgo(1) },
-    ],
-    startDate: daysAgo(2),
-    endDate: daysFromNow(3),
-    status: "active",
-    allowChangeVote: true,
-    anonymousVoting: false,
-    showIntermediateResults: true,
-  });
 
   for (let index = 0; index < groupIds.length; index += 1) {
     const group = await Group.findById(groupIds[index]);
@@ -541,25 +514,6 @@ const createAiReport = async (
   });
 };
 
-const createInvitation = async (
-  groupId: mongoose.Types.ObjectId,
-  invitedBy: mongoose.Types.ObjectId,
-): Promise<void> => {
-  await Invitation.deleteMany({
-    groupId,
-    token: { $regex: /^demo-invitation-/ },
-  });
-  await Invitation.create({
-    groupId,
-    invitedBy,
-    email: "invite@badenya.test",
-    phone: "+2250700000006",
-    token: `demo-invitation-${groupId.toString()}`,
-    status: "pending",
-    expiresAt: daysFromNow(14),
-  });
-};
-
 const resetDatabase = async (): Promise<void> => {
   if (process.env.SEED_ALLOW_RESET !== "true") {
     throw new Error("Refusing --reset: set SEED_ALLOW_RESET=true explicitly.");
@@ -568,12 +522,10 @@ const resetDatabase = async (): Promise<void> => {
   await Promise.all([
     AIReport.deleteMany({}),
     Group.deleteMany({}),
-    Invitation.deleteMany({}),
     Notification.deleteMany({}),
     Proposal.deleteMany({}),
     Transaction.deleteMany({}),
     User.deleteMany({}),
-    Vote.deleteMany({}),
   ]);
 };
 
@@ -593,7 +545,6 @@ const seed = async (): Promise<void> => {
   await createProposalsAndVotes(groupIds, users);
   await createNotifications(groupIds, users);
   await createAiReport(groupIds[0], users.admin);
-  await createInvitation(groupIds[0], users.admin);
 
   logger.info("Seed completed successfully", {
     database: mongoose.connection.name,

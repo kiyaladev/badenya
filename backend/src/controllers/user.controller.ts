@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { User, Transaction, Vote } from '../models';
+import { User, Transaction, Proposal } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import logger from '../utils/logger';
@@ -56,7 +56,7 @@ export const getUserStats = async (
         type: 'contribution',
         status: { $in: ['completed', 'pending'] },
       }),
-      Vote.countDocuments({
+      Proposal.countDocuments({
         'votes.userId': userId,
       }),
     ]);

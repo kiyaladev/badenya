@@ -3,7 +3,7 @@ import { version } from '../../package.json';
 import { Schema, SchemaType } from 'mongoose';
 import fs from 'fs';
 import path from 'path';
-import { User, Group, Transaction, Proposal, Notification, AIReport, Vote } from '../models';
+import { User, Group, Transaction, Proposal, Notification, AIReport } from '../models';
 
 interface ApiSchema {
   type?: string;
@@ -22,7 +22,7 @@ interface ApiSchema {
   maxLength?: number;
 }
 const modelSchemas = { User: User.schema, Group: Group.schema, Transaction: Transaction.schema,
-  Proposal: Proposal.schema, Notification: Notification.schema, AIReport: AIReport.schema, Vote: Vote.schema };
+  Proposal: Proposal.schema, Notification: Notification.schema, AIReport: AIReport.schema };
 const privateFields = new Set(['password', 'refreshTokens', 'passwordResetToken', 'passwordResetExpires',
   'emailVerificationToken', 'deviceTokens', 'sessionVersion', 'tokensValidAfter', 'invitationCode',
   'eventKey', 'pushLeaseUntil', 'pushDeliveredAt', 'pushExpoDeliveredAt', 'pushFcmDeliveredAt']);
@@ -93,8 +93,8 @@ export function createSwaggerSpec(runtimeRoot = path.resolve(__dirname, '..')) {
   };
   // Include routes without an annotation so new operational endpoints are discoverable in every release.
   const mounts: Record<string, string> = { auth: '/auth', user: '/users', group: '/groups', admin: '/admin', upload: '/uploads',
-    transaction: '', proposal: '', vote: '', notification: '/notifications', report: '/groups', contact: '/contact', ai: '' };
-  const tagNames: Record<string, string> = { auth: 'Auth', user: 'Users', group: 'Groups', admin: 'Administration', upload: 'Uploads', transaction: 'Transactions', proposal: 'Proposals', vote: 'Votes', notification: 'Notifications', report: 'Reports', contact: 'Contact', ai: 'AI Insights' };
+    transaction: '', proposal: '', notification: '/notifications', report: '/groups', contact: '/contact', ai: '' };
+  const tagNames: Record<string, string> = { auth: 'Auth', user: 'Users', group: 'Groups', admin: 'Administration', upload: 'Uploads', transaction: 'Transactions', proposal: 'Proposals', notification: 'Notifications', report: 'Reports', contact: 'Contact', ai: 'AI Insights' };
   for (const [name, prefix] of Object.entries(mounts)) {
     const file = path.join(runtimeRoot, 'routes', `${name}.routes.${extension}`);
     if (!fs.existsSync(file)) continue;

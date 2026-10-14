@@ -3,6 +3,8 @@ import DomainEvent from "../models/DomainEvent";
 import { Group, Notification } from "../models";
 import { NotificationType } from "../models/Notification";
 import { sendPushNotification } from "./notification.service";
+import { IGroup } from "../models/Group";
+import logger from "../utils/logger";
 export async function enqueueEvent(
   key: string,
   groupId: unknown,
@@ -126,4 +128,12 @@ export async function deliverEvents() {
       },
     );
   }
+}
+
+/** Group changes have committed before notification persistence. Retry keys use the
+ * successful document revision; a notification failure does not undo membership. */
+export async function groupEvent(group: IGroup, action: string, type: NotificationType, title: string, message: string) {
+  try {
+    await enqueueEvent(`group:${group.id}:${group.get('__v') || 0}:${action}`,group._id,type,title,message.slice(0,500));
+  } catch (error) { logger.warn('Group notification persistence failed', {groupId:group.id,action,error:error instanceof Error ? error.message : 'unknown'}); }
 }

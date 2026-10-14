@@ -58,7 +58,7 @@ const reportIdValidation = [
  *       500:
  *         description: AI service error
  */
-router.post('/groups/:groupId/insights', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateInsights);
+router.post('/groups/:groupId/insights', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateInsights);
 
 /**
  * @swagger
@@ -108,7 +108,7 @@ router.post('/groups/:groupId/insights', authenticate, authenticate, requireGrou
  *                     total:
  *                       type: integer
  */
-router.get('/groups/:groupId/insights', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.getGroupInsights);
+router.get('/groups/:groupId/insights', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.getGroupInsights);
 
 /**
  * @swagger
@@ -144,7 +144,7 @@ router.get('/groups/:groupId/insights', authenticate, authenticate, requireGroup
  *       404:
  *         description: Report not found
  */
-router.get('/insights/:reportId', authenticate, authenticate, reportIdValidation, validate, aiController.getInsightById);
+router.get('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.getInsightById);
 
 /**
  * @swagger
@@ -180,7 +180,7 @@ router.get('/insights/:reportId', authenticate, authenticate, reportIdValidation
  *       404:
  *         description: Group not found
  */
-router.post('/groups/:groupId/anomalies', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.detectAnomalies);
+router.post('/groups/:groupId/anomalies', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.detectAnomalies);
 
 /**
  * @swagger
@@ -216,7 +216,7 @@ router.post('/groups/:groupId/anomalies', authenticate, authenticate, requireGro
  *       404:
  *         description: Group not found
  */
-router.post('/groups/:groupId/recommendations', authenticate, authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateRecommendations);
+router.post('/groups/:groupId/recommendations', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateRecommendations);
 
 /**
  * @swagger
@@ -239,6 +239,6 @@ router.post('/groups/:groupId/recommendations', authenticate, authenticate, requ
  *       404:
  *         description: Report not found
  */
-router.delete('/insights/:reportId', authenticate, authenticate, reportIdValidation, validate, aiController.deleteInsight);
+router.delete('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.deleteInsight);
 
 export default router;

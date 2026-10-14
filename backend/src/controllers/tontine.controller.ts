@@ -1,4 +1,3 @@
-import TontineCycle from "../models/TontineCycle";
 import { Request, Response } from "express";
 import crypto from "crypto";
 import { Group, Transaction } from "../models";
@@ -281,16 +280,6 @@ export async function nextCycle(req: Request, res: Response) {
       const custom = saved.customIntervalDays;
       if (frequency === "custom" && (!custom || custom <= 0))
         throw new BusinessError(400, "Intervalle personnalisé requis");
-      await TontineCycle.create(
-        [
-          {
-            groupId: group._id,
-            cycleNumber: saved.cycleNumber,
-            schedule: saved.toObject(),
-          },
-        ],
-        { session },
-      );
       const lastDate = saved.rounds[saved.rounds.length - 1]?.payoutDate;
       const nextDate = lastDate
         ? new Date(dateAt(new Date(lastDate), 1, frequency, custom))

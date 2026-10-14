@@ -1,4 +1,4 @@
-import { groupEvent } from '../utils/groupEvents';
+import { groupEvent } from '../services/events.service';
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import mongoose from 'mongoose';

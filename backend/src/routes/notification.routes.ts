@@ -5,7 +5,6 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  sendNotification,
   updateDeviceToken,
   removeDeviceToken,
 } from '../controllers/notification.controller';
@@ -170,31 +169,6 @@ router.use(authenticate);
  */
 
 // Validation rules
-const sendNotificationValidation = [
-  body('userId').notEmpty().withMessage('User ID is required'),
-  body('type')
-    .isIn([
-      'group_invitation',
-      'member_joined',
-      'proposal_created',
-      'proposal_approved',
-      'proposal_rejected',
-      'contribution_received',
-      'vote_reminder',
-      'payment_reminder',
-      'expense_executed',
-      'role_changed',
-      'group_archived',
-    ])
-    .withMessage('Invalid notification type'),
-  body('title').trim().notEmpty().withMessage('Title is required'),
-  body('message').trim().notEmpty().withMessage('Message is required'),
-  body('priority')
-    .optional()
-    .isIn(['low', 'normal', 'high'])
-    .withMessage('Invalid priority'),
-];
-
 const deviceTokenValidation = [
   body('token').trim().notEmpty().withMessage('Device token is required'),
   body('platform').optional().trim(),
@@ -209,7 +183,6 @@ router.get('/', getUserNotifications);
 router.put('/:id/read', markAsRead);
 router.put('/mark-all-read', markAllAsRead);
 router.delete('/:id', deleteNotification);
-router.post('/send', sendNotificationValidation, validate, sendNotification);
 router.post('/device-token', deviceTokenValidation, validate, updateDeviceToken);
 router.delete('/device-token', removeDeviceTokenValidation, validate, removeDeviceToken);
 

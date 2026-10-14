@@ -3,7 +3,6 @@ import { Notification, User } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { requireAuth } from '../utils/typeGuards';
 import logger from '../utils/logger';
-import { sendPushNotification } from '../services/notification.service';
 
 // Get all notifications for current user
 export const getUserNotifications = async (
@@ -160,51 +159,6 @@ export const deleteNotification = async (
     });
   }
 };
-
-// Send notification (internal use or admin)
-export const sendNotification = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { userId, type, title, message, data, priority } = req.body;
-
-    // Verify user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    const notification = await Notification.create({
-      userId,
-      type,
-      title,
-      message,
-      data: data || {},
-      priority: priority || 'normal',
-      isRead: false,
-    });
-
-    await sendPushNotification(userId, notification);
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Notification sent successfully',
-      data: { notification },
-    });
-  } catch (error) {
-    logger.error('Send notification error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to send notification',
-    });
-  }
-};
-
 // Update device token for push notifications
 export const updateDeviceToken = async (
   req: Request,

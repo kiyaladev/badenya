@@ -473,9 +473,6 @@ it("archives a completed tontine cycle and refuses overlapping next cycles", asy
   expect(next.body.data.schedule.rounds[0].roundId).not.toBe(
     first.body.data.schedule.rounds[0].roundId,
   );
-  const { default: TontineCycle } = await import("../../models/TontineCycle");
-  const archive = await TontineCycle.findOne({ groupId, cycleNumber: 1 });
-  expect(archive?.schedule.rounds[0].status).toBe("completed");
   await request(app)
     .post(`/api/v1/groups/${groupId}/tontine/next-cycle`)
     .set(auth())

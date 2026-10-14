@@ -1,4 +1,4 @@
-import { groupEvent } from '../utils/groupEvents';
+import { groupEvent } from '../services/events.service';
 import { entityId } from '../utils/membership';
 import { Request, Response } from 'express';
 import { Group, User } from '../models';
