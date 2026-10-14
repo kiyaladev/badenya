@@ -2,7 +2,6 @@ import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useGroupStore } from '@/store/groupStore';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, Loading } from '@/components/ui';
 import transactionService, { Transaction } from '@/services/transaction.service';
 import { getErrorMessage } from '@/utils/errorHandler';
@@ -13,7 +12,6 @@ export default function TransactionsScreen() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(queryGroupId || null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'all' | 'contributions' | 'expenses'>('all');
-  const insets = useSafeAreaInsets();
 
   const PAGE_SIZE = 15;
   const [pageTransactions, setPageTransactions] = useState<Transaction[]>([]);
@@ -91,12 +89,8 @@ export default function TransactionsScreen() {
       )}
       {/* Header */}
       <View
-        className="bg-white dark:bg-gray-800 px-6 pb-4 border-b border-gray-200 dark:border-gray-600"
-        style={{ paddingTop: insets.top + 16 }}
+        className="bg-white dark:bg-gray-800 px-6 pt-4 pb-4 border-b border-gray-200 dark:border-gray-600"
       >
-        <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-          Transactions
-        </Text>
 
         {selectedGroupId && (
           <View className="flex-row items-center bg-primary-50 dark:bg-gray-800 border border-primary-200 rounded-lg px-3 py-1.5 self-start mb-3">

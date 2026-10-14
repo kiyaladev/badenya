@@ -14,7 +14,7 @@ export function StatItem({
 }) {
   const colors = useThemeStore(state => state.colors);
   const containerStyle: ViewStyle = { alignItems: 'center' };
-  const valueStyle: TextStyle = { fontSize: 20, fontWeight: '700', color };
+  const valueStyle: TextStyle = { fontSize: 20, fontWeight: '700', color: color ?? colors.text };
   const labelStyle: TextStyle = { fontSize: 12, color: colors.textSecondary, marginTop: 2 };
 
   return (

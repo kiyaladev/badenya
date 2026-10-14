@@ -16,7 +16,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   }, [checked, checkAuth]);
   const colors = useThemeStore(state => state.colors);
   if (!checked || (!isAuthenticated && isLoading)) return <Loading />;
-  if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
+  if (!isAuthenticated) return <Redirect href="/(auth)/splash" />;
   return (
     <View style={styles.fill}>
       <View

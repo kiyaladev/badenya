@@ -4,12 +4,10 @@ import { useState, useEffect } from 'react';
 import { useNotificationStore } from '@/store/notificationStore';
 import NotificationItem from '@/components/NotificationItem';
 import { Icon, Loading } from '@/components/ui';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const insets = useSafeAreaInsets();
 
   const {
     notifications,
@@ -73,16 +71,12 @@ export default function NotificationsScreen() {
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <View
-        className="bg-white dark:bg-gray-800 px-6 pb-4 border-b border-gray-200 dark:border-gray-600"
-        style={{ paddingTop: insets.top + 16 }}
+        className="bg-white dark:bg-gray-800 px-6 pt-4 pb-4 border-b border-gray-200 dark:border-gray-600"
       >
         <View className="flex-row justify-between items-center mb-3">
           <View>
-            <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              Notifications
-            </Text>
             {unreadCount > 0 && (
-              <Text className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+              <Text className="text-gray-600 dark:text-gray-300 text-sm">
                 {unreadCount} non lue{unreadCount > 1 ? 's' : ''}
               </Text>
             )}
