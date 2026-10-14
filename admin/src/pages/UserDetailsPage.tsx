@@ -1,4 +1,3 @@
-import ConfirmationModal from '../components/ConfirmationModal';
 import { Toast } from '../components/Feedback';
 import { LoadingState } from '../components/Feedback';
 import { ErrorMessage } from '../components/Feedback';
@@ -9,6 +8,7 @@ import { useAuthStore } from '../store/authStore';
 import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import AdminLayout from '../components/AdminLayout';
+import { useUserStatusActions } from '../hooks/useAdminActions';
 
 export default function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +17,6 @@ export default function UserDetailsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirmSuspend, setConfirmSuspend] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadUser = useCallback(async () => {
@@ -50,29 +49,10 @@ export default function UserDetailsPage() {
     setTimeout(() => setNotification(null), 5000);
   }, []);
 
-  const handleSuspendUser = async () => {
-    if (!id) return;
-    try {
-      await adminService.suspendUser(id);
-      setConfirmSuspend(false);
-      showNotification({ type: 'success', message: 'Utilisateur suspendu avec succès' });
-      await loadUser();
-    } catch (err) {
-      setConfirmSuspend(false);
-      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de la suspension' });
-    }
-  };
-
-  const handleActivateUser = async () => {
-    if (!id) return;
-    try {
-      await adminService.activateUser(id);
-      showNotification({ type: 'success', message: 'Utilisateur activé avec succès' });
-      await loadUser();
-    } catch (err) {
-      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'activation' });
-    }
-  };
+  const { requestSuspend, activate, modal } = useUserStatusActions({
+    onSuccess: async message => { showNotification({ type: 'success', message }); await loadUser(); },
+    onError: message => showNotification({ type: 'error', message }),
+  });
 
   return (
     <AdminLayout subtitle="Détails utilisateur">
@@ -124,14 +104,14 @@ export default function UserDetailsPage() {
                 <div className="space-y-2">
                   {user.isActive ? (
                     <button
-                      onClick={() => setConfirmSuspend(true)}
+                      onClick={() => id && requestSuspend(id)}
                       className="block w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                     >
                       Suspendre l'utilisateur
                     </button>
                   ) : (
                     <button
-                      onClick={handleActivateUser}
+                      onClick={() => id && void activate(id)}
                       className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
                     >
                       Activer l'utilisateur
@@ -181,26 +161,7 @@ export default function UserDetailsPage() {
       {/* Notification Toast */}
       {notification && <Toast notification={notification} onClose={() => setNotification(null)} />}
 
-      {/* Confirm Suspend Modal */}
-      {confirmSuspend && (
-        <ConfirmationModal id="confirm-suspend-title" title="Confirmer la suspension" onClose={() => setConfirmSuspend(false)}>
-            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setConfirmSuspend(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSuspendUser}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-              >
-                Suspendre
-              </button>
-            </div>
-        </ConfirmationModal>
-      )}
+      {modal}
     </AdminLayout>
   );
 }

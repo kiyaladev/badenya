@@ -1,4 +1,3 @@
-import ConfirmationModal from '../components/ConfirmationModal';
 import { Toast } from '../components/Feedback';
 import { LoadingState } from '../components/Feedback';
 import { ErrorMessage } from '../components/Feedback';
@@ -9,6 +8,7 @@ import { useAuthStore } from '../store/authStore';
 import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import AdminLayout from '../components/AdminLayout';
+import { useArchiveGroupAction } from '../hooks/useAdminActions';
 
 export default function GroupDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +17,6 @@ export default function GroupDetailsPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirmArchive, setConfirmArchive] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadGroup = useCallback(async () => {
@@ -50,18 +49,10 @@ export default function GroupDetailsPage() {
     setTimeout(() => setNotification(null), 5000);
   }, []);
 
-  const handleArchiveGroup = async () => {
-    if (!id) return;
-    try {
-      await adminService.archiveGroup(id);
-      setConfirmArchive(false);
-      showNotification({ type: 'success', message: 'Groupe archivé avec succès' });
-      await loadGroup();
-    } catch (err) {
-      setConfirmArchive(false);
-      showNotification({ type: 'error', message: getErrorMessage(err) || 'Erreur lors de l\'archivage' });
-    }
-  };
+  const { requestArchive, modal } = useArchiveGroupAction({
+    onSuccess: async message => { showNotification({ type: 'success', message }); await loadGroup(); },
+    onError: message => showNotification({ type: 'error', message }),
+  });
 
   const getGroupTypeLabel = (type: string) => groupTypeLabels[type] || type;
 
@@ -102,7 +93,7 @@ export default function GroupDetailsPage() {
                 </div>
                 {group.isActive && (
                   <button
-                    onClick={() => setConfirmArchive(true)}
+                    onClick={() => id && requestArchive(id)}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                   >
                     Archiver le groupe
@@ -196,26 +187,7 @@ export default function GroupDetailsPage() {
       {/* Notification Toast */}
       {notification && <Toast notification={notification} onClose={() => setNotification(null)} />}
 
-      {/* Confirm Archive Modal */}
-      {confirmArchive && (
-        <ConfirmationModal id="confirm-archive-title" title="Confirmer l'archivage" onClose={() => setConfirmArchive(false)}>
-            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir archiver ce groupe ?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setConfirmArchive(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleArchiveGroup}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-              >
-                Archiver
-              </button>
-            </div>
-        </ConfirmationModal>
-      )}
+      {modal}
     </AdminLayout>
   );
 }

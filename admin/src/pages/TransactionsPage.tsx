@@ -104,7 +104,7 @@ export default function TransactionsPage() {
 
 
   return (
-    <AdminLayout subtitle="Monitoring des transactions">
+    <AdminLayout subtitle="Suivi des transactions">
         {/* Filters */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
@@ -144,7 +144,6 @@ export default function TransactionsPage() {
             <option value="">Tous les types</option>
             <option value="contribution">Contribution</option>
             <option value="expense">Dépense</option>
-            <option value="refund">Remboursement</option><option value="adjustment">Ajustement</option>
           </select>
         </div>
 

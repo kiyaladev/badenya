@@ -1,4 +1,3 @@
-import ConfirmationModal from '../components/ConfirmationModal';
 import { ErrorMessage } from '../components/Feedback';
 import Pagination from '../components/Pagination';
 import { roleLabels } from '../utils/labels';
@@ -9,6 +8,7 @@ import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
 import AdminLayout from '../components/AdminLayout';
+import { useUserStatusActions } from '../hooks/useAdminActions';
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -20,7 +20,6 @@ export default function UsersPage() {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [confirmSuspend, setConfirmSuspend] = useState<string | null>(null);
   const limit = 10;
 
   const loadUsers = useCallback(async () => {
@@ -54,26 +53,7 @@ export default function UsersPage() {
     setCurrentPage(1);
   }, [debouncedSearch]);
 
-  const handleSuspendUser = async (userId: string) => {
-    try {
-      await adminService.suspendUser(userId);
-      setConfirmSuspend(null);
-      await loadUsers();
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Erreur lors de la suspension');
-    }
-  };
-
-  const handleActivateUser = async (userId: string) => {
-    try {
-      await adminService.activateUser(userId);
-      await loadUsers();
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Erreur lors de l\'activation');
-    }
-  };
-
-
+  const { requestSuspend, activate, modal } = useUserStatusActions({ onSuccess: loadUsers, onError: setError });
 
   return (
     <AdminLayout subtitle="Gestion des utilisateurs">
@@ -102,12 +82,6 @@ export default function UsersPage() {
                   Utilisateur
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Téléphone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Rôle
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
@@ -121,13 +95,13 @@ export default function UsersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center">
+                  <td colSpan={4} className="px-6 py-4 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-600">
+                  <td colSpan={4} className="px-6 py-4 text-center text-gray-600">
                     Aucun utilisateur trouvé
                   </td>
                 </tr>
@@ -145,17 +119,13 @@ export default function UsersPage() {
                           <div className="text-sm font-medium text-gray-900">
                             {user.fullName}
                           </div>
+                          <div className="text-sm text-gray-600">{user.email}</div>
+                          {user.phone && <div className="text-sm text-gray-600">{user.phone}</div>}
                           <div className="text-sm text-gray-600">
                             Inscrit le {new Date(user.createdAt).toLocaleDateString('fr-FR')}
                           </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.phone || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -180,14 +150,14 @@ export default function UsersPage() {
                       </button>
                       {user.isActive ? (
                         <button
-                          onClick={() => setConfirmSuspend(user._id)}
+                          onClick={() => requestSuspend(user._id)}
                           className="text-red-600 hover:text-red-900"
                         >
                           Suspendre
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleActivateUser(user._id)}
+                          onClick={() => void activate(user._id)}
                           className="text-green-600 hover:text-green-900"
                         >
                           Activer
@@ -203,26 +173,7 @@ export default function UsersPage() {
 
         <Pagination page={currentPage} limit={limit} total={totalUsers} onChange={setCurrentPage} />
 
-      {/* Confirmation Modal */}
-      {confirmSuspend && (
-        <ConfirmationModal id="confirm-suspend-title" title="Confirmer la suspension" onClose={() => setConfirmSuspend(null)}>
-            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setConfirmSuspend(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => handleSuspendUser(confirmSuspend)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-              >
-                Suspendre
-              </button>
-            </div>
-        </ConfirmationModal>
-      )}
+      {modal}
     </AdminLayout>
   );
 }

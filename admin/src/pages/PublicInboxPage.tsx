@@ -27,7 +27,7 @@ export default function PublicInboxPage() {
     catch { setError('Le message n’a pas pu être marqué comme traité.'); }
     finally { setBusy(''); }
   }
-  return <AdminLayout subtitle="Messages et newsletter"><h2 className="text-2xl font-bold text-gray-900 mb-6">Messages et newsletter</h2>
+  return <AdminLayout subtitle="Messages et newsletter">
     <div className="flex flex-wrap gap-3 mb-6">
       <button aria-pressed={tab === 'contact'} className="border rounded-lg p-3 text-gray-800" onClick={() => { setTab('contact'); setStatus('new'); setPage(1); }}>Messages</button>
       <button aria-pressed={tab === 'newsletter'} className="border rounded-lg p-3 text-gray-800" onClick={() => { setTab('newsletter'); setStatus('active'); setPage(1); }}>Newsletter</button>

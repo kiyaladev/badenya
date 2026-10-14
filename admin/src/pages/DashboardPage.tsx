@@ -61,6 +61,7 @@ export default function DashboardPage() {
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                         {stats.activeUsers} actifs
                       </p>
+                      <p className="text-sm text-gray-600 mt-1">+{stats.recentActivity.newUsers} cette semaine</p>
                     </div>
                     <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
                       <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,6 +81,7 @@ export default function DashboardPage() {
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                         {stats.activeGroups} actifs
                       </p>
+                      <p className="text-sm text-gray-600 mt-1">+{stats.recentActivity.newGroups} cette semaine</p>
                     </div>
                     <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
                       <svg className="w-7 h-7 text-green-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +97,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-sm font-medium text-gray-600">Transactions</p>
                       <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalTransactions}</p>
-                      <p className="text-sm text-gray-600 mt-1">Total</p>
+                      <p className="text-sm text-gray-600 mt-1">+{stats.recentActivity.newTransactions} cette semaine</p>
                     </div>
                     <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center">
                       <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,7 +111,7 @@ export default function DashboardPage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Volume</p>
+                      <p className="text-sm font-medium text-gray-600">Montant total des transactions</p>
                       {Object.entries(stats.totalsByCurrency || { XOF: stats.totalTransactionVolume }).map(([currency, value]) => (
                         <p key={currency} className="text-xl font-bold text-gray-900 mt-2 break-words">{(typeof value === 'number' ? value : value.totalTransactionVolume).toLocaleString('fr-FR')} {currency}</p>
                       ))}
@@ -123,67 +125,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Recent Activity */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-                <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                  Activité récente (7 derniers jours)
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-500">
-                    <p className="text-sm text-gray-600 mb-1">Nouveaux utilisateurs</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.recentActivity.newUsers}</p>
-                  </div>
-                  <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
-                    <p className="text-sm text-gray-600 mb-1">Nouveaux groupes</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.recentActivity.newGroups}</p>
-                  </div>
-                  <div className="bg-purple-50 rounded-xl p-4 border-l-4 border-purple-500">
-                    <p className="text-sm text-gray-600 mb-1">Nouvelles transactions</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.recentActivity.newTransactions}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
-                  Actions rapides
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => navigate('/users')}
-                    className="group p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 text-left"
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <span className="text-2xl">👥</span>
-                    </div>
-                    <p className="font-semibold text-gray-900">Gérer les utilisateurs</p>
-                    <p className="text-sm text-gray-600 mt-1">Voir tous les utilisateurs</p>
-                  </button>
-                  <button
-                    onClick={() => navigate('/groups')}
-                    className="group p-6 border-2 border-gray-100 rounded-2xl hover:border-green-500 hover:bg-green-50 transition-all duration-300 text-left"
-                  >
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <span className="text-2xl">🏢</span>
-                    </div>
-                    <p className="font-semibold text-gray-900">Gérer les groupes</p>
-                    <p className="text-sm text-gray-600 mt-1">Voir tous les groupes</p>
-                  </button>
-                  <button
-                    onClick={() => navigate('/transactions')}
-                    className="group p-6 border-2 border-gray-100 rounded-2xl hover:border-purple-500 hover:bg-purple-50 transition-all duration-300 text-left"
-                  >
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <span className="text-2xl">💰</span>
-                    </div>
-                    <p className="font-semibold text-gray-900">Voir les transactions</p>
-                    <p className="text-sm text-gray-600 mt-1">Historique complet</p>
-                  </button>
-                </div>
-              </div>
             </>
           )}
     </AdminLayout>

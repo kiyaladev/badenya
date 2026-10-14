@@ -1,4 +1,3 @@
-import ConfirmationModal from '../components/ConfirmationModal';
 import { LoadingState } from '../components/Feedback';
 import { ErrorMessage } from '../components/Feedback';
 import Pagination from '../components/Pagination';
@@ -10,6 +9,7 @@ import adminService, { type Group } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
 import AdminLayout from '../components/AdminLayout';
+import { useArchiveGroupAction } from '../hooks/useAdminActions';
 
 export default function GroupsPage() {
   const navigate = useNavigate();
@@ -22,7 +22,6 @@ export default function GroupsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGroups, setTotalGroups] = useState(0);
-  const [confirmArchive, setConfirmArchive] = useState<string | null>(null);
   const limit = 10;
 
   const loadGroups = useCallback(async () => {
@@ -57,15 +56,7 @@ export default function GroupsPage() {
     setCurrentPage(1);
   }, [debouncedSearch, typeFilter]);
 
-  const handleArchiveGroup = async (groupId: string) => {
-    try {
-      await adminService.archiveGroup(groupId);
-      setConfirmArchive(null);
-      await loadGroups();
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Erreur lors de l\'archivage');
-    }
-  };
+  const { requestArchive, modal } = useArchiveGroupAction({ onSuccess: loadGroups, onError: setError });
 
   const getGroupTypeLabel = (type: string) => groupTypeLabels[type] || type;
 
@@ -153,7 +144,7 @@ export default function GroupsPage() {
                   </button>
                   {group.isActive && (
                     <button
-                      onClick={() => setConfirmArchive(group._id)}
+                      onClick={() => requestArchive(group._id)}
                       className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
                     >
                       Archiver
@@ -167,26 +158,7 @@ export default function GroupsPage() {
 
         <Pagination page={currentPage} limit={limit} total={totalGroups} onChange={setCurrentPage} />
 
-      {/* Confirmation Modal */}
-      {confirmArchive && (
-        <ConfirmationModal id="confirm-archive-title" title="Confirmer l'archivage" onClose={() => setConfirmArchive(null)}>
-            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir archiver ce groupe ?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setConfirmArchive(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => handleArchiveGroup(confirmArchive)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-              >
-                Archiver
-              </button>
-            </div>
-        </ConfirmationModal>
-      )}
+      {modal}
     </AdminLayout>
   );
 }
