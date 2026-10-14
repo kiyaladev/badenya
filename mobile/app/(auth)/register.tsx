@@ -1,6 +1,4 @@
 import { Alert } from '@/services/dialog.service';
-import { themedStyles } from '@/utils/themedStyles';
-import { useThemeStore } from '@/store/themeStore';
 import {
   View,
   Text,
@@ -9,8 +7,6 @@ import {
   Platform,
   Keyboard,
   TouchableOpacity,
-  StyleSheet,
-  ViewStyle,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -19,77 +15,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Icon, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
-const baseStyles = StyleSheet.create({
-  keyboard: {
-    flex: 1,
-  },
-  scroll: {
-    backgroundColor: '#ffffff',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingBottom: 56,
-    paddingHorizontal: 24,
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 15,
-  },
-  formCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: -32,
-    paddingHorizontal: 24,
-    paddingTop: 28,
-  },
-  button: {
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  loginLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  loginPrompt: {
-    color: '#6b7280',
-    fontSize: 15,
-  },
-  loginText: {
-    color: '#0284c7',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
+const tw = {
+  keyboard: 'flex-1',
+  scroll: 'bg-white dark:bg-gray-800',
+  headerContent: 'items-center',
+  logo: 'w-[72px] h-[72px] rounded-full bg-white/20 items-center justify-center mb-4',
+  title: 'text-white text-[28px] font-bold mb-1.5',
+  subtitle: 'text-white/85 text-[15px]',
+  formCard: 'flex-1 bg-white dark:bg-gray-800 rounded-t-[32px] -mt-8 px-6 pt-7',
+  button: 'mt-2 mb-5',
+  loginLink: 'flex-row justify-center items-center mb-8',
+  loginPrompt: 'text-gray-500 dark:text-gray-300 text-[15px]',
+  loginText: 'text-primary-600 text-[15px] font-semibold',
+};
 
 export default function RegisterScreen() {
-  const styles = themedStyles(
-    baseStyles,
-    useThemeStore(state => state.colors)
-  );
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -109,10 +49,8 @@ export default function RegisterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { register, isLoading, clearError } = useAuthStore();
-  const headerStyle: ViewStyle = {
-    ...styles.header,
-    paddingTop: insets.top + 32,
-  };
+  // LinearGradient is not className-aware: layout stays inline with the safe-area inset.
+  const headerStyle = { paddingTop: insets.top + 32, paddingBottom: 56, paddingHorizontal: 24 };
 
   const validateForm = () => {
     let valid = true;
@@ -192,11 +130,11 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboard}
+      className={tw.keyboard}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}
+        contentContainerClassName="grow"
+        className={tw.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -207,17 +145,17 @@ export default function RegisterScreen() {
           end={{ x: 1, y: 1 }}
           style={headerStyle}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.logo}>
+          <View className={tw.headerContent}>
+            <View className={tw.logo}>
               <Icon name="user-plus" size={30} color="#ffffff" />
             </View>
-            <Text style={styles.title}>Créer un compte</Text>
-            <Text style={styles.subtitle}>Rejoignez Badenya dès aujourd'hui</Text>
+            <Text className={tw.title}>Créer un compte</Text>
+            <Text className={tw.subtitle}>Rejoignez Badenya dès aujourd'hui</Text>
           </View>
         </LinearGradient>
 
         {/* Form Card */}
-        <View style={styles.formCard}>
+        <View className={tw.formCard}>
           <Input
             label="Nom complet"
             value={fullName}
@@ -294,22 +232,23 @@ export default function RegisterScreen() {
           />
 
           {/* Register Button */}
-          <Button
-            title="S'inscrire"
-            onPress={handleRegister}
-            loading={isLoading}
-            fullWidth
-            size="lg"
-            iconName="check"
-            iconPosition="right"
-            style={styles.button}
-          />
+          <View className={tw.button}>
+            <Button
+              title="S'inscrire"
+              onPress={handleRegister}
+              loading={isLoading}
+              fullWidth
+              size="lg"
+              iconName="check"
+              iconPosition="right"
+            />
+          </View>
 
           {/* Login Link */}
-          <View style={styles.loginLink}>
-            <Text style={styles.loginPrompt}>Déjà un compte ? </Text>
+          <View className={tw.loginLink}>
+            <Text className={tw.loginPrompt}>Déjà un compte ? </Text>
             <TouchableOpacity onPress={() => router.back()}>
-              <Text style={styles.loginText}>Se connecter</Text>
+              <Text className={tw.loginText}>Se connecter</Text>
             </TouchableOpacity>
           </View>
         </View>

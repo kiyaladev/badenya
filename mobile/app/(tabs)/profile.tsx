@@ -1,21 +1,11 @@
 import { Alert } from '@/services/dialog.service';
-import { themedStyles } from '@/utils/themedStyles';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  TextStyle,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { useGroupStore } from '@/store/groupStore';
-import { useThemeStore } from '@/store/themeStore';
 import { Avatar, Card, Icon, StatItem } from '@/components/ui';
 import type { IconName } from '@/components/ui';
 import userService from '@/services/user.service';
@@ -32,78 +22,6 @@ interface MenuItemProps {
   danger?: boolean;
 }
 
-const baseStyles = StyleSheet.create({
-  profileScroll: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  gradient: {
-    paddingBottom: 80,
-    alignItems: 'center',
-  },
-  name: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  email: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  editButton: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  editButtonText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  statsContainer: {
-    marginHorizontal: 20,
-    marginTop: -50,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#f3f4f6',
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  footerText: {
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-  menuValue: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginRight: 8,
-  },
-});
-
 function MenuItem({
   icon,
   iconColor,
@@ -115,48 +33,27 @@ function MenuItem({
   rightElement,
   danger,
 }: MenuItemProps) {
-  const styles = themedStyles(
-    baseStyles,
-    useThemeStore(state => state.colors)
-  );
-  const itemStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: isLast ? 0 : 1,
-    borderBottomColor: '#f3f4f6',
-  };
-  const iconContainerStyle: ViewStyle = {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: iconBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  };
-  const labelStyle: TextStyle = {
-    flex: 1,
-    fontSize: 15,
-    color: danger ? '#ef4444' : useThemeStore(state => state.colors.text),
-    fontWeight: danger ? '500' : '400',
-  };
-
   return (
     <TouchableOpacity
-      style={itemStyle}
+      className={`flex-row items-center py-3.5 px-4 border-gray-100 ${isLast ? 'border-b-0' : 'border-b'}`}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress}
     >
-      <View style={iconContainerStyle}>
+      <View
+        className="w-9 h-9 rounded-[10px] items-center justify-center mr-3.5"
+        style={{ backgroundColor: iconBg }}
+      >
         <Icon name={icon} size={16} color={iconColor} />
       </View>
-      <Text style={labelStyle}>{label}</Text>
+      <Text
+        className={`flex-1 text-[15px] ${danger ? 'text-red-500 font-medium' : 'text-gray-900 dark:text-gray-50 font-normal'}`}
+      >
+        {label}
+      </Text>
       {rightElement || (
         <>
-          {value && <Text style={styles.menuValue}>{value}</Text>}
+          {value && <Text className="text-sm text-gray-500 dark:text-gray-300 mr-2">{value}</Text>}
           {onPress && <Icon name="chevron-right" size={12} color="#d1d5db" />}
         </>
       )}
@@ -165,10 +62,6 @@ function MenuItem({
 }
 
 export default function ProfileScreen() {
-  const styles = themedStyles(
-    baseStyles,
-    useThemeStore(state => state.colors)
-  );
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -211,13 +104,18 @@ export default function ProfileScreen() {
   }, []);
 
   const fullName = user?.fullName || 'Utilisateur';
-  const gradientStyle: ViewStyle = {
-    ...styles.gradient,
+  // LinearGradient is not className-aware: layout stays inline with the safe-area inset.
+  const gradientStyle = {
     paddingTop: insets.top + 24,
+    paddingBottom: 80,
+    alignItems: 'center' as const,
   };
 
   return (
-    <ScrollView style={styles.profileScroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 bg-slate-50 dark:bg-gray-800"
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header with Gradient */}
       <LinearGradient
         colors={['#0284c7', '#0369a1']}
@@ -231,31 +129,31 @@ export default function ProfileScreen() {
           size="xl"
           backgroundColor="rgba(255,255,255,0.25)"
         />
-        <Text style={styles.name}>{fullName}</Text>
-        <Text style={styles.email}>{user?.email || 'utilisateur@email.com'}</Text>
+        <Text className="text-white text-[22px] font-bold mt-4">{fullName}</Text>
+        <Text className="text-white/85 text-sm mt-1">{user?.email || 'utilisateur@email.com'}</Text>
         <TouchableOpacity
-          style={styles.editButton}
+          className="mt-4 px-5 py-2.5 rounded-full bg-white/20 border border-white/30"
           onPress={() => router.push('/(screens)/edit-profile')}
           activeOpacity={0.8}
         >
-          <Text style={styles.editButtonText}>Modifier le profil</Text>
+          <Text className="text-white text-[13px] font-semibold">Modifier le profil</Text>
         </TouchableOpacity>
       </LinearGradient>
 
       {/* Profile Stats */}
-      <View style={styles.statsContainer}>
+      <View className="mx-5 -mt-[50px]">
         <Card shadow="lg" padding="lg">
-          <View style={styles.statsRow}>
+          <View className="flex-row justify-around">
             <StatItem label="Groupes" value={totalGroups} />
-            <View style={styles.statDivider} />
+            <View className="w-px bg-gray-100 dark:bg-gray-800" />
             <StatItem label="Cotisations" value={totalContributions} />
-            <View style={styles.statDivider} />
+            <View className="w-px bg-gray-100 dark:bg-gray-800" />
             <StatItem label="Votes" value={totalVotes} />
           </View>
         </Card>
       </View>
 
-      <View style={styles.section}>
+      <View className="px-5 mt-6">
         <Card padding="none" shadow="sm">
           <MenuItem
             icon="cog"
@@ -277,8 +175,8 @@ export default function ProfileScreen() {
       </View>
 
       {/* Version */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Badenya v1.0.0</Text>
+      <View className="items-center py-8">
+        <Text className="text-gray-400 text-[13px]">Badenya v1.0.0</Text>
       </View>
     </ScrollView>
   );

@@ -235,7 +235,7 @@ export default function GroupDetailsScreen() {
                 className="px-4 py-3 border-t border-gray-100 dark:border-gray-700"
                 onPress={() =>
                   router.push({
-                    pathname: '/(tabs)/transactions',
+                    pathname: '/(screens)/transactions',
                     params: { groupId: id },
                   })
                 }

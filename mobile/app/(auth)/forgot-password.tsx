@@ -1,6 +1,4 @@
 import { Alert } from '@/services/dialog.service';
-import { themedStyles } from '@/utils/themedStyles';
-import { useThemeStore } from '@/store/themeStore';
 import {
   View,
   Text,
@@ -9,8 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  StyleSheet,
-  ViewStyle,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -19,134 +15,41 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import authService from '@/services/auth.service';
 import { Button, Input, Icon } from '@/components/ui';
 
-export const authFormStyles = StyleSheet.create({
-  success: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  successIcon: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 10,
-  },
-  successText: {
-    fontSize: 15,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
-  },
-  keyboard: {
-    flex: 1,
-  },
-  scroll: {
-    backgroundColor: '#ffffff',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingBottom: 56,
-    paddingHorizontal: 24,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    marginBottom: 20,
-  },
-  backIcon: {
-    marginRight: 6,
-  },
-  backText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 26,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  formCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: -32,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  description: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  submitButton: {
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  footer: {
-    alignItems: 'center',
-  },
-  footerText: {
-    color: '#0284c7',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+// Shared NativeWind classes for the auth form screens (also used by reset-password).
+export const authForm = {
+  success: 'flex-1 bg-white dark:bg-gray-800 px-6 justify-center items-center',
+  successIcon: 'w-[88px] h-[88px] rounded-full bg-blue-100 items-center justify-center mb-6',
+  successTitle: 'text-2xl font-bold text-gray-900 dark:text-gray-50 mb-2.5',
+  successText: 'text-[15px] text-gray-500 dark:text-gray-300 text-center mb-8 leading-[22px]',
+  keyboard: 'flex-1',
+  scroll: 'bg-white dark:bg-gray-800',
+  backButton: 'flex-row items-center self-start py-2 px-3 rounded-full bg-white/20 mb-5',
+  backText: 'text-white text-[13px] font-semibold',
+  headerContent: 'items-center',
+  logo: 'w-[72px] h-[72px] rounded-full bg-white/20 items-center justify-center mb-4',
+  title: 'text-white text-[26px] font-bold mb-1.5',
+  subtitle: 'text-white/85 text-sm text-center',
+  formCard: 'flex-1 bg-white dark:bg-gray-800 rounded-t-[32px] -mt-8 px-6 pt-8',
+  description: 'text-sm text-gray-500 dark:text-gray-300 mb-5 leading-5',
+  submitButton: 'mt-2 mb-6',
+  footer: 'items-center',
+  footerText: 'text-primary-600 text-sm font-semibold',
+};
+
+// LinearGradient is not className-aware: keep its layout inline (with the safe-area inset).
+export const authHeaderStyle = (top: number) => ({
+  paddingTop: top + 20,
+  paddingBottom: 56,
+  paddingHorizontal: 24,
 });
 
 export default function ForgotPasswordScreen() {
-  const styles = themedStyles(
-    authFormStyles,
-    useThemeStore(state => state.colors)
-  );
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const headerStyle: ViewStyle = {
-    ...styles.header,
-    paddingTop: insets.top + 20,
-  };
 
   const validateEmail = () => {
     if (!email) {
@@ -184,12 +87,12 @@ export default function ForgotPasswordScreen() {
 
   if (emailSent) {
     return (
-      <View style={styles.success}>
-        <View style={styles.successIcon}>
+      <View className={authForm.success}>
+        <View className={authForm.successIcon}>
           <Icon name="envelope-open" size={40} color="#0284c7" />
         </View>
-        <Text style={styles.successTitle}>Demande prise en compte</Text>
-        <Text style={styles.successText}>
+        <Text className={authForm.successTitle}>Demande prise en compte</Text>
+        <Text className={authForm.successText}>
           Si un compte correspond, votre demande a été prise en compte. Si aucun email n’arrive,
           réessayez plus tard.
         </Text>
@@ -201,11 +104,11 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboard}
+      className={authForm.keyboard}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}
+        contentContainerClassName="grow"
+        className={authForm.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -214,25 +117,27 @@ export default function ForgotPasswordScreen() {
           colors={['#0284c7', '#0369a1']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={headerStyle}
+          style={authHeaderStyle(insets.top)}
         >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size={14} color="#ffffff" style={styles.backIcon} />
-            <Text style={styles.backText}>Retour</Text>
+          <TouchableOpacity onPress={() => router.back()} className={authForm.backButton}>
+            <View className="mr-1.5">
+              <Icon name="arrow-left" size={14} color="#ffffff" />
+            </View>
+            <Text className={authForm.backText}>Retour</Text>
           </TouchableOpacity>
 
-          <View style={styles.headerContent}>
-            <View style={styles.logo}>
+          <View className={authForm.headerContent}>
+            <View className={authForm.logo}>
               <Icon name="key" size={30} color="#ffffff" />
             </View>
-            <Text style={styles.title}>Mot de passe oublié ?</Text>
-            <Text style={styles.subtitle}>Recevez un lien de réinitialisation sécurisé</Text>
+            <Text className={authForm.title}>Mot de passe oublié ?</Text>
+            <Text className={authForm.subtitle}>Recevez un lien de réinitialisation sécurisé</Text>
           </View>
         </LinearGradient>
 
         {/* Form Card */}
-        <View style={styles.formCard}>
-          <Text style={styles.description}>
+        <View className={authForm.formCard}>
+          <Text className={authForm.description}>
             Entrez l'adresse email associée à votre compte Badenya pour recevoir les instructions de
             réinitialisation.
           </Text>
@@ -251,20 +156,21 @@ export default function ForgotPasswordScreen() {
             leftIcon={<Icon name="envelope" size={18} color="#9ca3af" />}
           />
 
-          <Button
-            title="Envoyer le lien"
-            onPress={handleResetPassword}
-            loading={isLoading}
-            fullWidth
-            size="lg"
-            iconName="paper-plane"
-            iconPosition="right"
-            style={styles.submitButton}
-          />
+          <View className={authForm.submitButton}>
+            <Button
+              title="Envoyer le lien"
+              onPress={handleResetPassword}
+              loading={isLoading}
+              fullWidth
+              size="lg"
+              iconName="paper-plane"
+              iconPosition="right"
+            />
+          </View>
 
-          <View style={styles.footer}>
+          <View className={authForm.footer}>
             <TouchableOpacity onPress={() => router.back()}>
-              <Text style={styles.footerText}>Retour à la connexion</Text>
+              <Text className={authForm.footerText}>Retour à la connexion</Text>
             </TouchableOpacity>
           </View>
         </View>

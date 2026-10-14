@@ -7,23 +7,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  ViewStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import authService from '@/services/auth.service';
 import { getErrorMessage } from '@/utils/errorHandler';
-import { themedStyles } from '@/utils/themedStyles';
-import { useThemeStore } from '@/store/themeStore';
 import { Button, Input, Icon } from '@/components/ui';
-import { authFormStyles } from './(auth)/forgot-password';
+import { authForm, authHeaderStyle } from './(auth)/forgot-password';
 
 export default function ResetPassword() {
-  const styles = themedStyles(
-    authFormStyles,
-    useThemeStore(state => state.colors)
-  );
   const { token } = useLocalSearchParams<{ token: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -32,7 +25,6 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
-  const headerStyle: ViewStyle = { ...styles.header, paddingTop: insets.top + 20 };
 
   const handleSubmit = async () => {
     Keyboard.dismiss();
@@ -53,12 +45,12 @@ export default function ResetPassword() {
 
   if (done) {
     return (
-      <View style={styles.success}>
-        <View style={styles.successIcon}>
+      <View className={authForm.success}>
+        <View className={authForm.successIcon}>
           <Icon name="check" size={40} color="#0284c7" />
         </View>
-        <Text style={styles.successTitle}>Mot de passe modifié</Text>
-        <Text style={styles.successText}>Vous pouvez maintenant vous connecter.</Text>
+        <Text className={authForm.successTitle}>Mot de passe modifié</Text>
+        <Text className={authForm.successText}>Vous pouvez maintenant vous connecter.</Text>
         <Button
           title="Se connecter"
           onPress={() => router.replace('/(auth)/login')}
@@ -72,11 +64,11 @@ export default function ResetPassword() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboard}
+      className={authForm.keyboard}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}
+        contentContainerClassName="grow"
+        className={authForm.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -84,18 +76,20 @@ export default function ResetPassword() {
           colors={['#0284c7', '#0369a1']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={headerStyle}
+          style={authHeaderStyle(insets.top)}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.logo}>
+          <View className={authForm.headerContent}>
+            <View className={authForm.logo}>
               <Icon name="key" size={30} color="#ffffff" />
             </View>
-            <Text style={styles.title}>Nouveau mot de passe</Text>
-            <Text style={styles.subtitle}>Choisissez un mot de passe d'au moins 8 caractères</Text>
+            <Text className={authForm.title}>Nouveau mot de passe</Text>
+            <Text className={authForm.subtitle}>
+              Choisissez un mot de passe d'au moins 8 caractères
+            </Text>
           </View>
         </LinearGradient>
 
-        <View style={styles.formCard}>
+        <View className={authForm.formCard}>
           <Input
             label="Nouveau mot de passe"
             value={password}
@@ -111,17 +105,12 @@ export default function ResetPassword() {
             error={error}
             leftIcon={<Icon name="lock" size={18} color="#9ca3af" />}
           />
-          <Button
-            title="Enregistrer"
-            onPress={handleSubmit}
-            loading={busy}
-            fullWidth
-            size="lg"
-            style={styles.submitButton}
-          />
-          <View style={styles.footer}>
+          <View className={authForm.submitButton}>
+            <Button title="Enregistrer" onPress={handleSubmit} loading={busy} fullWidth size="lg" />
+          </View>
+          <View className={authForm.footer}>
             <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-              <Text style={styles.footerText}>Retour à la connexion</Text>
+              <Text className={authForm.footerText}>Retour à la connexion</Text>
             </TouchableOpacity>
           </View>
         </View>

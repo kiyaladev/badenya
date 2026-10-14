@@ -27,6 +27,7 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
+let biometricUnlocked = false;
 let sessionCheckPromise: Promise<void> | null = null;
 
 function resetBusinessStores() {
@@ -88,6 +89,7 @@ export const useAuthStore = create<AuthState>(set => ({
   },
 
   logout: async () => {
+    biometricUnlocked = false;
     set({ isLoading: true });
     try {
       await authService.logout();
@@ -118,7 +120,8 @@ export const useAuthStore = create<AuthState>(set => ({
           return;
         }
 
-        if (await biometricService.isBiometricLoginEnabled()) {
+        // Biometric unlock is asked once per app launch, not on every return to foreground.
+        if (!biometricUnlocked && (await biometricService.isBiometricLoginEnabled())) {
           const verified = await biometricService.authenticate();
           if (!verified.success) {
             set({
@@ -129,6 +132,7 @@ export const useAuthStore = create<AuthState>(set => ({
             });
             return;
           }
+          biometricUnlocked = true;
         }
         set({ isAuthenticated: true });
 

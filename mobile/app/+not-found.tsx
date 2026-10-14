@@ -1,93 +1,36 @@
-import { themedStyles } from '@/utils/themedStyles';
-import { useThemeStore } from '@/store/themeStore';
 import { Stack, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Icon } from '@/components/ui';
 
 export default function NotFoundScreen() {
-  const styles = themedStyles(
-    baseStyles,
-    useThemeStore(state => state.colors)
-  );
   const router = useRouter();
 
   return (
     <>
       <Stack.Screen options={{ title: 'Page introuvable', headerShown: true }} />
-      <View style={styles.container}>
-        <View style={styles.iconContainer}>
+      <View className="flex-1 items-center justify-center p-6 bg-slate-50 dark:bg-gray-800">
+        <View className="w-24 h-24 rounded-full bg-primary-100 items-center justify-center mb-5">
           <Icon name="compass" size={56} color="#0284c7" />
         </View>
 
-        <Text style={styles.title}>Page introuvable</Text>
-        <Text style={styles.description}>
+        <Text className="text-[22px] font-bold text-gray-900 dark:text-gray-50 mb-2">
+          Page introuvable
+        </Text>
+        <Text className="text-[15px] text-gray-500 dark:text-gray-300 text-center mb-7 leading-[22px] px-4">
           L'écran que vous recherchez n'existe pas ou a été déplacé.
         </Text>
 
         <TouchableOpacity
-          style={styles.button}
+          className="flex-row items-center justify-center bg-primary-600 py-3.5 px-6 rounded-xl shadow-md"
           onPress={() => router.replace('/(tabs)')}
           activeOpacity={0.8}
         >
-          <Icon name="home" size={18} color="#ffffff" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Retour à l'accueil</Text>
+          <View className="mr-2">
+            <Icon name="home" size={18} color="#ffffff" />
+          </View>
+          <Text className="text-white text-base font-semibold">Retour à l'accueil</Text>
         </TouchableOpacity>
       </View>
     </>
   );
 }
-
-const baseStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f8fafc',
-  },
-  iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#e0f2fe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 15,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 28,
-    lineHeight: 22,
-    paddingHorizontal: 16,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0284c7',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    shadowColor: '#0284c7',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

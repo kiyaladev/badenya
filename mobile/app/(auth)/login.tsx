@@ -1,6 +1,4 @@
 import { Alert } from '@/services/dialog.service';
-import { themedStyles } from '@/utils/themedStyles';
-import { useThemeStore } from '@/store/themeStore';
 import {
   View,
   Text,
@@ -9,8 +7,6 @@ import {
   Platform,
   TouchableOpacity,
   Keyboard,
-  StyleSheet,
-  ViewStyle,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -19,113 +15,35 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Icon, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
-const baseStyles = StyleSheet.create({
-  keyboard: {
-    flex: 1,
-  },
-  scroll: {
-    backgroundColor: '#ffffff',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    paddingBottom: 60,
-    paddingHorizontal: 24,
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 15,
-  },
-  formCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: -32,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  forgotButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-    marginTop: -8,
-  },
-  forgotText: {
-    color: '#0284c7',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  button: {
-    marginBottom: 24,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dividerText: {
-    paddingHorizontal: 16,
-    color: '#9ca3af',
-    fontSize: 13,
-  },
-  register: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  registerPrompt: {
-    color: '#6b7280',
-    fontSize: 15,
-  },
-  registerLink: {
-    color: '#0284c7',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  bottomSpacing: {
-    height: 40,
-  },
-});
+const tw = {
+  keyboard: 'flex-1',
+  scroll: 'bg-white dark:bg-gray-800',
+  headerContent: 'items-center',
+  logo: 'w-[72px] h-[72px] rounded-full bg-white/20 items-center justify-center mb-5',
+  title: 'text-white text-[28px] font-bold mb-2',
+  subtitle: 'text-white/85 text-[15px]',
+  formCard: 'flex-1 bg-white dark:bg-gray-800 rounded-t-[32px] -mt-8 px-6 pt-8',
+  forgotButton: 'self-end mb-6 -mt-2',
+  forgotText: 'text-primary-600 text-sm font-medium',
+  button: 'mb-6',
+  divider: 'flex-row items-center mb-6',
+  dividerLine: 'flex-1 h-px bg-gray-200 dark:bg-gray-700',
+  dividerText: 'px-4 text-gray-400 text-[13px]',
+  register: 'flex-row justify-center items-center',
+  registerPrompt: 'text-gray-500 dark:text-gray-300 text-[15px]',
+  registerLink: 'text-primary-600 text-[15px] font-semibold',
+  bottomSpacing: 'h-10',
+};
 
 export default function LoginScreen() {
-  const styles = themedStyles(
-    baseStyles,
-    useThemeStore(state => state.colors)
-  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const headerStyle: ViewStyle = {
-    ...styles.header,
-    paddingTop: insets.top + 40,
-  };
+  // LinearGradient is not className-aware: layout stays inline with the safe-area inset.
+  const headerStyle = { paddingTop: insets.top + 40, paddingBottom: 60, paddingHorizontal: 24 };
 
   const { login, isLoading, clearError } = useAuthStore();
 
@@ -178,11 +96,11 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboard}
+      className={tw.keyboard}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}
+        contentContainerClassName="grow"
+        className={tw.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -193,17 +111,17 @@ export default function LoginScreen() {
           end={{ x: 1, y: 1 }}
           style={headerStyle}
         >
-          <View style={styles.headerContent}>
-            <View style={styles.logo}>
+          <View className={tw.headerContent}>
+            <View className={tw.logo}>
               <Icon name="users" size={32} color="#ffffff" />
             </View>
-            <Text style={styles.title}>Bienvenue</Text>
-            <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
+            <Text className={tw.title}>Bienvenue</Text>
+            <Text className={tw.subtitle}>Connectez-vous à votre compte</Text>
           </View>
         </LinearGradient>
 
         {/* Form Card */}
-        <View style={styles.formCard}>
+        <View className={tw.formCard}>
           {/* Form */}
           <Input
             label="Email"
@@ -240,40 +158,41 @@ export default function LoginScreen() {
           {/* Forgot Password */}
           <TouchableOpacity
             onPress={() => router.push('/(auth)/forgot-password')}
-            style={styles.forgotButton}
+            className={tw.forgotButton}
           >
-            <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+            <Text className={tw.forgotText}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
-          <Button
-            title="Se connecter"
-            onPress={handleLogin}
-            loading={isLoading}
-            fullWidth
-            size="lg"
-            iconName="sign-in"
-            iconPosition="right"
-            style={styles.button}
-          />
+          <View className={tw.button}>
+            <Button
+              title="Se connecter"
+              onPress={handleLogin}
+              loading={isLoading}
+              fullWidth
+              size="lg"
+              iconName="sign-in"
+              iconPosition="right"
+            />
+          </View>
 
           {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
-            <View style={styles.dividerLine} />
+          <View className={tw.divider}>
+            <View className={tw.dividerLine} />
+            <Text className={tw.dividerText}>ou</Text>
+            <View className={tw.dividerLine} />
           </View>
 
           {/* Register Link */}
-          <View style={styles.register}>
-            <Text style={styles.registerPrompt}>Pas encore de compte ? </Text>
+          <View className={tw.register}>
+            <Text className={tw.registerPrompt}>Pas encore de compte ? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text style={styles.registerLink}>S'inscrire</Text>
+              <Text className={tw.registerLink}>S'inscrire</Text>
             </TouchableOpacity>
           </View>
 
           {/* Bottom spacing */}
-          <View style={styles.bottomSpacing} />
+          <View className={tw.bottomSpacing} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

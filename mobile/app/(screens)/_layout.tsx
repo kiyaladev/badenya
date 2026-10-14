@@ -25,6 +25,8 @@ export default function ScreensLayout() {
         <Stack.Screen name="group-reports" options={{ title: 'Rapports' }} />
         <Stack.Screen name="group-insights" options={{ title: 'Analyses' }} />
         <Stack.Screen name="insight-details" options={{ title: 'Analyse' }} />
+        <Stack.Screen name="transactions" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ title: 'Paramètres' }} />
         <Stack.Screen name="tontine-rounds" options={{ title: 'Tour de rôle' }} />
         <Stack.Screen name="edit-profile" options={{ title: 'Modifier le profil' }} />

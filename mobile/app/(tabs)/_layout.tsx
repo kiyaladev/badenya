@@ -2,11 +2,10 @@ import AuthGate from '@/components/AuthGate';
 import { useThemeStore } from '@/store/themeStore';
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, Platform, StyleSheet } from 'react-native';
+import { View, Platform, StyleSheet } from 'react-native';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon, type IconName } from '@/components/ui';
-import { useNotificationStore } from '@/store/notificationStore';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -17,29 +16,6 @@ const styles = StyleSheet.create({
   icon: {
     marginBottom: 2,
   },
-  notificationIcon: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    right: -8,
-    top: -4,
-    backgroundColor: '#ef4444',
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  notificationCount: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
 });
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -47,21 +23,6 @@ function TabBarIcon(props: { name: IconName; color: string }) {
   return (
     <View style={styles.tabIcon}>
       <Icon size={22} style={styles.icon} name={props.name} color={props.color} />
-    </View>
-  );
-}
-
-function NotificationIcon({ color }: { color: string }) {
-  const { unreadCount } = useNotificationStore();
-
-  return (
-    <View style={styles.notificationIcon}>
-      <Icon size={22} style={styles.icon} name="bell" color={color} />
-      {unreadCount > 0 && (
-        <View style={styles.notificationBadge}>
-          <Text style={styles.notificationCount}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -121,22 +82,6 @@ export default function TabLayout() {
             title: 'Groupes',
             headerShown: false,
             tabBarIcon: ({ color }) => <TabBarIcon name="users" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="transactions"
-          options={{
-            title: 'Transactions',
-            headerShown: false,
-            tabBarIcon: ({ color }) => <TabBarIcon name="exchange" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="notifications"
-          options={{
-            title: 'Notifications',
-            headerShown: false,
-            tabBarIcon: ({ color }) => <NotificationIcon color={color} />,
           }}
         />
         <Tabs.Screen
