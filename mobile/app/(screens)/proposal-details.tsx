@@ -79,8 +79,9 @@ export default function ProposalDetailsScreen() {
               Alert.alert('Succès', 'Dépense effectuée');
               loadProposal();
             } catch (err: unknown) {
-              const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || "Impossible d'effectuer la dépense");
+              // Shows the API message (e.g. financial storage unavailable)
+              // instead of axios' generic "Request failed with status code".
+              Alert.alert('Erreur', getErrorMessage(err, "Impossible d'effectuer la dépense"));
             }
           },
         },
@@ -107,8 +108,9 @@ export default function ProposalDetailsScreen() {
                 },
               ]);
             } catch (err: unknown) {
-              const error = err as { message?: string };
-              Alert.alert('Erreur', error.message || 'Impossible de retirer la proposition');
+              // Shows the API message (e.g. financial storage unavailable)
+              // instead of axios' generic "Request failed with status code".
+              Alert.alert('Erreur', getErrorMessage(err, 'Impossible de retirer la proposition'));
             }
           },
         },

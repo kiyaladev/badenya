@@ -122,7 +122,18 @@ export function createApp(): Application {
   const uploadDirectory = path.resolve(
     process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads"),
   );
-  app.use("/uploads", express.static(uploadDirectory, { maxAge: "1d" }));
+  // The web app and admin read these files from another origin (e.g.
+  // badenya.naimba.com, admin.badenya.app): helmet's default
+  // Cross-Origin-Resource-Policy "same-origin" makes browsers block the
+  // thumbnails, so relax it for this static mount only.
+  app.use(
+    "/uploads",
+    (_req: Request, res: Response, next: import("express").NextFunction) => {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      next();
+    },
+    express.static(uploadDirectory, { maxAge: "1d" }),
+  );
 
   // Health check route
   app.get("/health", async (_req: Request, res: Response) => {

@@ -32,6 +32,7 @@ export default function Button({
   fullWidth = false,
   disabled,
   style,
+  className,
   ...props
 }: ButtonProps) {
   const getVariantStyles = (): string => {
@@ -95,6 +96,10 @@ export default function Button({
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';
+  // Callers pass layout classes (mr-2, mb-3…): merge them instead of letting
+  // the spread props replace the variant background, which left white text on
+  // a transparent button.
+  const extraClassName = className ?? '';
   const textColor = getTextColor();
   const iconSpacingStyle = { marginHorizontal: 6 };
   const buttonShadowStyle = {
@@ -125,7 +130,7 @@ export default function Button({
   return (
     <TouchableOpacity
       disabled={disabled || loading}
-      className={`rounded-xl flex-row items-center justify-center ${getVariantStyles()} ${getSizeStyles()} ${widthStyle}`}
+      className={`rounded-xl flex-row items-center justify-center ${getVariantStyles()} ${getSizeStyles()} ${widthStyle} ${extraClassName}`}
       style={[buttonShadowStyle, style]}
       activeOpacity={0.8}
       accessibilityRole="button"

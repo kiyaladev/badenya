@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { TouchableOpacity } from 'react-native';
 import Button from '../ui/Button';
 
 describe('Button Component', () => {
@@ -64,5 +65,15 @@ describe('Button Component', () => {
   it('should render with icon', () => {
     const { getByText } = render(<Button title="With Icon" icon={<></>} />);
     expect(getByText('With Icon')).toBeTruthy();
+  });
+
+  it('should keep the variant background when a layout className is passed', () => {
+    // Regression: `className="mr-2"` used to replace the whole className, so the
+    // primary button lost its background and its white text became invisible.
+    const { UNSAFE_getByType } = render(<Button title="Approuver" className="mr-2" />);
+    const className: string = UNSAFE_getByType(TouchableOpacity).props.className;
+
+    expect(className).toContain('bg-primary-600');
+    expect(className).toContain('mr-2');
   });
 });

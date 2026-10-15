@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { Alert } from '@/services/dialog.service';
+import { getErrorMessage } from '@/utils/errorHandler';
 import {
   View,
   Text,
@@ -71,8 +72,9 @@ export default function TransactionDetailsScreen() {
             Alert.alert('Succès', 'Réception confirmée');
             loadTransaction();
           } catch (err: unknown) {
-            const error = err as { message?: string };
-            Alert.alert('Erreur', error.message || 'Impossible de confirmer la réception');
+            // Shows the API message (e.g. financial storage unavailable)
+            // instead of axios' generic "Request failed with status code".
+            Alert.alert('Erreur', getErrorMessage(err, 'Impossible de confirmer la réception'));
           }
         },
       },
