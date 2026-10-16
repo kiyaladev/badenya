@@ -49,8 +49,8 @@ const router = Router();
 const searchValidation = [
   query('q')
     .trim()
-    .isLength({ min: 2 })
-    .withMessage('Search query must be at least 2 characters'),
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Search query must be between 2 and 100 characters'),
 ];
 
 router.get('/search', authenticate, searchValidation, validate, searchUsers);

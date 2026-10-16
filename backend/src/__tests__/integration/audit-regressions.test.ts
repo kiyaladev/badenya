@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createTestApp } from "../helpers/app";
 import { User, Group, Transaction, Proposal } from "../../models";
+import TontineSchedule from "../../models/TontineSchedule";
 import { generateTokens } from "../../utils/jwt";
 import { hashPassword } from "../../utils/password";
 jest.mock("../../services/email.service", () => ({
@@ -34,6 +35,7 @@ beforeEach(async () => {
     Group.deleteMany({}),
     Transaction.deleteMany({}),
     Proposal.deleteMany({}),
+    TontineSchedule.deleteMany({}),
   ]);
   const user = await User.create({
     fullName: "Audit User",
@@ -535,3 +537,106 @@ it("expires archived-group proposals while continuing other automatic decisions"
   expect((await Proposal.findById(obsolete.id))?.status).toBe("expired");
   expect((await Proposal.findById(current.id))?.status).toBe("approved");
 });
+
+it("escapes regex characters in user search query", async () => {
+  await User.create({
+    fullName: "Target User",
+    email: "target@example.test",
+    phone: "+221700000001",
+    password: await hashPassword("Password123!"),
+  });
+  const res = await request(app)
+    .get("/api/v1/users/search?q=%2B221700000001")
+    .set(auth())
+    .expect(200);
+  expect(res.body.status).toBe("success");
+  expect(res.body.data.users).toHaveLength(1);
+  expect(res.body.data.users[0].phone).toBe("+221700000001");
+});
+
+it("preserves completed round when updating tontine schedule", async () => {
+  const member2 = await User.create({
+    fullName: "Member Two",
+    email: "member2@example.test",
+    phone: "+221700000002",
+    password: await hashPassword("Password123!"),
+  });
+  await Group.updateOne(
+    { _id: groupId },
+    {
+      $push: {
+        members: { userId: member2.id, role: "member", status: "active" },
+      },
+    },
+  );
+
+  const roundId = "round-completed-1";
+  await TontineSchedule.create({
+    groupId,
+    revision: 1,
+    cycleNumber: 1,
+    totalRounds: 2,
+    currentRoundNumber: 2,
+    contributionAmount: 100,
+    potAmount: 200,
+    frequency: "monthly",
+    rounds: [
+      {
+        roundId,
+        roundNumber: 1,
+        beneficiaryId: userId,
+        beneficiaryName: "Audit User",
+        payoutDate: new Date().toISOString(),
+        potAmount: 200,
+        status: "completed",
+        paidAt: new Date().toISOString(),
+      },
+      {
+        roundId: "round-upcoming-2",
+        roundNumber: 2,
+        beneficiaryId: member2.id,
+        beneficiaryName: "Member Two",
+        payoutDate: new Date(Date.now() + 86400000).toISOString(),
+        potAmount: 200,
+        status: "upcoming",
+      },
+    ],
+  });
+
+  const res = await request(app)
+    .put(`/api/v1/groups/${groupId}/tontine`)
+    .set(auth())
+    .send({
+      revision: 1,
+      frequency: "monthly",
+      contributionAmount: 100,
+      potAmount: 200,
+      rounds: [
+        {
+          roundId,
+          roundNumber: 1,
+          beneficiaryId: userId,
+          beneficiaryName: "Audit User",
+          payoutDate: new Date().toISOString(),
+          potAmount: 200,
+          status: "completed",
+        },
+        {
+          roundId: "round-upcoming-2",
+          roundNumber: 2,
+          beneficiaryId: member2.id,
+          beneficiaryName: "Member Two",
+          payoutDate: new Date(Date.now() + 86400000).toISOString(),
+          potAmount: 200,
+          status: "upcoming",
+        },
+      ],
+    })
+    .expect(200);
+
+  expect(res.body.status).toBe("success");
+  const updatedSchedule = await TontineSchedule.findOne({ groupId });
+  expect(updatedSchedule?.rounds[0].roundId).toBe(roundId);
+  expect(updatedSchedule?.rounds[0].status).toBe("completed");
+});
+

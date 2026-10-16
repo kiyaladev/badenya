@@ -42,7 +42,7 @@ interface PopulatedTransaction {
   amount: number;
   currency: string;
   category?: string;
-  initiatedBy: PopulatedUser;
+  initiatedBy?: PopulatedUser | null;
   createdAt: Date;
 }
 
@@ -54,7 +54,7 @@ export class ReportService {
     groupId: string,
     period?: ReportPeriod,
   ): Promise<TransactionSummary> {
-    const query: Record<string, unknown> = { groupId };
+    const query: Record<string, unknown> = { groupId, status: "completed" };
 
     if (period) {
       query.createdAt = {
@@ -93,14 +93,16 @@ export class ReportService {
           summary.totalContributions += tx.amount;
 
           // Track per member
-          const userId =
-            typeof tx.initiatedBy._id === "string"
-              ? tx.initiatedBy._id
-              : tx.initiatedBy._id.toString();
+          const user = tx.initiatedBy as PopulatedUser | null | undefined;
+          const userId = user
+            ? typeof user._id === "string"
+              ? user._id
+              : user._id?.toString() || "deleted"
+            : "deleted";
           const userName =
-            tx.initiatedBy.fullName ||
-            `${tx.initiatedBy.firstName || ""} ${tx.initiatedBy.lastName || ""}`.trim() ||
-            "Utilisateur";
+            user?.fullName ||
+            `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+            (user ? "Utilisateur" : "Utilisateur supprimé");
           const existing = memberContributions.get(userId);
           if (existing) {
             existing.amount += tx.amount;
@@ -157,7 +159,7 @@ export class ReportService {
     summary.expensesByCategory.sort((a, b) => b.amount - a.amount);
 
     summary.netBalance =
-      summary.totalContributions - summary.totalExpenses + summary.totalRefunds;
+      summary.totalContributions - summary.totalExpenses - summary.totalRefunds;
 
     return summary;
   }
@@ -181,6 +183,7 @@ export class ReportService {
     const summary = await this.getGroupSummary(groupId, period);
     const transactions = await Transaction.find({
       groupId,
+      status: "completed",
       ...(period && {
         createdAt: { $gte: period.startDate, $lte: period.endDate },
       }),
@@ -278,7 +281,7 @@ export class ReportService {
       const userName =
         user?.fullName ||
         `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-        "Utilisateur";
+        (user ? "Utilisateur" : "Utilisateur supprimé");
       const date = tx.createdAt.toLocaleDateString("fr-FR");
       const typeLabel = {
         contribution: "Contribution",
@@ -342,7 +345,8 @@ export class ReportService {
         Catégorie: tx.category || "",
         Initiateur:
           user?.fullName ||
-          `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+          `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+          (user ? "Utilisateur" : "Utilisateur supprimé"),
         Email: user?.email || "",
         "Méthode de paiement": tx.paymentMethod?.type || "",
         Statut: tx.status,

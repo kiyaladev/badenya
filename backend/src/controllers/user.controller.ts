@@ -13,7 +13,11 @@ export const searchUsers = async (
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
 
-    const query = (req.query.q as string).trim();
+    const raw = typeof req.query.q === 'string' ? req.query.q : String(req.query.q || '');
+    const query = raw
+      .trim()
+      .slice(0, 100)
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const users = await User.find({
       $or: [

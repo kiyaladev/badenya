@@ -123,7 +123,7 @@ jobs:
       
       - name: Upload build artifact
         if: steps.profile.outputs.profile == 'preview'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-build-${{ steps.profile.outputs.profile }}
           path: mobile/builds/*
@@ -266,7 +266,7 @@ jobs:
       
       - name: Upload build artifact
         if: steps.profile.outputs.profile == 'preview'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-build-${{ steps.profile.outputs.profile }}
           path: mobile/builds/*

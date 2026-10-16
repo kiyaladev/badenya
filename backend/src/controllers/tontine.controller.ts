@@ -133,7 +133,25 @@ export async function putSchedule(req: Request, res: Response) {
           old.beneficiaryId !== r.beneficiaryId
         )
           throw new BusinessError(409, "Tour versé immuable");
-        return { ...old, roundNumber: index + 1 };
+        const oldDoc = old as unknown as { toObject?: () => Round };
+        const oldObj =
+          typeof oldDoc.toObject === "function"
+            ? oldDoc.toObject()
+            : old;
+        return {
+          roundId: old.roundId,
+          roundNumber: index + 1,
+          beneficiaryId: old.beneficiaryId,
+          beneficiaryName: old.beneficiaryName,
+          payoutDate:
+            typeof old.payoutDate === "string"
+              ? old.payoutDate
+              : new Date(old.payoutDate).toISOString(),
+          potAmount: old.potAmount,
+          status: "completed",
+          paidAt: oldObj.paidAt,
+          payoutTransactionId: oldObj.payoutTransactionId,
+        };
       }
       if (
         !Number.isFinite(r.potAmount) ||

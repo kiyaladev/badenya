@@ -89,3 +89,29 @@ it('deduplicates an event and its delivered notification across worker retries',
   expect(await Notification.countDocuments({userId})).toBe(1);
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
+it('removes permanently invalid Expo tokens and avoids retransmitting to valid devices',async()=>{
+  await User.updateOne(
+    {_id:userId},
+    {$set:{deviceTokens:['ExpoPushToken[valid]','ExpoPushToken[unregistered]']}}
+  );
+  const fetchMock=jest.spyOn(globalThis,'fetch').mockResolvedValue({
+    ok:true,
+    json:async()=>({
+      data:[
+        {status:'ok',id:'valid-ticket'},
+        {status:'error',details:{error:'DeviceNotRegistered'}},
+      ],
+    }),
+  } as Response);
+  await enqueueEvent('expo-invalid-cleanup',groupId,'proposal_created','Proposal','Vote now');
+  await deliverEvents();
+  const userAfter=await User.findById(userId);
+  expect(userAfter?.deviceTokens).toEqual(['ExpoPushToken[valid]']);
+  const event=await DomainEvent.findOne({key:'expo-invalid-cleanup'});
+  expect(event?.get('deliveredAt')).toBeInstanceOf(Date);
+  const notification=await Notification.findOne({userId});
+  expect(notification?.get('pushExpoDeliveredAt')).toBeInstanceOf(Date);
+  await deliverEvents();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+

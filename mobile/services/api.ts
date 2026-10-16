@@ -49,8 +49,16 @@ function isTokenExpired(token: string): boolean {
   return Date.now() >= payload.exp * 1000 - 30000;
 }
 
-let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
+
+function getSharedRefreshToken(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
 
 /**
  * Refresh the access token using the refresh token
@@ -140,14 +148,7 @@ api.interceptors.request.use(
     // Proactively refresh if token is expired or about to expire
     if (token && isTokenExpired(token) && (await offlineService.isOnline())) {
       assertCurrent();
-      if (!isRefreshing) {
-        isRefreshing = true;
-        refreshPromise = refreshAccessToken().finally(() => {
-          isRefreshing = false;
-          refreshPromise = null;
-        });
-      }
-      token = await refreshPromise;
+      token = await getSharedRefreshToken();
     }
 
     assertCurrent();
@@ -235,7 +236,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const newToken = await refreshAccessToken();
+        const newToken = await getSharedRefreshToken();
         if (newToken) {
           // Retry the original request with new token
           originalRequest.headers.Authorization = `Bearer ${newToken}`;

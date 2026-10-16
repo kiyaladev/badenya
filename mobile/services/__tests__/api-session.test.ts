@@ -129,6 +129,28 @@ describe('Session refresh transport failures', () => {
     await rejected;
     expect(tokenStorage.deleteItemAsync).not.toHaveBeenCalled();
   });
+  it('shares one refresh between concurrent 401 responses', async () => {
+    let finish!: (value: unknown) => void;
+    (tokenStorage.getItemAsync as jest.Mock).mockResolvedValue('refresh-A');
+    (axios.post as jest.Mock).mockImplementation(
+      () =>
+        new Promise(resolve => {
+          finish = resolve;
+        })
+    );
+    const failed = () =>
+      handleError({
+        config: { url: '/groups', method: 'get', accountId: 'A', sessionVersion: 0, headers: {} },
+        response: { status: 401 },
+      }).catch(() => undefined);
+    const first = failed();
+    const second = failed();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    finish({ data: { data: { tokens: { accessToken: 'access-2', refreshToken: 'refresh-2' } } } });
+    await Promise.all([first, second]);
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(tokenStorage.deleteItemAsync).not.toHaveBeenCalled();
+  });
   it('refuses an old mutation retry before reading the new account token', async () => {
     (offlineService.getAccountId as jest.Mock).mockReturnValue('B');
     (offlineService.getAccountVersion as jest.Mock).mockReturnValue(1);

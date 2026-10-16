@@ -80,8 +80,40 @@ export const sendPushNotification = async (
       if (!expoResponse.ok) {
         logger.warn(`Expo push gateway returned ${expoResponse.status}`);return false;
       }
-      const tickets = await expoResponse.json() as {data?: Array<{status?:string;details?:{error?:string}}>};
-      if (!Array.isArray(tickets.data) || tickets.data.length !== expoTokens.length || tickets.data.some(ticket=>ticket.status!=='ok')) return false;
+      const tickets = (await expoResponse.json()) as {
+        data?: Array<{ status?: string; details?: { error?: string } }>;
+      };
+      if (
+        !Array.isArray(tickets.data) ||
+        tickets.data.length !== expoTokens.length
+      ) {
+        return false;
+      }
+
+      const invalidTokens: string[] = [];
+      let successCount = 0;
+      let hasTransientError = false;
+
+      tickets.data.forEach((ticket, idx) => {
+        if (ticket.status === "ok") {
+          successCount++;
+        } else if (ticket.details?.error === "DeviceNotRegistered") {
+          invalidTokens.push(expoTokens[idx]);
+        } else {
+          hasTransientError = true;
+        }
+      });
+
+      if (invalidTokens.length > 0) {
+        await User.findByIdAndUpdate(userId, {
+          $pull: { deviceTokens: { $in: invalidTokens } },
+        });
+        logger.info(
+          `Removed ${invalidTokens.length} invalid Expo device tokens for user ${userId}`,
+        );
+      }
+
+      if (hasTransientError && successCount === 0) return false;
     }
 
     if (fcmTokens.length === 0 || !isFirebaseReady()) {
