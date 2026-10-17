@@ -1,4 +1,6 @@
-import {createHash} from "crypto";
+import { validateAttachments } from "../services/upload.service";
+import mongoose from "mongoose";
+import { createHash } from "crypto";
 import {
   validateFinancialTransaction,
   BusinessError,
@@ -10,10 +12,25 @@ import { AuthRequest } from "../middleware/auth";
 import { requireAuth } from "../utils/typeGuards";
 import logger from "../utils/logger";
 
-function requestFingerprint(body: Record<string,unknown>): string {
- const normalized:Record<string,unknown>={...body,amount:Number(body.amount)};delete normalized.idempotencyKey;
- function canonical(value:unknown):unknown {if(Array.isArray(value))return value.map(canonical);if(value && typeof value==='object')return Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>[key,canonical(item)]));return value;}
- return createHash('sha256').update(JSON.stringify(canonical(normalized))).digest('hex');
+function requestFingerprint(body: Record<string, unknown>): string {
+  const normalized: Record<string, unknown> = {
+    ...body,
+    amount: Number(body.amount),
+  };
+  delete normalized.idempotencyKey;
+  function canonical(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, item]) => [key, canonical(item)]),
+      );
+    return value;
+  }
+  return createHash("sha256")
+    .update(JSON.stringify(canonical(normalized)))
+    .digest("hex");
 }
 // Create new transaction
 export const createTransaction = async (
@@ -41,7 +58,7 @@ export const createTransaction = async (
     if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: "error",
-        message: "Group not found",
+        message: "Groupe introuvable",
       });
       return;
     }
@@ -53,7 +70,7 @@ export const createTransaction = async (
     if (!isMember) {
       res.status(403).json({
         status: "error",
-        message: "You are not a member of this group",
+        message: "Vous n’êtes pas membre actif de ce groupe",
       });
       return;
     }
@@ -65,8 +82,13 @@ export const createTransaction = async (
       return;
     }
     const key = req.get("Idempotency-Key") || req.body.idempotencyKey;
-    if(key && (typeof key!=='string' || key.length>200)){res.status(400).json({status:'error',message:'Clé de réessai invalide'});return;}
-    const fingerprint=requestFingerprint(req.body);
+    if (key && (typeof key !== "string" || key.length > 200)) {
+      res
+        .status(400)
+        .json({ status: "error", message: "Clé de réessai invalide" });
+      return;
+    }
+    const fingerprint = requestFingerprint(req.body);
     if (key) {
       const existing = await Transaction.findOne({
         groupId,
@@ -75,12 +97,10 @@ export const createTransaction = async (
       });
       if (existing) {
         if (existing.requestFingerprint !== fingerprint) {
-          res
-            .status(409)
-            .json({
-              status: "error",
-              message: "Clé déjà utilisée pour une autre opération",
-            });
+          res.status(409).json({
+            status: "error",
+            message: "Clé déjà utilisée pour une autre opération",
+          });
           return;
         }
         res
@@ -89,6 +109,7 @@ export const createTransaction = async (
         return;
       }
     }
+    await validateAttachments(attachments, String(groupId), authReq.user.id);
     // Create transaction
     const transaction = await Transaction.create({
       groupId,
@@ -107,28 +128,56 @@ export const createTransaction = async (
         reference: paymentDetails?.reference,
       },
       status: "pending",
-      metadata: {notes: typeof metadata?.notes === "string" ? metadata.notes.slice(0,500) : undefined},
+      metadata: {
+        notes:
+          typeof metadata?.notes === "string"
+            ? metadata.notes.slice(0, 500)
+            : undefined,
+      },
       attachments: attachments || [],
     });
 
+    await transaction.populate("validatedBy", "fullName");
     await transaction.populate("initiatedBy", "fullName email avatar");
     await transaction.populate("groupId", "name type");
 
     res.status(201).json({
       status: "success",
-      message: "Transaction created successfully",
+      message: "Opération créée",
       data: { transaction },
     });
   } catch (error) {
-    if(error && typeof error==='object' && 'code' in error && error.code===11000){
-     const authReq=req as AuthRequest;const existing=await Transaction.findOne({groupId:req.params.groupId,initiatedBy:authReq.user?.id,idempotencyKey:req.get('Idempotency-Key') || req.body.idempotencyKey});
-     if(existing?.requestFingerprint===requestFingerprint(req.body)){res.status(200).json({status:'success',data:{transaction:existing}});return;}
-     res.status(409).json({status:'error',message:'Clé déjà utilisée'});return;
+    if (error instanceof BusinessError) {
+      res
+        .status(error.status)
+        .json({ status: "error", message: error.message });
+      return;
+    }
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      const authReq = req as AuthRequest;
+      const existing = await Transaction.findOne({
+        groupId: req.params.groupId,
+        initiatedBy: authReq.user?.id,
+        idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+      });
+      if (existing?.requestFingerprint === requestFingerprint(req.body)) {
+        res
+          .status(200)
+          .json({ status: "success", data: { transaction: existing } });
+        return;
+      }
+      res.status(409).json({ status: "error", message: "Clé déjà utilisée" });
+      return;
     }
     logger.error("Create transaction error:", error);
     res.status(500).json({
       status: "error",
-      message: "Failed to create transaction",
+      message: "Impossible de créer l’opération",
     });
   }
 };
@@ -170,6 +219,7 @@ export const getMyTransactions = async (
     if (req.query.status) filter.status = String(req.query.status);
     const [transactions, total] = await Promise.all([
       Transaction.find(filter)
+        .populate("validatedBy", "fullName")
         .populate("initiatedBy", "fullName email avatar")
         .populate("groupId", "name type currency")
         .sort({ createdAt: -1, _id: -1 })
@@ -205,13 +255,14 @@ export const getTransactionById = async (
     const { id } = req.params;
 
     const transaction = await Transaction.findById(id)
+      .populate("validatedBy", "fullName")
       .populate("initiatedBy", "fullName email avatar phone")
       .populate("groupId", "name type");
 
     if (!transaction) {
       res.status(404).json({
         status: "error",
-        message: "Transaction not found",
+        message: "Opération introuvable",
       });
       return;
     }
@@ -222,7 +273,7 @@ export const getTransactionById = async (
     if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: "error",
-        message: "Group not found",
+        message: "Groupe introuvable",
       });
       return;
     }
@@ -234,7 +285,7 @@ export const getTransactionById = async (
     if (!isMember) {
       res.status(403).json({
         status: "error",
-        message: "You are not a member of this group",
+        message: "Vous n’êtes pas membre actif de ce groupe",
       });
       return;
     }
@@ -247,7 +298,7 @@ export const getTransactionById = async (
     logger.error("Get transaction error:", error);
     res.status(500).json({
       status: "error",
-      message: "Failed to get transaction",
+      message: "Impossible de charger l’opération",
     });
   }
 };
@@ -265,6 +316,7 @@ export const verifyTransaction = async (
       authReq.user.id,
       req.body.notes,
     );
+    await transaction.populate("validatedBy", "fullName");
     await transaction.populate("initiatedBy", "fullName email avatar");
     res.status(200).json({ status: "success", data: { transaction } });
   } catch (error) {
@@ -313,16 +365,22 @@ export const cancelTransaction = async (
           status: "cancelled",
           "metadata.notes": String(req.body.reason || "").slice(0, 500),
         },
+        $push: {
+          auditTrail: {
+            action: "cancelled",
+            actor: new mongoose.Types.ObjectId(authReq.user.id),
+            at: new Date(),
+            reason: String(req.body.reason || "").slice(0, 500),
+          },
+        },
       },
       { new: true },
     );
     if (!cancelled) {
-      res
-        .status(409)
-        .json({
-          status: "error",
-          message: "Seule une opération en attente peut être annulée",
-        });
+      res.status(409).json({
+        status: "error",
+        message: "Seule une opération en attente peut être annulée",
+      });
       return;
     }
     res.json({ status: "success", data: { transaction: cancelled } });

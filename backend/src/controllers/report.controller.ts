@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
-import reportService from '../services/report.service';
-import logger from '../utils/logger';
+import { Request, Response } from "express";
+import reportService from "../services/report.service";
+import logger from "../utils/logger";
 
 /**
  * Helper to extract error message
@@ -34,10 +34,10 @@ export const getGroupSummary = async (req: Request, res: Response) => {
       data: summary,
     });
   } catch (error: unknown) {
-    logger.error('Error getting group summary:', error);
+    logger.error("Error getting group summary:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get group summary',
+      message: "Impossible de charger le résumé du groupe",
       error: getErrorMessage(error),
     });
   }
@@ -62,13 +62,13 @@ export const generatePdfReport = async (req: Request, res: Response) => {
 
     await reportService.generatePdfReport(groupId, res, period);
   } catch (error: unknown) {
-    logger.error('Error generating PDF report:', error);
-    
+    logger.error("Error generating PDF report:", error);
+
     // Only send JSON if headers haven't been sent
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
-        message: 'Failed to generate PDF report',
+        message: "Impossible de générer le rapport PDF",
         error: getErrorMessage(error),
       });
     }
@@ -94,13 +94,13 @@ export const generateExcelReport = async (req: Request, res: Response) => {
 
     await reportService.generateExcelReport(groupId, res, period);
   } catch (error: unknown) {
-    logger.error('Error generating Excel report:', error);
-    
+    logger.error("Error generating Excel report:", error);
+
     // Only send JSON if headers haven't been sent
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
-        message: 'Failed to generate Excel report',
+        message: "Impossible de générer le rapport Excel",
         error: getErrorMessage(error),
       });
     }
@@ -120,7 +120,7 @@ export const getMonthlyReport = async (req: Request, res: Response) => {
     const report = await reportService.generateMonthlyReport(
       groupId,
       parseInt(year),
-      parseInt(month)
+      parseInt(month),
     );
 
     res.json({
@@ -128,10 +128,10 @@ export const getMonthlyReport = async (req: Request, res: Response) => {
       data: report,
     });
   } catch (error: unknown) {
-    logger.error('Error generating monthly report:', error);
+    logger.error("Error generating monthly report:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to generate monthly report',
+      message: "Impossible de générer le rapport mensuel",
       error: getErrorMessage(error),
     });
   }

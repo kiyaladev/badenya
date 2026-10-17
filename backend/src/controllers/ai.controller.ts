@@ -1,11 +1,11 @@
-import { entityId } from '../utils/membership';
-import { Request, Response } from 'express';
-import { AuthRequest } from '../middleware/auth';
-import { requireAuth } from '../utils/typeGuards';
-import aiService from '../services/ai.service';
-import AIReport from '../models/AIReport';
-import logger from '../utils/logger';
-import { Group } from '../models';
+import { entityId } from "../utils/membership";
+import { Request, Response } from "express";
+import { AuthRequest } from "../middleware/auth";
+import { requireAuth } from "../utils/typeGuards";
+import aiService from "../services/ai.service";
+import AIReport from "../models/AIReport";
+import logger from "../utils/logger";
+import { Group } from "../models";
 
 /**
  * Helper to extract error message
@@ -19,7 +19,10 @@ const getErrorMessage = (error: unknown): string => {
  * Generate AI insights for a group
  * @route POST /api/v1/groups/:groupId/insights
  */
-export const generateInsights = async (req: Request, res: Response): Promise<void> => {
+export const generateInsights = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
@@ -39,28 +42,29 @@ export const generateInsights = async (req: Request, res: Response): Promise<voi
       groupId,
       userId,
       periodStart,
-      periodEnd
+      periodEnd,
     );
 
     res.status(201).json({
-      status: 'success',
+      status: "success",
       data: aiReport,
     });
   } catch (error: unknown) {
-    logger.error('Generate insights error:', error);
-    
+    logger.error("Generate insights error:", error);
+
     const errorMsg = getErrorMessage(error);
-    if (errorMsg.includes('not available')) {
+    if (errorMsg.includes("not available")) {
       res.status(503).json({
-        status: 'error',
-        message: 'AI service is currently unavailable. Please try again later.',
+        status: "error",
+        message:
+          "Le service IA est temporairement indisponible. Réessayez plus tard.",
       });
       return;
     }
 
     res.status(500).json({
-      status: 'error',
-      message: errorMsg || 'Failed to generate insights',
+      status: "error",
+      message: "Impossible de générer les analyses",
     });
   }
 };
@@ -69,7 +73,10 @@ export const generateInsights = async (req: Request, res: Response): Promise<voi
  * Get insights history for a group
  * @route GET /api/v1/groups/:groupId/insights
  */
-export const getGroupInsights = async (req: Request, res: Response): Promise<void> => {
+export const getGroupInsights = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { groupId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
@@ -80,12 +87,12 @@ export const getGroupInsights = async (req: Request, res: Response): Promise<voi
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('generatedBy', 'fullName');
+      .populate("generatedBy", "fullName");
 
     const total = await AIReport.countDocuments({ groupId });
 
     res.json({
-      status: 'success',
+      status: "success",
       data: {
         reports,
         pagination: {
@@ -97,10 +104,10 @@ export const getGroupInsights = async (req: Request, res: Response): Promise<voi
       },
     });
   } catch (error: unknown) {
-    logger.error('Get insights error:', error);
+    logger.error("Get insights error:", error);
     res.status(500).json({
-      status: 'error',
-      message: getErrorMessage(error) || 'Failed to retrieve insights',
+      status: "error",
+      message: "Impossible de charger les analyses",
     });
   }
 };
@@ -109,42 +116,50 @@ export const getGroupInsights = async (req: Request, res: Response): Promise<voi
  * Get a specific insight report
  * @route GET /api/v1/insights/:reportId
  */
-export const getInsightById = async (req: Request, res: Response): Promise<void> => {
+export const getInsightById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
     const { reportId } = req.params;
 
     const report = await AIReport.findById(reportId)
-      .populate('groupId', 'name type currency')
-      .populate('generatedBy', 'fullName');
+      .populate("groupId", "name type currency")
+      .populate("generatedBy", "fullName");
 
     if (!report) {
       res.status(404).json({
-        status: 'error',
-        message: 'Insight report not found',
+        status: "error",
+        message: "Analyse introuvable",
       });
       return;
     }
 
-    const group = await Group.findById(report.groupId).select('members');
+    const group = await Group.findById(report.groupId).select("members");
     const isMember = group?.members.some(
-      member => entityId(member.userId) === authReq.user.id && member.status === 'active'
+      (member) =>
+        entityId(member.userId) === authReq.user.id &&
+        member.status === "active",
     );
     if (!isMember) {
-      res.status(403).json({ status: 'error', message: 'You are not a member of this group' });
+      res.status(403).json({
+        status: "error",
+        message: "Vous n’êtes pas membre actif de ce groupe",
+      });
       return;
     }
 
     res.json({
-      status: 'success',
+      status: "success",
       data: report,
     });
   } catch (error: unknown) {
-    logger.error('Get insight by ID error:', error);
+    logger.error("Get insight by ID error:", error);
     res.status(500).json({
-      status: 'error',
-      message: getErrorMessage(error) || 'Failed to retrieve insight',
+      status: "error",
+      message: "Impossible de charger l’analyse",
     });
   }
 };
@@ -153,7 +168,10 @@ export const getInsightById = async (req: Request, res: Response): Promise<void>
  * Detect anomalies in group transactions
  * @route POST /api/v1/groups/:groupId/anomalies
  */
-export const detectAnomalies = async (req: Request, res: Response): Promise<void> => {
+export const detectAnomalies = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const groupId = req.params.groupId as string;
 
@@ -162,23 +180,24 @@ export const detectAnomalies = async (req: Request, res: Response): Promise<void
     const result = await aiService.detectAnomalies(groupId, authReq.user.id);
 
     res.json({
-      status: 'success',
+      status: "success",
       data: result,
     });
   } catch (error: unknown) {
-    logger.error('Detect anomalies error:', error);
-    
-    if (getErrorMessage(error).includes('not available')) {
+    logger.error("Detect anomalies error:", error);
+
+    if (getErrorMessage(error).includes("not available")) {
       res.status(503).json({
-        status: 'error',
-        message: 'AI service is currently unavailable. Please try again later.',
+        status: "error",
+        message:
+          "Le service IA est temporairement indisponible. Réessayez plus tard.",
       });
       return;
     }
 
     res.status(500).json({
-      status: 'error',
-      message: getErrorMessage(error) || 'Failed to detect anomalies',
+      status: "error",
+      message: "Impossible de détecter les anomalies",
     });
   }
 };
@@ -187,32 +206,39 @@ export const detectAnomalies = async (req: Request, res: Response): Promise<void
  * Generate personalized recommendations for a group
  * @route POST /api/v1/groups/:groupId/recommendations
  */
-export const generateRecommendations = async (req: Request, res: Response): Promise<void> => {
+export const generateRecommendations = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const groupId = req.params.groupId as string;
 
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    const result = await aiService.generateRecommendations(groupId, authReq.user.id);
+    const result = await aiService.generateRecommendations(
+      groupId,
+      authReq.user.id,
+    );
 
     res.json({
-      status: 'success',
+      status: "success",
       data: result,
     });
   } catch (error: unknown) {
-    logger.error('Generate recommendations error:', error);
-    
-    if (getErrorMessage(error).includes('not available')) {
+    logger.error("Generate recommendations error:", error);
+
+    if (getErrorMessage(error).includes("not available")) {
       res.status(503).json({
-        status: 'error',
-        message: 'AI service is currently unavailable. Please try again later.',
+        status: "error",
+        message:
+          "Le service IA est temporairement indisponible. Réessayez plus tard.",
       });
       return;
     }
 
     res.status(500).json({
-      status: 'error',
-      message: getErrorMessage(error) || 'Failed to generate recommendations',
+      status: "error",
+      message: "Impossible de générer les recommandations",
     });
   }
 };
@@ -221,7 +247,10 @@ export const generateRecommendations = async (req: Request, res: Response): Prom
  * Delete an insight report
  * @route DELETE /api/v1/insights/:reportId
  */
-export const deleteInsight = async (req: Request, res: Response): Promise<void> => {
+export const deleteInsight = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
@@ -232,8 +261,8 @@ export const deleteInsight = async (req: Request, res: Response): Promise<void> 
 
     if (!report) {
       res.status(404).json({
-        status: 'error',
-        message: 'Insight report not found',
+        status: "error",
+        message: "Analyse introuvable",
       });
       return;
     }
@@ -241,8 +270,8 @@ export const deleteInsight = async (req: Request, res: Response): Promise<void> 
     // Only allow the user who generated the report to delete it
     if (report.generatedBy.toString() !== userId.toString()) {
       res.status(403).json({
-        status: 'error',
-        message: 'You are not authorized to delete this report',
+        status: "error",
+        message: "Vous ne pouvez pas supprimer ce rapport",
       });
       return;
     }
@@ -250,14 +279,14 @@ export const deleteInsight = async (req: Request, res: Response): Promise<void> 
     await AIReport.findByIdAndDelete(reportId);
 
     res.json({
-      status: 'success',
-      message: 'Insight report deleted successfully',
+      status: "success",
+      message: "Analyse supprimée",
     });
   } catch (error: unknown) {
-    logger.error('Delete insight error:', error);
+    logger.error("Delete insight error:", error);
     res.status(500).json({
-      status: 'error',
-      message: getErrorMessage(error) || 'Failed to delete insight',
+      status: "error",
+      message: "Impossible de supprimer l’analyse",
     });
   }
 };

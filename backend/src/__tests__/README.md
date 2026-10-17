@@ -1,121 +1,20 @@
-# Backend Testing Guide
+# Tests du backend
 
-## Overview
+Les suites unitaires couvrent les utilitaires, permissions et services. Les suites d’intégration exécutent Express via Supertest avec des bases MongoDB éphémères. Les parcours financiers utilisent un replica set pour vérifier les commits atomiques.
 
-This directory contains tests for the Badenya backend API.
+Depuis la racine :
 
-## Test Structure
-
-```
-src/__tests__/
-├── helpers/          # Test helper utilities
-│   └── db.ts        # Database connection helpers
-├── utils/           # Unit tests for utility functions
-│   ├── crypto.test.ts
-│   ├── jwt.test.ts
-│   └── password.test.ts
-└── integration/     # Integration tests for API endpoints (TODO)
+```sh
+npm run test:backend
+npm run test:backend:integration
+npm test --workspace=backend -- --runInBand --detectOpenHandles
+npm run build:backend
 ```
 
-## Running Tests
+`helpers/financial-fixture.ts` crée une base isolée, un compte authentifié et un groupe. Chaque suite ferme sa connexion et arrête son serveur MongoDB. Aucun test ne doit effacer une base de développement ou de production.
 
-```bash
-# Run all tests
-npm test
+Pour une règle métier, envoyer une session valide, vérifier un statut précis et inspecter les données persistées. Un `401` ne prouve pas la validation d’un montant ou d’un identifiant. Les tests d’authentification restent distincts. Les tests de concurrence vérifient les invariants financiers et la déduplication.
 
-# Run tests with coverage
-npm run test:coverage
+Pour rechercher les ressources non libérées : exécuter Jest avec `--runInBand --detectOpenHandles`, corriger la ressource concernée et vérifier la sortie naturelle du processus ; ne pas masquer le problème avec `--forceExit`.
 
-# Run tests in watch mode
-npm run test:watch
-
-# Run specific test file
-npm test -- crypto.test.ts
-
-# Run tests matching a pattern
-npm test -- --testPathPatterns="utils"
-```
-
-## Test Coverage
-
-Current test coverage:
-- ✅ Utils (crypto, jwt, password): 100% coverage
-- ⏳ Models: Pending (requires database setup)
-- ⏳ Controllers: Pending
-- ⏳ Services: Pending
-- ⏳ Middleware: Pending
-- ⏳ Integration Tests: Pending
-
-## Writing Tests
-
-### Unit Tests
-
-Unit tests focus on testing individual functions or methods in isolation.
-
-Example:
-```typescript
-import { hashPassword } from '../../utils/password';
-
-describe('Password Utils', () => {
-  it('should hash a password', async () => {
-    const password = 'testPassword123';
-    const hashed = await hashPassword(password);
-    
-    expect(hashed).toBeDefined();
-    expect(hashed).not.toBe(password);
-  });
-});
-```
-
-### Integration Tests
-
-Integration tests test the API endpoints end-to-end.
-
-Example (requires database setup):
-```typescript
-import request from 'supertest';
-import app from '../../index';
-
-describe('Auth API', () => {
-  it('POST /auth/register should create a new user', async () => {
-    const response = await request(app)
-      .post('/auth/register')
-      .send({
-        fullName: 'Test User',
-        email: 'test@example.com',
-        password: 'password123',
-      });
-    
-    expect(response.status).toBe(201);
-    expect(response.body.status).toBe('success');
-  });
-});
-```
-
-## Environment Variables
-
-Tests use the following environment variables:
-- `TEST_MONGODB_URI`: MongoDB connection string for tests (default: mongodb://localhost:27017/badenya_test)
-- `JWT_SECRET`: Test JWT secret key
-- `JWT_REFRESH_SECRET`: Test refresh token secret key
-
-## Database Setup for Integration Tests
-
-Integration tests require a MongoDB instance. You can:
-
-1. Use a local MongoDB instance
-2. Use MongoDB Atlas test cluster
-3. Use MongoDB Memory Server (requires internet access to download MongoDB binary)
-
-Set the `TEST_MONGODB_URI` environment variable:
-```bash
-export TEST_MONGODB_URI="mongodb://localhost:27017/badenya_test"
-```
-
-## Next Steps
-
-1. Add integration tests for authentication endpoints
-2. Add tests for group management
-3. Add tests for transaction handling
-4. Add tests for voting system
-5. Increase coverage to >70%
+Les tests de fichiers utilisent un répertoire temporaire nettoyé en fin de suite. Les comptes, pièces jointes et secrets de test sont fictifs. La couverture doit être mesurée avec `npm run test:coverage --workspace=backend` ; aucun pourcentage historique n’est une preuve de couverture de la version courante.

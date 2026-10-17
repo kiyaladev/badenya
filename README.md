@@ -8,7 +8,9 @@ Le dépôt comprend une API Express/MongoDB (`backend`), une administration Reac
 
 L’[audit du 6 octobre 2026](DOCS/AUDIT_APPLICATION_2026-10-06.md) décrit les problèmes reproduits avant correction. Les corrections et leur vérification sont suivies dans le [rapport de remédiation](DOCS/REMEDIATION_2026-10-06.md). Les anciens pourcentages de complétion et déclarations « prêt à déployer » ne constituent pas une validation des parcours métier ; ils sont conservés dans `DOCS/archive/pre-remediation-2026-10-06`.
 
-Les modifications du dépôt ne sont pas automatiquement publiées. La configuration email, push et IA ainsi que les essais sur appareils doivent être vérifiés dans l’environnement cible. Les opérations financières atomiques nécessitent un replica set MongoDB ; le MongoDB standalone actuellement observé doit être migré vers une instance dédiée avant activation de ces opérations.
+Les modifications du dépôt ne sont pas automatiquement publiées. La configuration email, push et IA ainsi que les essais sur appareils doivent être vérifiés dans l’environnement cible. Les opérations financières atomiques nécessitent un replica set MongoDB. Le contrôle du 17 octobre 2026 confirme un replica set et un stockage financier disponible sur le serveur actuel ; le runbook de migration reste nécessaire pour les installations standalone.
+
+Les corrections complémentaires sont décrites dans le [rapport du 17 octobre 2026](DOCS/REMEDIATION_2026-10-17.md), avec la procédure de migration des reçus privés dans le guide de déploiement.
 
 ## Domaines
 

@@ -1,5 +1,9 @@
-import { sendPasswordResetEmail } from '../../services/email.service';
-jest.mock('../../services/email.service', () => ({ isEmailConfigured: jest.fn(() => true), sendPasswordResetEmail: jest.fn(async () => true), sendContactConfirmationEmail: jest.fn(async () => true) }));
+import { sendPasswordResetEmail } from "../../services/email.service";
+jest.mock("../../services/email.service", () => ({
+  isEmailConfigured: jest.fn(() => true),
+  sendPasswordResetEmail: jest.fn(async () => true),
+  sendContactConfirmationEmail: jest.fn(async () => true),
+}));
 import request from "supertest";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
@@ -15,7 +19,9 @@ let mongoServer: MongoMemoryServer;
 describe("Auth Integration Tests", () => {
   beforeAll(async () => {
     // Setup in-memory MongoDB
-    mongoServer = await MongoMemoryServer.create({ instance: { launchTimeout: 120000 } });
+    mongoServer = await MongoMemoryServer.create({
+      instance: { launchTimeout: 120000 },
+    });
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
   });
@@ -46,7 +52,7 @@ describe("Auth Integration Tests", () => {
         .expect(201);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.message).toBe("User registered successfully");
+      expect(response.body.message).toBe("Compte créé");
       expect(response.body.data.user).toMatchObject({
         fullName: validUser.fullName,
         email: validUser.email,
@@ -71,7 +77,7 @@ describe("Auth Integration Tests", () => {
         .expect(400);
 
       expect(response.body.status).toBe("error");
-      expect(response.body.message).toContain("already exists");
+      expect(response.body.message).toContain("déjà");
     });
 
     it("should reject registration with existing phone", async () => {
@@ -90,7 +96,7 @@ describe("Auth Integration Tests", () => {
         .expect(400);
 
       expect(response.body.status).toBe("error");
-      expect(response.body.message).toContain("already exists");
+      expect(response.body.message).toContain("déjà");
     });
 
     it("should reject registration with missing fields", async () => {
@@ -134,7 +140,7 @@ describe("Auth Integration Tests", () => {
         .expect(200);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.message).toBe("Login successful");
+      expect(response.body.message).toBe("Connexion réussie");
       expect(response.body.data.user).toMatchObject({
         email: userCredentials.email,
       });
@@ -165,7 +171,7 @@ describe("Auth Integration Tests", () => {
         .expect(401);
 
       expect(response.body.status).toBe("error");
-      expect(response.body.message).toBe("Invalid credentials");
+      expect(response.body.message).toBe("Identifiants incorrects");
     });
 
     it("should reject login with invalid password", async () => {
@@ -178,7 +184,7 @@ describe("Auth Integration Tests", () => {
         .expect(401);
 
       expect(response.body.status).toBe("error");
-      expect(response.body.message).toBe("Invalid credentials");
+      expect(response.body.message).toBe("Identifiants incorrects");
     });
 
     it("should reject login with missing credentials", async () => {
@@ -218,7 +224,7 @@ describe("Auth Integration Tests", () => {
         .expect(200);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.message).toBe("Token refreshed successfully");
+      expect(response.body.message).toBe("Session renouvelée");
       expect(response.body.data.tokens).toHaveProperty("accessToken");
       expect(response.body.data.tokens).toHaveProperty("refreshToken");
     });
@@ -271,7 +277,7 @@ describe("Auth Integration Tests", () => {
         .expect(200);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.message).toBe("Logout successful");
+      expect(response.body.message).toBe("Déconnexion réussie");
     });
 
     it("should reject logout without authentication", async () => {
@@ -370,7 +376,7 @@ describe("Auth Integration Tests", () => {
         .expect(200);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.message).toBe("Password reset successful");
+      expect(response.body.message).toBe("Mot de passe réinitialisé");
 
       // Verify password was changed
       const loginResponse = await request(app)

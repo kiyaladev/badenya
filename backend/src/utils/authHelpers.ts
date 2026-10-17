@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { IUser } from '../models/User';
-import { AuthRequest } from '../middleware/auth';
+import { Request, Response, NextFunction } from "express";
+import { IUser } from "../models/User";
+import { AuthRequest } from "../middleware/auth";
 
 /**
  * Extended Express Request with authenticated user
@@ -14,7 +14,9 @@ export interface AuthenticatedRequest extends Request {
  * @param req Express request object
  * @returns true if request has authenticated user
  */
-export function isAuthenticatedRequest(req: Request): req is AuthenticatedRequest {
+export function isAuthenticatedRequest(
+  req: Request,
+): req is AuthenticatedRequest {
   const authReq = req as AuthRequest;
   return authReq.user !== undefined && authReq.user !== null;
 }
@@ -28,11 +30,11 @@ export function isAuthenticatedRequest(req: Request): req is AuthenticatedReques
  */
 export function requireAuth(
   req: Request,
-  res: Response
+  res: Response,
 ): asserts req is AuthenticatedRequest {
   if (!isAuthenticatedRequest(req)) {
-    res.status(401).json({ message: 'Authentication required' });
-    throw new Error('Unauthorized');
+    res.status(401).json({ message: "Authentification requise" });
+    throw new Error("Unauthorized");
   }
 }
 
@@ -52,9 +54,13 @@ export function getAuthUser(req: Request, res: Response): IUser {
  * Middleware to ensure request has authenticated user
  * Use after auth middleware to get type-safe user access
  */
-export function ensureAuth(req: Request, res: Response, next: NextFunction): void {
+export function ensureAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   if (!isAuthenticatedRequest(req)) {
-    res.status(401).json({ message: 'Authentication required' });
+    res.status(401).json({ message: "Authentification requise" });
     return;
   }
   next();
@@ -66,11 +72,11 @@ export function ensureAuth(req: Request, res: Response, next: NextFunction): voi
  * @returns Wrapped handler with type-safe user access
  */
 export function withAuth(
-  handler: (req: AuthenticatedRequest, res: Response) => Promise<void> | void
+  handler: (req: AuthenticatedRequest, res: Response) => Promise<void> | void,
 ) {
   return async (req: Request, res: Response): Promise<void> => {
     if (!isAuthenticatedRequest(req)) {
-      res.status(401).json({ message: 'Authentication required' });
+      res.status(401).json({ message: "Authentification requise" });
       return;
     }
     await handler(req, res);

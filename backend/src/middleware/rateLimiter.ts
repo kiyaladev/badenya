@@ -12,8 +12,7 @@ const isTestEnvironment = process.env.NODE_ENV === "test";
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: isTestEnvironment ? 1000 : 5, // keep production limit strict; avoid cross-test pollution
-  message:
-    "Too many authentication attempts from this IP, please try again after 15 minutes.",
+  message: "Trop de tentatives de connexion. Réessayez dans 15 minutes.",
   skipSuccessfulRequests: true, // Don't count successful requests
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -28,7 +27,7 @@ export const authLimiter = rateLimit({
 export const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: isTestEnvironment ? 1000 : 3, // keep production limit strict; avoid cross-test pollution
-  message: "Too many password reset attempts, please try again after an hour.",
+  message: "Trop de demandes de réinitialisation. Réessayez dans une heure.",
   standardHeaders: true,
   legacyHeaders: false,
 });

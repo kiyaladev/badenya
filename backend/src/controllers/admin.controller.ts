@@ -47,8 +47,12 @@ export const getDashboardStats = async (
         totalGroups,
         activeGroups,
         totalTransactions,
-        totalTransactionVolume: transactionVolume.find(v=>v._id === "XOF")?.total || 0,
-        totalsByCurrency: transactionVolume.map(v=>({currency:v._id,totalTransactionVolume:v.total})),
+        totalTransactionVolume:
+          transactionVolume.find((v) => v._id === "XOF")?.total || 0,
+        totalsByCurrency: transactionVolume.map((v) => ({
+          currency: v._id,
+          totalTransactionVolume: v.total,
+        })),
         recentActivity: {
           newUsers: recentUsers,
           newGroups: recentGroups,
@@ -57,9 +61,10 @@ export const getDashboardStats = async (
       },
     });
   } catch {
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to load dashboard stats" });
+    res.status(500).json({
+      success: false,
+      message: "Impossible de charger les statistiques",
+    });
   }
 };
 
@@ -104,7 +109,9 @@ export const getAllUsers = async (
       data: { users, total },
     });
   } catch {
-    res.status(500).json({ success: false, message: "Failed to load users" });
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger les comptes" });
   }
 };
 
@@ -124,13 +131,15 @@ export const getUserById = async (
       .lean();
 
     if (!user) {
-      res.status(404).json({ success: false, message: "User not found" });
+      res.status(404).json({ success: false, message: "Compte introuvable" });
       return;
     }
 
     res.json({ success: true, data: { user } });
   } catch {
-    res.status(500).json({ success: false, message: "Failed to load user" });
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger le compte" });
   }
 };
 
@@ -145,18 +154,27 @@ export const suspendUser = async (
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { $set: {isActive: false, refreshTokens: [], tokensValidAfter: new Date()}, $inc:{sessionVersion:1} },
+      {
+        $set: {
+          isActive: false,
+          refreshTokens: [],
+          tokensValidAfter: new Date(),
+        },
+        $inc: { sessionVersion: 1 },
+      },
       { new: true },
     ).select("-password -refreshTokens");
 
     if (!user) {
-      res.status(404).json({ success: false, message: "User not found" });
+      res.status(404).json({ success: false, message: "Compte introuvable" });
       return;
     }
 
     res.json({ success: true, data: { user } });
   } catch {
-    res.status(500).json({ success: false, message: "Failed to suspend user" });
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de suspendre le compte" });
   }
 };
 
@@ -176,7 +194,7 @@ export const activateUser = async (
     ).select("-password -refreshTokens");
 
     if (!user) {
-      res.status(404).json({ success: false, message: "User not found" });
+      res.status(404).json({ success: false, message: "Compte introuvable" });
       return;
     }
 
@@ -184,7 +202,7 @@ export const activateUser = async (
   } catch {
     res
       .status(500)
-      .json({ success: false, message: "Failed to activate user" });
+      .json({ success: false, message: "Impossible de réactiver le compte" });
   }
 };
 
@@ -229,7 +247,9 @@ export const getAllGroups = async (
       data: { groups, total },
     });
   } catch {
-    res.status(500).json({ success: false, message: "Failed to load groups" });
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger les groupes" });
   }
 };
 
@@ -248,13 +268,15 @@ export const getGroupById = async (
       .lean();
 
     if (!group) {
-      res.status(404).json({ success: false, message: "Group not found" });
+      res.status(404).json({ success: false, message: "Groupe introuvable" });
       return;
     }
 
     res.json({ success: true, data: { group } });
   } catch {
-    res.status(500).json({ success: false, message: "Failed to load group" });
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger le groupe" });
   }
 };
 
@@ -269,12 +291,12 @@ export const archiveGroup = async (
   try {
     const group = await Group.findByIdAndUpdate(
       req.params.id,
-      { $set:{isActive: false, archivedAt: new Date()}, $inc:{__v:1} },
+      { $set: { isActive: false, archivedAt: new Date() }, $inc: { __v: 1 } },
       { new: true },
     );
 
     if (!group) {
-      res.status(404).json({ success: false, message: "Group not found" });
+      res.status(404).json({ success: false, message: "Groupe introuvable" });
       return;
     }
 
@@ -282,7 +304,7 @@ export const archiveGroup = async (
   } catch {
     res
       .status(500)
-      .json({ success: false, message: "Failed to archive group" });
+      .json({ success: false, message: "Impossible d’archiver le groupe" });
   }
 };
 
@@ -304,7 +326,16 @@ export const getAllTransactions = async (
     const type = req.query.type as string | undefined;
 
     const filter: Record<string, unknown> = {};
-    if(req.query.search){const search=String(req.query.search).slice(0,100).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');filter.$or=[{description:{$regex:search,$options:'i'}},{'paymentMethod.reference':{$regex:search,$options:'i'}},{category:{$regex:search,$options:'i'}}];}
+    if (req.query.search) {
+      const search = String(req.query.search)
+        .slice(0, 100)
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { description: { $regex: search, $options: "i" } },
+        { "paymentMethod.reference": { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+      ];
+    }
     if (status) {
       filter.status = status;
     }
@@ -335,9 +366,10 @@ export const getAllTransactions = async (
       data: { transactions: mapped, total },
     });
   } catch {
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to load transactions" });
+    res.status(500).json({
+      success: false,
+      message: "Impossible de charger les opérations",
+    });
   }
 };
 
@@ -368,7 +400,7 @@ export const flagTransaction = async (
     if (!transaction) {
       res
         .status(404)
-        .json({ success: false, message: "Transaction not found" });
+        .json({ success: false, message: "Opération introuvable" });
       return;
     }
 
@@ -376,6 +408,6 @@ export const flagTransaction = async (
   } catch {
     res
       .status(500)
-      .json({ success: false, message: "Failed to flag transaction" });
+      .json({ success: false, message: "Impossible de signaler l’opération" });
   }
 };

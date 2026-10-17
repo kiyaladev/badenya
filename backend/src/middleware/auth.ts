@@ -60,7 +60,7 @@ export const authenticate = async (
     if (!token) {
       res.status(401).json({
         status: "error",
-        message: "No token provided",
+        message: "Jeton de session manquant",
       });
       return;
     }
@@ -84,29 +84,25 @@ export const authenticate = async (
     if (!user) {
       res.status(401).json({
         status: "error",
-        message: "User not found",
+        message: "Compte introuvable",
       });
       return;
     }
 
     if (!user.isActive) {
-      res
-        .status(403)
-        .json({
-          status: "error",
-          code: "ACCOUNT_SUSPENDED",
-          message: "Compte suspendu",
-        });
+      res.status(403).json({
+        status: "error",
+        code: "ACCOUNT_SUSPENDED",
+        message: "Compte suspendu",
+      });
       return;
     }
     if ((decoded.sessionVersion || 0) !== (user.sessionVersion || 0)) {
-      res
-        .status(401)
-        .json({
-          status: "error",
-          code: "SESSION_REVOKED",
-          message: "Session expirée",
-        });
+      res.status(401).json({
+        status: "error",
+        code: "SESSION_REVOKED",
+        message: "Session expirée",
+      });
       return;
     }
     // Attach user to request
@@ -120,7 +116,7 @@ export const authenticate = async (
     if (error instanceof jwt.JsonWebTokenError) {
       res.status(401).json({
         status: "error",
-        message: "Invalid token",
+        message: "Jeton de session invalide",
       });
       return;
     }
@@ -128,14 +124,14 @@ export const authenticate = async (
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         status: "error",
-        message: "Token expired",
+        message: "Session expirée",
       });
       return;
     }
 
     res.status(500).json({
       status: "error",
-      message: "Authentication failed",
+      message: "Échec de l’authentification",
     });
   }
 };
@@ -172,7 +168,7 @@ export const isAdmin = async (
     if (!authReq.user) {
       res.status(403).json({
         status: "error",
-        message: "Access denied. Admin only.",
+        message: "Accès réservé aux administrateurs.",
       });
       return;
     }
@@ -182,7 +178,7 @@ export const isAdmin = async (
     if (!user || user.role !== "admin") {
       res.status(403).json({
         status: "error",
-        message: "Access denied. Admin only.",
+        message: "Accès réservé aux administrateurs.",
       });
       return;
     }
@@ -191,7 +187,7 @@ export const isAdmin = async (
   } catch {
     res.status(500).json({
       status: "error",
-      message: "Authorization check failed",
+      message: "Échec de la vérification des droits",
     });
   }
 };

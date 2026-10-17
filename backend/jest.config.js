@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'ts-jest',
+  maxWorkers: 2,
   // Runtime regressions transpile independently; npm run build checks all types.
   transform: { '^.+\\.tsx?$': 'ts-jest' },
   testEnvironment: 'node',

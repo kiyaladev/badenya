@@ -1,3 +1,5 @@
+// Refuse builds that bypassed postinstall or contain unreviewed dependency code.
+require('./scripts/security-backports.cjs').backports('check');
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
 

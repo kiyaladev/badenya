@@ -107,6 +107,13 @@ export async function account(
     );
   tx.status = "completed";
   tx.processedAt = new Date();
+  tx.validatedAt = tx.processedAt;
+  tx.validatedBy = new mongoose.Types.ObjectId(actor);
+  tx.auditTrail.push({
+    action: "validated",
+    actor: tx.validatedBy,
+    at: tx.processedAt,
+  });
   await group.save({ session });
   await tx.save({ session });
   await enqueueEvent(

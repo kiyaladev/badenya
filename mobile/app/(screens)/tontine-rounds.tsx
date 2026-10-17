@@ -26,6 +26,9 @@ export default function TontineRoundsScreen() {
 
   const [customIntervalDays, setCustomIntervalDays] = useState('');
   const [schedule, setSchedule] = useState<TontineSchedule | null>(null);
+  const [history, setHistory] = useState<TontineSchedule[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -41,6 +44,10 @@ export default function TontineRoundsScreen() {
     try {
       const data = await tontineService.getTontineSchedule(groupId, group);
       setSchedule(data);
+      const cycles = await tontineService.getCycleHistory(groupId);
+      setHistory(cycles);
+      setHistoryPage(1);
+      setHasMoreHistory(cycles.length === 20);
     } catch {
       Alert.alert('Erreur', 'Impossible de charger le tour de rôle');
     } finally {
@@ -301,7 +308,8 @@ export default function TontineRoundsScreen() {
                       onPress: async () => {
                         setUpdating(true);
                         try {
-                          setSchedule(await tontineService.startNextCycle(groupId));
+                          await tontineService.startNextCycle(groupId);
+                          await loadSchedule();
                         } catch (error) {
                           Alert.alert('Cycle non créé', getErrorMessage(error));
                         } finally {
@@ -422,6 +430,47 @@ export default function TontineRoundsScreen() {
             );
           })}
         </View>
+      </View>
+      <View className="px-6 py-4">
+        <Text className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">
+          Cycles précédents
+        </Text>
+        {history.length === 0 && <Text className="text-gray-500">Aucun cycle archivé.</Text>}
+        {history.map(cycle => (
+          <View key={cycle.cycleNumber} className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3">
+            <Text className="font-bold text-gray-800 dark:text-gray-100">
+              Cycle {cycle.cycleNumber}
+            </Text>
+            {cycle.rounds.map(round => (
+              <Text key={round.roundId} className="text-gray-600 dark:text-gray-300 mt-2">
+                Tour {round.roundNumber} — {round.beneficiaryName} :{' '}
+                {round.potAmount.toLocaleString()} {group.currency}
+                {round.paidAt
+                  ? ` — versé le ${new Date(round.paidAt).toLocaleDateString('fr-FR')}`
+                  : ''}
+              </Text>
+            ))}
+          </View>
+        ))}
+        {hasMoreHistory && (
+          <Button
+            title="Charger les cycles précédents"
+            disabled={updating}
+            onPress={async () => {
+              setUpdating(true);
+              try {
+                const cycles = await tontineService.getCycleHistory(groupId, historyPage + 1);
+                setHistory(previous => [...previous, ...cycles]);
+                setHistoryPage(previous => previous + 1);
+                setHasMoreHistory(cycles.length === 20);
+              } catch (error) {
+                Alert.alert('Erreur', getErrorMessage(error));
+              } finally {
+                setUpdating(false);
+              }
+            }}
+          />
+        )}
       </View>
     </ScrollView>
   );

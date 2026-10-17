@@ -90,17 +90,23 @@ const router = Router();
 
 // Validation rules
 const registerValidation = [
-  body("fullName").trim().notEmpty().withMessage("Full name is required"),
-  body("email").isEmail().withMessage("Valid email is required"),
-  body("phone").trim().notEmpty().withMessage("Phone number is required"),
+  body("fullName").trim().notEmpty().withMessage("Le nom complet est requis"),
+  body("email").isEmail().withMessage("Une adresse email valide est requise"),
+  body("phone")
+    .trim()
+    .notEmpty()
+    .withMessage("Le numéro de téléphone est requis"),
   body("password")
     .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters"),
+    .withMessage("Le mot de passe doit contenir au moins 8 caractères"),
 ];
 
 const loginValidation = [
-  body("email").trim().notEmpty().withMessage("Email or phone is required"),
-  body("password").notEmpty().withMessage("Password is required"),
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("L’adresse email ou le téléphone est requis"),
+  body("password").notEmpty().withMessage("Le mot de passe est requis"),
 ];
 
 const refreshTokenValidation = [
@@ -108,28 +114,38 @@ const refreshTokenValidation = [
     .optional()
     .isString()
     .notEmpty()
-    .withMessage("Refresh token must be a string"),
+    .withMessage(
+      "Le jeton de renouvellement doit être une chaîne de caractères",
+    ),
 ];
 
 const forgotPasswordValidation = [
-  body("email").trim().isEmail().withMessage("Valid email is required"),
+  body("email")
+    .trim()
+    .isEmail()
+    .withMessage("Une adresse email valide est requise"),
 ];
 
 const resetPasswordValidation = [
   body("token")
     .isString()
     .isLength({ min: 32, max: 256 })
-    .withMessage("Valid reset token is required"),
+    .withMessage("Un lien de réinitialisation valide est requis"),
   body("newPassword")
     .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters")
+    .withMessage("Le mot de passe doit contenir au moins 8 caractères")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/)
-    .withMessage("Password requires upper/lowercase letters and a number"),
+    .withMessage(
+      "Le mot de passe doit contenir une majuscule, une minuscule et un chiffre",
+    ),
 ];
 
 const updateProfileValidation = [
   body("fullName").optional().trim().notEmpty(),
-  body("email").optional().isEmail().withMessage("Valid email is required"),
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Une adresse email valide est requise"),
   body("phone").optional().trim().notEmpty(),
   body("avatar").optional(),
 ];
@@ -291,10 +307,10 @@ const updateProfileValidation = [
 const changePasswordValidation = [
   body("currentPassword")
     .notEmpty()
-    .withMessage("Current password is required"),
+    .withMessage("Le mot de passe actuel est requis"),
   body("newPassword")
     .isLength({ min: 8 })
-    .withMessage("New password must be at least 8 characters"),
+    .withMessage("Le nouveau mot de passe doit contenir au moins 8 caractères"),
 ];
 
 // Public routes (with rate limiting)

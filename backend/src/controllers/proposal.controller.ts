@@ -1,3 +1,4 @@
+import { validateAttachments } from "../services/upload.service";
 import { decideProposal } from "../services/proposal-lifecycle.service";
 import { enqueueEvent } from "../services/events.service";
 import { activeMember } from "../utils/membership";
@@ -48,6 +49,11 @@ export const createProposal = async (
           409,
           "Limite mensuelle de propositions atteinte",
         );
+      await validateAttachments(
+        req.body.attachments,
+        String(group._id),
+        authReq.user.id,
+      );
       const saved = new Proposal({
         groupId: group._id,
         proposedBy: authReq.user.id,
@@ -112,7 +118,7 @@ export const getGroupProposals = async (
     if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: "error",
-        message: "Group not found",
+        message: "Groupe introuvable",
       });
       return;
     }
@@ -124,7 +130,7 @@ export const getGroupProposals = async (
     if (!isMember) {
       res.status(403).json({
         status: "error",
-        message: "You are not a member of this group",
+        message: "Vous n’êtes pas membre actif de ce groupe",
       });
       return;
     }
@@ -156,7 +162,7 @@ export const getGroupProposals = async (
     logger.error("Get group proposals error:", error);
     res.status(500).json({
       status: "error",
-      message: "Failed to get proposals",
+      message: "Impossible de charger les propositions",
     });
   }
 };
@@ -179,7 +185,7 @@ export const getProposalById = async (
     if (!proposal) {
       res.status(404).json({
         status: "error",
-        message: "Proposal not found",
+        message: "Proposition introuvable",
       });
       return;
     }
@@ -190,7 +196,7 @@ export const getProposalById = async (
     if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
         status: "error",
-        message: "Group not found",
+        message: "Groupe introuvable",
       });
       return;
     }
@@ -202,7 +208,7 @@ export const getProposalById = async (
     if (!isMember) {
       res.status(403).json({
         status: "error",
-        message: "You are not a member of this group",
+        message: "Vous n’êtes pas membre actif de ce groupe",
       });
       return;
     }
@@ -215,7 +221,7 @@ export const getProposalById = async (
     logger.error("Get proposal error:", error);
     res.status(500).json({
       status: "error",
-      message: "Failed to get proposal",
+      message: "Impossible de charger la proposition",
     });
   }
 };

@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { query } from 'express-validator';
-import { searchUsers, getUserStats } from '../controllers/user.controller';
-import { authenticate } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+import { Router } from "express";
+import { query } from "express-validator";
+import { searchUsers, getUserStats } from "../controllers/user.controller";
+import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validation";
 
 const router = Router();
 
@@ -47,13 +47,13 @@ const router = Router();
  */
 
 const searchValidation = [
-  query('q')
+  query("q")
     .trim()
     .isLength({ min: 2, max: 100 })
-    .withMessage('Search query must be between 2 and 100 characters'),
+    .withMessage("La recherche doit contenir entre 2 et 100 caractères"),
 ];
 
-router.get('/search', authenticate, searchValidation, validate, searchUsers);
+router.get("/search", authenticate, searchValidation, validate, searchUsers);
 
 /**
  * @swagger
@@ -84,6 +84,6 @@ router.get('/search', authenticate, searchValidation, validate, searchUsers);
  *       401:
  *         description: Unauthorized
  */
-router.get('/stats', authenticate, getUserStats);
+router.get("/stats", authenticate, getUserStats);
 
 export default router;

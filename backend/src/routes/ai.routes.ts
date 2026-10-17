@@ -1,18 +1,22 @@
-import express from 'express';
-import { param } from 'express-validator';
-import * as aiController from '../controllers/ai.controller';
-import { authenticate } from '../middleware/auth';
-import { requireGroupMember } from '../middleware/groupMember';
-import { validate } from '../middleware/validation';
+import express from "express";
+import { param } from "express-validator";
+import * as aiController from "../controllers/ai.controller";
+import { authenticate } from "../middleware/auth";
+import { requireGroupMember } from "../middleware/groupMember";
+import { validate } from "../middleware/validation";
 
 const router = express.Router();
 
 const groupIdValidation = [
-  param('groupId').isMongoId().withMessage('Valid group ID is required'),
+  param("groupId")
+    .isMongoId()
+    .withMessage("Un identifiant de groupe valide est requis"),
 ];
 
 const reportIdValidation = [
-  param('reportId').isMongoId().withMessage('Valid report ID is required'),
+  param("reportId")
+    .isMongoId()
+    .withMessage("Un identifiant de rapport valide est requis"),
 ];
 
 /**
@@ -58,7 +62,14 @@ const reportIdValidation = [
  *       500:
  *         description: AI service error
  */
-router.post('/groups/:groupId/insights', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateInsights);
+router.post(
+  "/groups/:groupId/insights",
+  authenticate,
+  requireGroupMember(),
+  groupIdValidation,
+  validate,
+  aiController.generateInsights,
+);
 
 /**
  * @swagger
@@ -108,7 +119,14 @@ router.post('/groups/:groupId/insights', authenticate, requireGroupMember(), gro
  *                     total:
  *                       type: integer
  */
-router.get('/groups/:groupId/insights', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.getGroupInsights);
+router.get(
+  "/groups/:groupId/insights",
+  authenticate,
+  requireGroupMember(),
+  groupIdValidation,
+  validate,
+  aiController.getGroupInsights,
+);
 
 /**
  * @swagger
@@ -144,7 +162,13 @@ router.get('/groups/:groupId/insights', authenticate, requireGroupMember(), grou
  *       404:
  *         description: Report not found
  */
-router.get('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.getInsightById);
+router.get(
+  "/insights/:reportId",
+  authenticate,
+  reportIdValidation,
+  validate,
+  aiController.getInsightById,
+);
 
 /**
  * @swagger
@@ -180,7 +204,14 @@ router.get('/insights/:reportId', authenticate, reportIdValidation, validate, ai
  *       404:
  *         description: Group not found
  */
-router.post('/groups/:groupId/anomalies', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.detectAnomalies);
+router.post(
+  "/groups/:groupId/anomalies",
+  authenticate,
+  requireGroupMember(),
+  groupIdValidation,
+  validate,
+  aiController.detectAnomalies,
+);
 
 /**
  * @swagger
@@ -216,7 +247,14 @@ router.post('/groups/:groupId/anomalies', authenticate, requireGroupMember(), gr
  *       404:
  *         description: Group not found
  */
-router.post('/groups/:groupId/recommendations', authenticate, requireGroupMember(), groupIdValidation, validate, aiController.generateRecommendations);
+router.post(
+  "/groups/:groupId/recommendations",
+  authenticate,
+  requireGroupMember(),
+  groupIdValidation,
+  validate,
+  aiController.generateRecommendations,
+);
 
 /**
  * @swagger
@@ -239,6 +277,12 @@ router.post('/groups/:groupId/recommendations', authenticate, requireGroupMember
  *       404:
  *         description: Report not found
  */
-router.delete('/insights/:reportId', authenticate, reportIdValidation, validate, aiController.deleteInsight);
+router.delete(
+  "/insights/:reportId",
+  authenticate,
+  reportIdValidation,
+  validate,
+  aiController.deleteInsight,
+);
 
 export default router;

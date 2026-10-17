@@ -70,9 +70,7 @@ export default function NotificationsScreen() {
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <View
-        className="bg-white dark:bg-gray-800 px-6 pt-4 pb-4 border-b border-gray-200 dark:border-gray-600"
-      >
+      <View className="bg-white dark:bg-gray-800 px-6 pt-4 pb-4 border-b border-gray-200 dark:border-gray-600">
         <View className="flex-row justify-between items-center mb-3">
           <View>
             {unreadCount > 0 && (

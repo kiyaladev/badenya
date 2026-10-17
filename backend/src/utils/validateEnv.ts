@@ -1,4 +1,4 @@
-import logger from './logger';
+import logger from "./logger";
 
 interface EnvVar {
   name: string;
@@ -15,32 +15,77 @@ interface EnvVar {
 
 const envSchema: EnvVar[] = [
   // Required in all environments
-  { name: 'JWT_SECRET', required: true, message: 'JWT signing secret is required' },
-  { name: 'JWT_REFRESH_SECRET', required: true, message: 'JWT refresh secret is required' },
+  {
+    name: "JWT_SECRET",
+    required: true,
+    message: "JWT signing secret is required",
+  },
+  {
+    name: "JWT_REFRESH_SECRET",
+    required: true,
+    message: "JWT refresh secret is required",
+  },
 
   // Required in production
-  { name: 'MONGODB_URI', required: false, requiredIn: ['production'], message: 'MongoDB URI is required in production' },
-  { name: 'CORS_ORIGIN', required: false, requiredIn: ['production'], message: 'CORS origin must be set in production' },
+  {
+    name: "MONGODB_URI",
+    required: false,
+    requiredIn: ["production"],
+    message: "MongoDB URI is required in production",
+  },
+  {
+    name: "PUBLIC_API_URL",
+    required: false,
+    requiredIn: ["production"],
+    validate: (value) => {
+      try {
+        const url = new URL(value);
+        return (
+          ["http:", "https:"].includes(url.protocol) &&
+          !url.username &&
+          !url.password &&
+          !url.search &&
+          !url.hash &&
+          /^\/(?:api\/v1\/?)?$/.test(url.pathname)
+        );
+      } catch {
+        return false;
+      }
+    },
+    message:
+      "PUBLIC_API_URL doit être une URL absolue de l’API (racine ou /api/v1)",
+  },
+  {
+    name: "CORS_ORIGIN",
+    required: false,
+    requiredIn: ["production"],
+    message: "CORS origin must be set in production",
+  },
 
   // Optional with defaults
-  { name: 'PORT', required: false, default: '5000' },
-  { name: 'NODE_ENV', required: false, default: 'development' },
-  { name: 'JWT_EXPIRE', required: false, default: '24h' },
-  { name: 'JWT_REFRESH_EXPIRE', required: false, default: '7d' },
+  { name: "PORT", required: false, default: "5000" },
+  { name: "NODE_ENV", required: false, default: "development" },
+  { name: "JWT_EXPIRE", required: false, default: "24h" },
+  { name: "JWT_REFRESH_EXPIRE", required: false, default: "7d" },
 
   // Optional services (warn if missing)
-  { name: 'SMTP_HOST', required: false },
-  { name: 'SMTP_PORT', required: false, validate: (v) => !isNaN(parseInt(v, 10)), message: 'SMTP_PORT must be a number' },
-  { name: 'SMTP_USER', required: false },
-  { name: 'SMTP_PASSWORD', required: false },
+  { name: "SMTP_HOST", required: false },
+  {
+    name: "SMTP_PORT",
+    required: false,
+    validate: (v) => !isNaN(parseInt(v, 10)),
+    message: "SMTP_PORT must be a number",
+  },
+  { name: "SMTP_USER", required: false },
+  { name: "SMTP_PASSWORD", required: false },
 
   // Firebase (optional)
-  { name: 'FIREBASE_PROJECT_ID', required: false },
-  { name: 'FIREBASE_CLIENT_EMAIL', required: false },
-  { name: 'FIREBASE_PRIVATE_KEY', required: false },
+  { name: "FIREBASE_PROJECT_ID", required: false },
+  { name: "FIREBASE_CLIENT_EMAIL", required: false },
+  { name: "FIREBASE_PRIVATE_KEY", required: false },
 
   // AI (optional)
-  { name: 'GEMINI_API_KEY', required: false },
+  { name: "GEMINI_API_KEY", required: false },
 ];
 
 /**
@@ -48,7 +93,7 @@ const envSchema: EnvVar[] = [
  * Fails fast for missing required vars. Logs warnings for optional ones.
  */
 export function validateEnv(): void {
-  const nodeEnv = process.env.NODE_ENV || 'development';
+  const nodeEnv = process.env.NODE_ENV || "development";
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -61,7 +106,8 @@ export function validateEnv(): void {
     }
 
     // Check required
-    const isRequired = def.required || (def.requiredIn && def.requiredIn.includes(nodeEnv));
+    const isRequired =
+      def.required || (def.requiredIn && def.requiredIn.includes(nodeEnv));
     if (isRequired && !value) {
       errors.push(def.message || `Missing required env var: ${def.name}`);
       continue;
@@ -74,18 +120,29 @@ export function validateEnv(): void {
   }
 
   // Warn about optional service groups
-  const smtpVars = ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD'];
-  if (smtpVars.some((v) => process.env[v]) && !smtpVars.every((v) => process.env[v])) {
-    warnings.push('Partial SMTP config detected — set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD together');
+  const smtpVars = ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"];
+  if (
+    smtpVars.some((v) => process.env[v]) &&
+    !smtpVars.every((v) => process.env[v])
+  ) {
+    warnings.push(
+      "Partial SMTP config detected — set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD together",
+    );
   }
 
-  const firebaseVars = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
+  const firebaseVars = [
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_CLIENT_EMAIL",
+    "FIREBASE_PRIVATE_KEY",
+  ];
   if (
     !process.env.GOOGLE_APPLICATION_CREDENTIALS &&
     firebaseVars.some((v) => process.env[v]) &&
     !firebaseVars.every((v) => process.env[v])
   ) {
-    warnings.push('Partial Firebase config — set all three: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY');
+    warnings.push(
+      "Partial Firebase config — set all three: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY",
+    );
   }
 
   // Output warnings
@@ -98,9 +155,11 @@ export function validateEnv(): void {
     for (const error of errors) {
       logger.error(`❌ ${error}`);
     }
-    logger.error(`Environment validation failed with ${errors.length} error(s). Exiting.`);
+    logger.error(
+      `Environment validation failed with ${errors.length} error(s). Exiting.`,
+    );
     process.exit(1);
   }
 
-  logger.info('✅ Environment variables validated');
+  logger.info("✅ Environment variables validated");
 }

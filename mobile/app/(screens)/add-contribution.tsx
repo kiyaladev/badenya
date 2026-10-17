@@ -196,7 +196,10 @@ export default function AddContributionScreen() {
         setIsUploading(true);
         uploadedAttachments = await Promise.all(
           attachments.map(async attachment => {
-            const uploaded = await uploadImage(attachment);
+            const uploaded = await uploadImage(attachment, {
+              purpose: 'receipt',
+              groupId: selectedGroupId,
+            });
             return {
               name: attachment.name,
               filename: uploaded.filename || attachment.name,

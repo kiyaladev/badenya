@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { body } from 'express-validator';
+import { Router } from "express";
+import { body } from "express-validator";
 import {
   getUserNotifications,
   markAsRead,
@@ -7,9 +7,9 @@ import {
   deleteNotification,
   updateDeviceToken,
   removeDeviceToken,
-} from '../controllers/notification.controller';
-import { authenticate } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+} from "../controllers/notification.controller";
+import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validation";
 
 const router = Router();
 
@@ -170,20 +170,36 @@ router.use(authenticate);
 
 // Validation rules
 const deviceTokenValidation = [
-  body('token').trim().notEmpty().withMessage('Device token is required'),
-  body('platform').optional().trim(),
+  body("token")
+    .trim()
+    .notEmpty()
+    .withMessage("Le jeton de l’appareil est requis"),
+  body("platform").optional().trim(),
 ];
 
 const removeDeviceTokenValidation = [
-  body('token').trim().notEmpty().withMessage('Device token is required'),
+  body("token")
+    .trim()
+    .notEmpty()
+    .withMessage("Le jeton de l’appareil est requis"),
 ];
 
 // Routes
-router.get('/', getUserNotifications);
-router.put('/:id/read', markAsRead);
-router.put('/mark-all-read', markAllAsRead);
-router.delete('/:id', deleteNotification);
-router.post('/device-token', deviceTokenValidation, validate, updateDeviceToken);
-router.delete('/device-token', removeDeviceTokenValidation, validate, removeDeviceToken);
+router.get("/", getUserNotifications);
+router.put("/:id/read", markAsRead);
+router.put("/mark-all-read", markAllAsRead);
+router.delete("/:id", deleteNotification);
+router.post(
+  "/device-token",
+  deviceTokenValidation,
+  validate,
+  updateDeviceToken,
+);
+router.delete(
+  "/device-token",
+  removeDeviceTokenValidation,
+  validate,
+  removeDeviceToken,
+);
 
 export default router;

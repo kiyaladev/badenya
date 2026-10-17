@@ -197,7 +197,20 @@ jobs:
       - name: Audit workspace dependencies
         run: npm audit --audit-level=high
       
-      - name: Audit mobile dependencies
-        run: |
-          cd mobile
-          npm audit --audit-level=high
+      - name: Install mobile dependencies with verified backports
+        run: npm ci
+        working-directory: mobile
+
+      - name: Audit mobile dependencies and verify security backports
+        run: npm run security:audit
+        working-directory: mobile
+        env:
+          SECURITY_AUDIT_REPORT: ${{ runner.temp }}/badenya-mobile-audit.json
+
+      - name: Retain raw npm audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-security-audit
+          path: ${{ runner.temp }}/badenya-mobile-audit.json
+          if-no-files-found: ignore

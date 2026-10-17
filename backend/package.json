@@ -1,7 +1,7 @@
 {
   "name": "badenya-backend",
   "version": "1.0.0",
-  "description": "Badenya Backend API - Gestion financière collaborative",
+  "description": "Badenya Backend API - Gestion financi\u00e8re collaborative",
   "main": "dist/index.js",
   "scripts": {
     "dev": "node --watch -r ts-node/register src/index.ts",
@@ -15,7 +15,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts"
+    "format": "prettier --write src/**/*.ts",
+    "uploads:migrate": "node dist/scripts/migrate-uploads.js"
   },
   "keywords": [
     "fintech",
@@ -46,6 +47,7 @@
     "mongoose": "^8.19.1",
     "nodemailer": "^10.0.9",
     "pdfkit": "^0.17.2",
+    "sharp": "^0.35.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0"

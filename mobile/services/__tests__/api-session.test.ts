@@ -184,3 +184,27 @@ describe('Session refresh transport failures', () => {
     await rejected;
   });
 });
+
+describe('Temporary receipt credentials', () => {
+  const client = (axios.create as jest.Mock).mock.results[0].value;
+  const [handleResponse, handleError] = client.interceptors.response.use.mock.calls[0];
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (offlineService.getAccountId as jest.Mock).mockReturnValue('A');
+    (offlineService.getAccountVersion as jest.Mock).mockReturnValue(0);
+  });
+  it('never persists signed access URLs in the offline cache', async () => {
+    const response = {
+      config: { url: '/uploads/receipt.webp/access', method: 'get' },
+      data: { data: { url: 'https://api.test/uploads/receipt.webp?access=temporary' } },
+    };
+    expect(await handleResponse(response)).toBe(response);
+    expect(offlineService.cacheResponse).not.toHaveBeenCalled();
+  });
+  it('does not replay an expired receipt link from offline storage', async () => {
+    (offlineService.isOnline as jest.Mock).mockResolvedValue(false);
+    const error = { config: { url: '/uploads/receipt.webp/access', method: 'get' } };
+    await expect(handleError(error)).rejects.toBe(error);
+    expect(offlineService.getCachedResponse).not.toHaveBeenCalled();
+  });
+});

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { closeDueProposals } from "./services/proposal-lifecycle.service";
-import { deliverEvents, enqueueEvent } from "./services/events.service";
-import { Group } from "./models";
+import { deliverEvents } from "./services/events.service";
+import { sendDueReminders } from "./services/reminder.service";
 import mongoose from "mongoose";
 import { capabilities } from "./services/capabilities.service";
 import express, { Application, Request, Response } from "express";
@@ -11,7 +11,8 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
-import path from "path";
+import { serveUpload } from "./controllers/upload.controller";
+import { cleanupAbandonedUploads } from "./services/upload.service";
 import swaggerUi from "swagger-ui-express";
 import { connectDatabase } from "./config/database";
 import { initializeFirebase } from "./config/firebase";
@@ -57,7 +58,7 @@ export function createApp(): Application {
       5000,
       Math.max(100, Number(process.env.API_RATE_LIMIT) || 600),
     ),
-    message: "Too many requests from this IP, please try again later.",
+    message: "Trop de requêtes. Réessayez plus tard.",
   });
   app.use("/api/", limiter);
 
@@ -74,13 +75,11 @@ export function createApp(): Application {
           .map((value) => value.trim());
         const origin = req.headers.origin;
         if (origin && !origins.includes(origin)) {
-          res
-            .status(403)
-            .json({
-              status: "error",
-              code: "UNTRUSTED_ORIGIN",
-              message: "Origine non autorisée",
-            });
+          res.status(403).json({
+            status: "error",
+            code: "UNTRUSTED_ORIGIN",
+            message: "Origine non autorisée",
+          });
           return;
         }
         const publicRequest =
@@ -92,13 +91,11 @@ export function createApp(): Application {
           !req.headers.authorization &&
           !req.body?.refreshToken;
         if (cookieOnly && !publicRequest && !origin) {
-          res
-            .status(403)
-            .json({
-              status: "error",
-              code: "UNTRUSTED_ORIGIN",
-              message: "Origine requise",
-            });
+          res.status(403).json({
+            status: "error",
+            code: "UNTRUSTED_ORIGIN",
+            message: "Origine requise",
+          });
           return;
         }
       }
@@ -116,24 +113,8 @@ export function createApp(): Application {
     },
   );
 
-  // Uploaded images are served separately from the API routes. Files use
-  // unpredictable names; production deployments should move this to signed
-  // object-storage URLs.
-  const uploadDirectory = path.resolve(
-    process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads"),
-  );
-  // The web app and admin read these files from another origin (e.g.
-  // badenya.naimba.com, admin.badenya.app): helmet's default
-  // Cross-Origin-Resource-Policy "same-origin" makes browsers block the
-  // thumbnails, so relax it for this static mount only.
-  app.use(
-    "/uploads",
-    (_req: Request, res: Response, next: import("express").NextFunction) => {
-      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-      next();
-    },
-    express.static(uploadDirectory, { maxAge: "1d" }),
-  );
+  // Every file, including legacy names, passes through metadata and access checks.
+  app.get("/uploads/:filename", serveUpload);
 
   // Health check route
   app.get("/health", async (_req: Request, res: Response) => {
@@ -190,7 +171,7 @@ export function createApp(): Application {
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
       status: "error",
-      message: "Route not found",
+      message: "Route introuvable",
     });
   });
 
@@ -205,7 +186,7 @@ export function createApp(): Application {
       logger.error(err.stack);
       res.status(500).json({
         status: "error",
-        message: "Internal server error",
+        message: "Erreur interne du serveur",
       });
     },
   );
@@ -220,6 +201,7 @@ export const startServer = async () => {
     await connectDatabase();
     initializeFirebase();
     let working = false;
+    let lastCleanup = 0;
     const tick = async () => {
       if (working) return;
       working = true;
@@ -232,22 +214,11 @@ export const startServer = async () => {
             error instanceof Error ? error.message : "failed",
           );
         }
-        const now = new Date();
-        const day = now.getUTCDate();
-        const date = now.toISOString().slice(0, 10);
-        const groups = await Group.find({
-          isActive: true,
-          "contributionSettings.autoReminder": true,
-          "contributionSettings.dueDay": day,
-        });
-        for (const group of groups)
-          await enqueueEvent(
-            `reminder:${group.id}:${date}`,
-            group._id,
-            "payment_reminder",
-            "Rappel de cotisation",
-            `${group.contributionSettings.amount || 0} ${group.currency} — ${group.name}`,
-          );
+        await sendDueReminders();
+        if (Date.now() - lastCleanup > 3600000) {
+          await cleanupAbandonedUploads();
+          lastCleanup = Date.now();
+        }
       } catch (error) {
         logger.warn(
           "Background jobs:",

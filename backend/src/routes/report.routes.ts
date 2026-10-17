@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import * as reportController from '../controllers/report.controller';
-import { authenticate } from '../middleware/auth';
-import { requireGroupMember } from '../middleware/groupMember';
-import { query } from 'express-validator';
+import { Router } from "express";
+import * as reportController from "../controllers/report.controller";
+import { authenticate } from "../middleware/auth";
+import { requireGroupMember } from "../middleware/groupMember";
+import { query } from "express-validator";
 
 const router = Router();
 
@@ -188,13 +188,16 @@ router.use(authenticate);
  * Get financial summary for a group
  */
 router.get(
-  '/:groupId/reports/summary',
+  "/:groupId/reports/summary",
   requireGroupMember(),
   [
-    query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
-    query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
+    query("startDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Date de début invalide"),
+    query("endDate").optional().isISO8601().withMessage("Date de fin invalide"),
   ],
-  reportController.getGroupSummary
+  reportController.getGroupSummary,
 );
 
 /**
@@ -202,13 +205,16 @@ router.get(
  * Generate PDF report
  */
 router.get(
-  '/:groupId/reports/pdf',
+  "/:groupId/reports/pdf",
   requireGroupMember(),
   [
-    query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
-    query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
+    query("startDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Date de début invalide"),
+    query("endDate").optional().isISO8601().withMessage("Date de fin invalide"),
   ],
-  reportController.generatePdfReport
+  reportController.generatePdfReport,
 );
 
 /**
@@ -216,13 +222,16 @@ router.get(
  * Generate Excel export
  */
 router.get(
-  '/:groupId/reports/excel',
+  "/:groupId/reports/excel",
   requireGroupMember(),
   [
-    query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
-    query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
+    query("startDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Date de début invalide"),
+    query("endDate").optional().isISO8601().withMessage("Date de fin invalide"),
   ],
-  reportController.generateExcelReport
+  reportController.generateExcelReport,
 );
 
 /**
@@ -230,9 +239,9 @@ router.get(
  * Get monthly report
  */
 router.get(
-  '/:groupId/reports/monthly/:year/:month',
+  "/:groupId/reports/monthly/:year/:month",
   requireGroupMember(),
-  reportController.getMonthlyReport
+  reportController.getMonthlyReport,
 );
 
 export default router;

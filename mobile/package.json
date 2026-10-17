@@ -14,7 +14,11 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"**/*.{ts,tsx,json}\""
+    "format": "prettier --write \"**/*.{ts,tsx,json}\"",
+    "postinstall": "node scripts/security-backports.cjs apply",
+    "security:apply": "node scripts/security-backports.cjs apply",
+    "security:verify": "node scripts/security-backports.cjs check && node --test scripts/security-backports.test.cjs",
+    "security:audit": "npm run security:verify && node scripts/audit-security.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

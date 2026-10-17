@@ -175,7 +175,11 @@ api.interceptors.response.use(
     )
       throw new axios.CanceledError('Session changed');
     // Cache successful GET responses
-    if (response.config.method === 'get' && response.config.url) {
+    if (
+      response.config.method === 'get' &&
+      response.config.url &&
+      !/^\/uploads\/[^/]+\/access$/.test(response.config.url)
+    ) {
       offlineService
         .cacheResponse(
           offlineService.requestKey(response.config.url, response.config.params),
@@ -205,7 +209,11 @@ api.interceptors.response.use(
       // Mutations require an explicit retry. Never queue credentials or financial actions
       // after an ambiguous timeout, where the server may already have committed them.
       // If GET request fails and we're offline, try cache
-      if (method === 'GET' && originalRequest.url) {
+      if (
+        method === 'GET' &&
+        originalRequest.url &&
+        !/^\/uploads\/[^/]+\/access$/.test(originalRequest.url)
+      ) {
         const online = await offlineService.isOnline();
         assertCurrent();
         if (!online) {

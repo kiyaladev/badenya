@@ -71,3 +71,21 @@ GET `/admin/newsletter-subscriptions` accepte `page`, `limit` et `active=false` 
 ## Exploitation
 
 `/health` est hors de `/api/v1`. Vérifier la connexion à la base et la capacité transactionnelle avant d’annoncer que les écritures financières sont disponibles. Un simple200 statique ou une compilation ne valide pas un parcours utilisateur. Voir le guide de déploiement et le runbook MongoDB pour les prérequis et la bascule contrôlée.
+
+## Reçus et avatars (17 octobre 2026)
+
+POST `/uploads/image`, authentifié : `{data,mimeType,purpose,groupId?}`. `data` est du base64 (éventuellement une data URL), `mimeType` doit correspondre au contenu réel JPEG/PNG/WEBP. `purpose:"receipt"` (valeur par défaut) exige un groupe dont le compte est membre actif. `purpose:"avatar"` crée une image publique explicite. Réponse 201 : `data.file:{url,filename,mimeType,size}`. Les images sont réencodées en WEBP sans métadonnées, limitées à 5 Mo en entrée/sortie, 16 mégapixels, 8192 pixels par côté et redimensionnées à 2400 pixels maximum. Les images animées sont refusées. Limites : 30 images/heure/compte et 100 Mo stockés/compte (429).
+
+Les nouvelles pièces jointes doivent provenir d’un upload privé du même compte et du même groupe, avoir moins de 23 heures et être au nombre de dix maximum. Leur URL permanente est une identité de fichier, pas un lien public. GET `/uploads/:filename/access` délivre, après authentification et contrôle des droits, `data:{url,expiresIn:120}`. Le client utilise ce lien temporaire pour afficher ou ouvrir le reçu. À chaque lecture, le serveur vérifie l’expiration, l’état du compte, sa version de session et son appartenance active au groupe. Un départ ou une suspension révoque immédiatement l’accès. Les réponses de lecture sont `private,no-store`. Les liens temporaires ne sont jamais persistés ni rejoués dans le cache hors ligne du mobile. Aucun jeton de session complet n’est placé dans les liens.
+
+Les fichiers sans métadonnées ne sont jamais servis. Les fichiers référencés dans les transactions/propositions sont conservés ; les uploads abandonnés sont nettoyés après 24 heures. Les avatars publics restent consultables sans authentification et ne doivent contenir aucun justificatif. Un ancien lien vers un reçu nécessite une nouvelle résolution authentifiée. Voir le guide de migration avant toute mise en production.
+
+## Cycles de tontine et validation
+
+GET `/groups/:id/tontine/history?page=1`, membre actif : `data:{cycles,page}`, vingt cycles complets par page, ordre décroissant. Le passage au cycle suivant archive atomiquement le calendrier achevé avec ses dates, bénéficiaires, montants et identifiants de versement. Les tours payés restent conservés même si un bénéficiaire quitte ensuite le groupe. Aucun endpoint ne permet de modifier un cycle archivé.
+
+Les opérations nouvellement validées exposent `validatedBy` et `validatedAt`, ainsi qu’un `auditTrail` contenant l’acteur, la date et l’action (`validated` ou `cancelled`, avec motif). Les réessais d’une validation ne créent aucune nouvelle entrée. Les anciennes opérations peuvent ne pas avoir ces champs ; leur identité de validation ne doit pas être inventée.
+
+## Échéances et rappels
+
+`contributionSettings` accepte `firstDueAt` (date ISO), `dueDay` (1–31, mensuel), `customIntervalDays` (1–3650, obligatoire pour `custom`), `autoReminder`, `amount` et `frequency`. `nextDueAt` est calculé par le serveur et ne peut pas être envoyé par le client. Les dates civiles utilisent UTC. La fréquence hebdomadaire s’ancre sur la première échéance ; les fréquences quotidienne et personnalisée avancent respectivement d’un jour et du nombre de jours configuré. Un jour mensuel absent tombe le dernier jour du mois, sans modifier le jour souhaité pour le mois suivant. Après une interruption, un seul rappel représente la première échéance non traitée, puis la prochaine date future est persistée. La clé d’événement déduplique les réessais après une panne entre enregistrement de l’événement et actualisation de la date.

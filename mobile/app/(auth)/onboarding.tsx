@@ -72,7 +72,7 @@ export default function OnboardingScreen() {
         colors={[...currentSlide.gradient]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ flex: 1 }}
+        className="flex-1"
       >
         <ScrollView contentContainerClassName="grow">
           {/* Skip Button */}

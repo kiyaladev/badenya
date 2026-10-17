@@ -1,15 +1,9 @@
+import { getUploadAccessUrl } from '@/services/upload.service';
+import PrivateReceiptImage from '@/components/PrivateReceiptImage';
 import { useAuthStore } from '@/store/authStore';
 import { Alert } from '@/services/dialog.service';
 import { getErrorMessage } from '@/utils/errorHandler';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  Image,
-  Linking,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Linking } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTransactionStore } from '@/store/transactionStore';
@@ -195,8 +189,9 @@ export default function TransactionDetailsScreen() {
   const openAttachment = async (url?: string) => {
     if (!url) return;
     try {
-      if (await Linking.canOpenURL(url)) {
-        await Linking.openURL(url);
+      const accessUrl = await getUploadAccessUrl(url);
+      if (await Linking.canOpenURL(accessUrl)) {
+        await Linking.openURL(accessUrl);
       }
     } catch {
       Alert.alert('Erreur', "Impossible d'ouvrir la pièce jointe");
@@ -298,6 +293,19 @@ export default function TransactionDetailsScreen() {
           </View>
         </View>
 
+        {transaction.validatedAt && (
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
+            <Text className="text-gray-800 dark:text-gray-100">
+              Validée le {new Date(transaction.validatedAt).toLocaleString('fr-FR')}
+              {transaction.validatedBy &&
+              typeof transaction.validatedBy === 'object' &&
+              transaction.validatedBy.fullName
+                ? ` par ${transaction.validatedBy.fullName}`
+                : ''}
+            </Text>
+          </View>
+        )}
+
         {/* Attachments */}
         {transaction.attachments && transaction.attachments.length > 0 && (
           <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
@@ -314,7 +322,7 @@ export default function TransactionDetailsScreen() {
                 accessibilityLabel={`Ouvrir ${attachment.name}`}
               >
                 {attachment.type === 'image' && attachment.url ? (
-                  <Image source={{ uri: attachment.url }} className="w-12 h-12 rounded mr-3" />
+                  <PrivateReceiptImage url={attachment.url} />
                 ) : (
                   <Icon
                     name={attachment.type === 'image' ? 'image' : 'file-text-o'}

@@ -36,6 +36,8 @@ export interface Transaction {
     filename: string;
     name: string;
   }>;
+  validatedBy?: { _id: string; fullName?: string } | string;
+  validatedAt?: string;
   processedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -82,6 +84,8 @@ function normalizeTransaction(rawTransaction: unknown): Transaction {
     status?: unknown;
     metadata?: Transaction['metadata'];
     attachments?: Transaction['attachments'];
+    validatedBy?: Transaction['validatedBy'];
+    validatedAt?: string;
     processedAt?: unknown;
     createdAt?: unknown;
     updatedAt?: unknown;
@@ -112,6 +116,8 @@ function normalizeTransaction(rawTransaction: unknown): Transaction {
     status: (raw.status || 'pending') as Transaction['status'],
     metadata: raw.metadata,
     attachments: raw.attachments,
+    validatedBy: raw.validatedBy,
+    validatedAt: raw.validatedAt,
     processedAt: raw.processedAt ? String(raw.processedAt) : undefined,
     createdAt: String(raw.createdAt || new Date().toISOString()),
     updatedAt: String(raw.updatedAt || raw.createdAt || new Date().toISOString()),

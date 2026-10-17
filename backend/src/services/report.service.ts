@@ -177,7 +177,7 @@ export class ReportService {
       "fullName",
     );
     if (!group) {
-      throw new Error("Group not found");
+      throw new Error("Groupe introuvable");
     }
 
     const summary = await this.getGroupSummary(groupId, period);
@@ -314,7 +314,7 @@ export class ReportService {
   ): Promise<void> {
     const group = await Group.findById(groupId);
     if (!group) {
-      throw new Error("Group not found");
+      throw new Error("Groupe introuvable");
     }
 
     const transactions = await Transaction.find({

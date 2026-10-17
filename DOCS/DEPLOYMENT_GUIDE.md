@@ -27,3 +27,22 @@ Tester d’abord la version sur un port temporaire et une base staging dédiée.
 Conserver au minimum la version précédente, son environnement et les chemins Nginx/PM2. Si la nouvelle version échoue : remettre les chemins statiques de la version précédente, valider/recharger Nginx et redémarrer PM2 avec sa configuration précédente. Vérifier la santé, la connexion et un parcours en lecture. Ne pas restaurer automatiquement une ancienne sauvegarde MongoDB : cela supprimerait les écritures récentes. Toute restauration de données exige une interruption contrôlée des écritures et une décision explicite.
 
 Les compatibilités de schéma et de données doivent être examinées avant tout retour arrière. Les événements financiers existants doivent conserver leurs identifiants et leurs liens. Les anciennes dépendances et les builds exacts sont conservés avec leur version pour éviter de reconstruire une version historique avec des dépendances différentes.
+
+## Mise à niveau du 17 octobre 2026 : fichiers privés
+
+Préparer backend et export mobile ensemble : les uploads de reçus exigent maintenant `groupId` et les avatars doivent déclarer `purpose:"avatar"`. Vérifier `PUBLIC_API_URL` (URL absolue de l’API, avec ou sans `/api/v1`), `UPLOAD_DIR`, `JWT_SECRET` et les droits disque du compte applicatif. Le module natif `sharp` doit être installé depuis le verrou sur la plateforme cible ; ne pas copier un `node_modules` d’une autre architecture.
+
+Avant activation, arrêter les écritures d’uploads, sauvegarder MongoDB et le dossier des fichiers, et réserver un dossier privé hors de `UPLOAD_DIR` pour les originaux. Avec la configuration de la base cible chargée, depuis `backend` :
+
+```sh
+npm run uploads:migrate
+UPLOAD_MIGRATION_BACKUP=/chemin/prive/badenya-originaux npm run uploads:migrate -- --apply
+```
+
+Le script compilé `dist/scripts/migrate-uploads.js` fait partie du build backend ; dans un checkout source, lancer d’abord `npm run build` depuis `backend`. La première commande simule. La seconde classe les références existantes : avatars publics, reçus privés associés à leur groupe. Elle sauvegarde les originaux, réencode les fichiers sans métadonnées, crée les métadonnées d’accès et recalcule les quotas. Les originaux doivent rester inaccessibles au serveur HTTP. La migration est réexécutable. Les fichiers manquants sont signalés ; les références partagées entre plusieurs groupes doivent être copiées et réattribuées avant migration. Les fichiers inconnus restent inaccessibles et ne sont pas supprimés par la migration.
+
+Supprimer toute directive Nginx/CDN servant directement `UPLOAD_DIR` : `/uploads/` doit passer par Express. Purger les caches publics des anciens reçus ; une copie déjà téléchargée ne peut pas être révoquée. Vérifier qu’un reçu refuse l’accès anonyme, qu’un membre reçoit un lien temporaire, qu’un départ révoque ce lien, et qu’un avatar public reste visible. Tester un upload et une consultation sur navigateur et appareil natif avant ouverture aux utilisateurs.
+
+Les nouveaux cycles de tontine s’archivent automatiquement lors du passage au suivant. Les anciens cycles déjà écrasés et les acteurs des anciennes validations ne sont pas récupérables par cette mise à niveau sans sauvegarde ou journal externe. Les nouvelles métadonnées sont additives, mais revenir à l’ancien serveur réexposerait les reçus : un retour arrière doit maintenir le blocage HTTP de `/uploads/` jusqu’au rétablissement du contrôle d’accès.
+
+Pour les groupes existants de fréquence `custom`, renseigner `customIntervalDays` avant d’activer leurs rappels. Les rappels non configurables sont journalisés sans bloquer ceux des autres groupes.

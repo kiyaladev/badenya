@@ -30,6 +30,12 @@ export interface TontineSchedule {
 }
 
 class TontineService {
+  public async getCycleHistory(groupId: string, page = 1): Promise<TontineSchedule[]> {
+    return unwrapApiData<{ cycles: TontineSchedule[] }>(
+      (await api.get(`/groups/${groupId}/tontine/history`, { params: { page } })).data
+    ).cycles;
+  }
+
   private calculatePayoutDate(
     startDate: Date,
     roundIndex: number,

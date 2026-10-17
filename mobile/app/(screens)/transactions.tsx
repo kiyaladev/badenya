@@ -88,10 +88,7 @@ export default function TransactionsScreen() {
         </Text>
       )}
       {/* Header */}
-      <View
-        className="bg-white dark:bg-gray-800 px-6 pt-4 pb-4 border-b border-gray-200 dark:border-gray-600"
-      >
-
+      <View className="bg-white dark:bg-gray-800 px-6 pt-4 pb-4 border-b border-gray-200 dark:border-gray-600">
         {selectedGroupId && (
           <View className="flex-row items-center bg-primary-50 dark:bg-gray-800 border border-primary-200 rounded-lg px-3 py-1.5 self-start mb-3">
             <Icon name="users" size={12} color="#0284c7" />

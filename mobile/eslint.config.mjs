@@ -7,7 +7,7 @@ import prettierPlugin from 'eslint-plugin-prettier';
 
 export default [
   {
-    ignores: ['dist/**', '.expo/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', '.expo/**', 'node_modules/**', 'coverage/**', 'expo-env.d.ts'],
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],

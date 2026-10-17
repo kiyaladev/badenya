@@ -99,7 +99,7 @@ export default function EditProfileScreen() {
       };
 
       if (avatar) {
-        const uploadedAvatar = await uploadImage(avatar);
+        const uploadedAvatar = await uploadImage(avatar, { purpose: 'avatar' });
         updateData.avatar = {
           url: uploadedAvatar.url,
           filename: uploadedAvatar.filename,

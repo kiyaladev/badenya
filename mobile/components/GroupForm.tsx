@@ -29,6 +29,10 @@ interface FormState {
   frequency: ContributionFrequency;
   currency: string;
   isPrivate: boolean;
+  customIntervalDays: string;
+  firstDueAt: string;
+  dueDay: string;
+  autoReminder: boolean;
 }
 
 const fromGroup = (group?: Group): FormState => ({
@@ -41,6 +45,10 @@ const fromGroup = (group?: Group): FormState => ({
   frequency: group?.contributionSettings?.frequency ?? group?.frequency ?? 'monthly',
   currency: group?.currency ?? 'XOF',
   isPrivate: true,
+  customIntervalDays: String(group?.contributionSettings.customIntervalDays || ''),
+  firstDueAt: String(group?.contributionSettings.firstDueAt || '').slice(0, 10),
+  dueDay: String(group?.contributionSettings.dueDay || ''),
+  autoReminder: group?.contributionSettings.autoReminder !== false,
 });
 
 export default function GroupForm(props: GroupFormProps) {
@@ -84,6 +92,27 @@ export default function GroupForm(props: GroupFormProps) {
     if (!form.contributionAmount) next.contributionAmount = 'Le montant de cotisation est requis';
     else if (isNaN(amount) || amount <= 0)
       next.contributionAmount = 'Le montant doit être un nombre positif';
+    if (
+      form.frequency === 'custom' &&
+      (!Number.isInteger(Number(form.customIntervalDays)) ||
+        Number(form.customIntervalDays) < 1 ||
+        Number(form.customIntervalDays) > 3650)
+    )
+      next.customIntervalDays = 'Indiquez un intervalle de 1 à 3650 jours';
+    if (
+      form.firstDueAt &&
+      (!/^\d{4}-\d{2}-\d{2}$/.test(form.firstDueAt) ||
+        Number.isNaN(Date.parse(form.firstDueAt)) ||
+        new Date(form.firstDueAt).toISOString().slice(0, 10) !== form.firstDueAt)
+    )
+      next.firstDueAt = 'Date attendue : AAAA-MM-JJ';
+    if (
+      form.dueDay &&
+      (!Number.isInteger(Number(form.dueDay)) ||
+        Number(form.dueDay) < 1 ||
+        Number(form.dueDay) > 31)
+    )
+      next.dueDay = 'Jour attendu : 1 à 31';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -104,6 +133,11 @@ export default function GroupForm(props: GroupFormProps) {
           contributionSettings: {
             amount: Number(form.contributionAmount),
             frequency: form.frequency,
+            customIntervalDays:
+              form.frequency === 'custom' ? Number(form.customIntervalDays) : undefined,
+            firstDueAt: form.firstDueAt ? `${form.firstDueAt}T00:00:00.000Z` : undefined,
+            dueDay: form.dueDay ? Number(form.dueDay) : undefined,
+            autoReminder: form.autoReminder,
           },
         });
       } else {
@@ -114,7 +148,11 @@ export default function GroupForm(props: GroupFormProps) {
           contributionSettings: {
             amount: Number(form.contributionAmount),
             frequency: form.frequency,
-            autoReminder: true,
+            customIntervalDays:
+              form.frequency === 'custom' ? Number(form.customIntervalDays) : undefined,
+            firstDueAt: form.firstDueAt ? `${form.firstDueAt}T00:00:00.000Z` : undefined,
+            dueDay: form.dueDay ? Number(form.dueDay) : undefined,
+            autoReminder: form.autoReminder,
           },
         });
       }
@@ -265,6 +303,44 @@ export default function GroupForm(props: GroupFormProps) {
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {form.frequency === 'custom' && (
+          <Input
+            label="Intervalle en jours"
+            value={form.customIntervalDays}
+            onChangeText={customIntervalDays => set({ customIntervalDays })}
+            keyboardType="number-pad"
+            error={errors.customIntervalDays}
+          />
+        )}
+        <Input
+          label="Première échéance (AAAA-MM-JJ, UTC)"
+          value={form.firstDueAt}
+          onChangeText={firstDueAt => set({ firstDueAt })}
+          placeholder="2026-11-01"
+          error={errors.firstDueAt}
+        />
+        {form.frequency === 'monthly' && (
+          <Input
+            label="Jour du mois (1 à 31)"
+            value={form.dueDay}
+            onChangeText={dueDay => set({ dueDay })}
+            keyboardType="number-pad"
+            error={errors.dueDay}
+          />
+        )}
+        <Text className="text-gray-500 mb-4">
+          Les jours absents sont reportés au dernier jour du mois. Après une interruption, un seul
+          rappel regroupe les échéances manquées.
+        </Text>
+        <View className="flex-row items-center justify-between mb-4">
+          <Text className="text-gray-700 dark:text-gray-200">Rappels de cotisation</Text>
+          <Switch
+            accessibilityLabel="Rappels de cotisation"
+            value={form.autoReminder}
+            onValueChange={autoReminder => set({ autoReminder })}
+          />
         </View>
 
         {!isEdit && (

@@ -23,7 +23,7 @@ export interface Schedule {
   rounds: Round[];
   updatedAt: Date;
 }
-const schema = new Schema<Schedule>(
+export const scheduleSchema = new Schema<Schedule>(
   {
     groupId: { type: Schema.Types.ObjectId, required: true, unique: true },
     revision: { type: Number, default: 0 },
@@ -51,4 +51,4 @@ const schema = new Schema<Schedule>(
   },
   { timestamps: true },
 );
-export default mongoose.model<Schedule>("TontineSchedule", schema);
+export default mongoose.model<Schedule>("TontineSchedule", scheduleSchema);

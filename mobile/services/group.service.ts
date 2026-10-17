@@ -19,6 +19,9 @@ export interface Group {
     amount: number;
     frequency: ContributionFrequency;
     dueDay?: number;
+    firstDueAt?: string;
+    nextDueAt?: string;
+    customIntervalDays?: number;
     autoReminder: boolean;
   };
   members: GroupMember[];
@@ -54,6 +57,9 @@ export interface CreateGroupData {
     amount: number;
     frequency: ContributionFrequency;
     autoReminder?: boolean;
+    dueDay?: number;
+    firstDueAt?: string;
+    customIntervalDays?: number;
   };
   currency?: string;
 }
@@ -135,13 +141,18 @@ export function normalizeGroup(rawGroup: unknown): Group {
       amount,
       frequency,
       dueDay: settings.dueDay,
+      firstDueAt: settings.firstDueAt,
+      nextDueAt: settings.nextDueAt,
+      customIntervalDays: settings.customIntervalDays,
       autoReminder: settings.autoReminder !== false,
     },
     members: (raw.members || []).map(normalizeMember),
     balance: Number(raw.balance || 0),
     currency: String(raw.currency || 'XOF'),
     createdAt: String(raw.createdAt || new Date().toISOString()),
-    nextContributionDate: raw.nextContributionDate ? String(raw.nextContributionDate) : undefined,
+    nextContributionDate:
+      settings.nextDueAt ||
+      (raw.nextContributionDate ? String(raw.nextContributionDate) : undefined),
     avatar: raw.avatar,
   };
 }

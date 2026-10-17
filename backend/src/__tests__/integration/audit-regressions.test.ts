@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createTestApp } from "../helpers/app";
 import { User, Group, Transaction, Proposal } from "../../models";
+import TontineCycle from "../../models/TontineCycle";
 import TontineSchedule from "../../models/TontineSchedule";
 import { generateTokens } from "../../utils/jwt";
 import { hashPassword } from "../../utils/password";
@@ -36,6 +37,7 @@ beforeEach(async () => {
     Transaction.deleteMany({}),
     Proposal.deleteMany({}),
     TontineSchedule.deleteMany({}),
+    TontineCycle.deleteMany({}),
   ]);
   const user = await User.create({
     fullName: "Audit User",
@@ -472,6 +474,20 @@ it("archives a completed tontine cycle and refuses overlapping next cycles", asy
     .send({})
     .expect(200);
   expect(next.body.data.schedule.cycleNumber).toBe(2);
+  const history = await request(app)
+    .get(`/api/v1/groups/${groupId}/tontine/history`)
+    .set(auth())
+    .expect(200);
+  expect(history.body.data.cycles).toHaveLength(1);
+  expect(history.body.data.cycles[0].cycleNumber).toBe(1);
+  expect(history.body.data.cycles[0].rounds[0].roundId).toBe(
+    first.body.data.schedule.rounds[0].roundId,
+  );
+  expect(history.body.data.cycles[0].rounds[0].paidAt).toBeDefined();
+  expect(
+    history.body.data.cycles[0].rounds[0].payoutTransactionId,
+  ).toBeDefined();
+
   expect(next.body.data.schedule.rounds[0].roundId).not.toBe(
     first.body.data.schedule.rounds[0].roundId,
   );
@@ -638,5 +654,69 @@ it("preserves completed round when updating tontine schedule", async () => {
   const updatedSchedule = await TontineSchedule.findOne({ groupId });
   expect(updatedSchedule?.rounds[0].roundId).toBe(roundId);
   expect(updatedSchedule?.rounds[0].status).toBe("completed");
+
+  await Group.updateOne(
+    { _id: groupId },
+    { $set: { "members.0.status": "left", "members.1.role": "admin" } },
+  );
+  const replacement = generateTokens({
+    id: member2.id,
+    email: member2.email,
+  }).accessToken;
+  await request(app)
+    .put(`/api/v1/groups/${groupId}/tontine`)
+    .set("Authorization", `Bearer ${replacement}`)
+    .send(res.body.data.schedule)
+    .expect(200);
+  expect(
+    (await TontineSchedule.findOne({ groupId }))?.rounds[0].beneficiaryId,
+  ).toBe(userId);
 });
 
+it("keeps two archived cycles and their payment identities independently", async () => {
+  await Group.updateOne(
+    { _id: groupId },
+    { $set: { "contributionSettings.amount": 100 } },
+  );
+  for (let cycle = 1; cycle <= 2; cycle++) {
+    const current = await request(app)
+      .get(`/api/v1/groups/${groupId}/tontine`)
+      .set(auth())
+      .expect(200);
+    await request(app)
+      .post(`/api/v1/groups/${groupId}/tontine/payout`)
+      .set(auth())
+      .send({ roundId: current.body.data.schedule.rounds[0].roundId })
+      .expect(200);
+    await request(app)
+      .post(`/api/v1/groups/${groupId}/tontine/next-cycle`)
+      .set(auth())
+      .send({})
+      .expect(200);
+  }
+  const history = await request(app)
+    .get(`/api/v1/groups/${groupId}/tontine/history`)
+    .set(auth())
+    .expect(200);
+  expect(
+    history.body.data.cycles.map(
+      (cycle: { cycleNumber: number }) => cycle.cycleNumber,
+    ),
+  ).toEqual([2, 1]);
+  expect(
+    new Set(
+      history.body.data.cycles.map(
+        (cycle: { rounds: Array<{ payoutTransactionId: string }> }) =>
+          cycle.rounds[0].payoutTransactionId,
+      ),
+    ).size,
+  ).toBe(2);
+  await Group.updateOne(
+    { _id: groupId },
+    { $set: { "members.0.status": "left" } },
+  );
+  await request(app)
+    .get(`/api/v1/groups/${groupId}/tontine/history`)
+    .set(auth())
+    .expect(403);
+});

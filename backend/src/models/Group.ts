@@ -1,28 +1,36 @@
-import crypto from 'crypto';
-import mongoose, { Document, Schema } from 'mongoose';
+import crypto from "crypto";
+import { firstContributionDue } from "../services/contribution-schedule.service";
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IGroup extends Document {
   invitationCode: string;
-  joinRequests: Array<{_id: mongoose.Types.ObjectId;userId: mongoose.Types.ObjectId;requestedAt: Date}>;
+  joinRequests: Array<{
+    _id: mongoose.Types.ObjectId;
+    userId: mongoose.Types.ObjectId;
+    requestedAt: Date;
+  }>;
   name: string;
   description?: string;
-  type: 'tontine' | 'association' | 'family' | 'friends' | 'project';
+  type: "tontine" | "association" | "family" | "friends" | "project";
   currency: string;
   balance: number;
   targetAmount?: number;
   contributionSettings: {
-    frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
+    frequency: "daily" | "weekly" | "monthly" | "custom";
     amount: number;
     dueDay?: number;
+    customIntervalDays?: number;
+    firstDueAt?: Date;
+    nextDueAt?: Date;
     autoReminder: boolean;
   };
   members: Array<{
     userId: mongoose.Types.ObjectId;
-    role: 'admin' | 'treasurer' | 'member';
+    role: "admin" | "treasurer" | "member";
     joinedAt: Date;
     totalContributed: number;
     lastContributionAt?: Date;
-    status: 'active' | 'suspended' | 'left';
+    status: "active" | "suspended" | "left";
   }>;
   votingRules: {
     quorum: number;
@@ -56,8 +64,17 @@ export interface IGroup extends Document {
 
 const GroupSchema: Schema = new Schema(
   {
-    invitationCode: {type:String,default:()=>crypto.randomBytes(12).toString('hex'),index:true},
-    joinRequests: [{userId:{type:Schema.Types.ObjectId,ref:'User'},requestedAt:{type:Date,default:Date.now}}],
+    invitationCode: {
+      type: String,
+      default: () => crypto.randomBytes(12).toString("hex"),
+      index: true,
+    },
+    joinRequests: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: "User" },
+        requestedAt: { type: Date, default: Date.now },
+      },
+    ],
     name: {
       type: String,
       required: true,
@@ -70,14 +87,14 @@ const GroupSchema: Schema = new Schema(
     },
     type: {
       type: String,
-      enum: ['tontine', 'association', 'family', 'friends', 'project'],
+      enum: ["tontine", "association", "family", "friends", "project"],
       required: true,
       index: true,
     },
     currency: {
       type: String,
-      default: 'XOF',
-      enum: ['XOF','XAF','EUR','USD','GNF','CDF','MAD'],
+      default: "XOF",
+      enum: ["XOF", "XAF", "EUR", "USD", "GNF", "CDF", "MAD"],
     },
     balance: {
       type: Number,
@@ -88,11 +105,19 @@ const GroupSchema: Schema = new Schema(
     contributionSettings: {
       frequency: {
         type: String,
-        enum: ['daily', 'weekly', 'monthly', 'custom'],
-        default: 'monthly',
+        enum: ["daily", "weekly", "monthly", "custom"],
+        default: "monthly",
       },
-      amount: {type:Number,min:0,max:1000000000000},
-      dueDay: {type:Number,min:1,max:31,validate:Number.isSafeInteger},
+      amount: { type: Number, min: 0, max: 1000000000000 },
+      dueDay: { type: Number, min: 1, max: 31, validate: Number.isSafeInteger },
+      customIntervalDays: {
+        type: Number,
+        min: 1,
+        max: 3650,
+        validate: Number.isSafeInteger,
+      },
+      firstDueAt: Date,
+      nextDueAt: Date,
       autoReminder: {
         type: Boolean,
         default: true,
@@ -102,12 +127,12 @@ const GroupSchema: Schema = new Schema(
       {
         userId: {
           type: Schema.Types.ObjectId,
-          ref: 'User',
+          ref: "User",
           required: true,
         },
         role: {
           type: String,
-          enum: ['admin', 'treasurer', 'member'],
+          enum: ["admin", "treasurer", "member"],
           required: true,
         },
         joinedAt: {
@@ -121,8 +146,8 @@ const GroupSchema: Schema = new Schema(
         lastContributionAt: Date,
         status: {
           type: String,
-          enum: ['active', 'suspended', 'left'],
-          default: 'active',
+          enum: ["active", "suspended", "left"],
+          default: "active",
         },
       },
     ],
@@ -130,17 +155,20 @@ const GroupSchema: Schema = new Schema(
       quorum: {
         type: Number,
         default: 50,
-        min: 0, max: 100,
+        min: 0,
+        max: 100,
       },
       approvalThreshold: {
         type: Number,
         default: 50,
-        min: 0, max: 100,
+        min: 0,
+        max: 100,
       },
       votingDuration: {
         type: Number,
         default: 72,
-        min: 1, max: 8760,
+        min: 1,
+        max: 8760,
       },
       allowAbstention: {
         type: Boolean,
@@ -166,7 +194,13 @@ const GroupSchema: Schema = new Schema(
       },
     },
     settings: {
-      maxMembers: {type:Number,default:100,min:1,max:5000,validate:Number.isSafeInteger},
+      maxMembers: {
+        type: Number,
+        default: 100,
+        min: 1,
+        max: 5000,
+        validate: Number.isSafeInteger,
+      },
       isPrivate: {
         type: Boolean,
         default: false,
@@ -182,7 +216,8 @@ const GroupSchema: Schema = new Schema(
       maxProposalsPerMonth: {
         type: Number,
         default: 10,
-        min: 1, max: 1000,
+        min: 1,
+        max: 1000,
       },
     },
     avatar: {
@@ -197,17 +232,55 @@ const GroupSchema: Schema = new Schema(
     archivedAt: Date,
     createdBy: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
     },
   },
   {
     timestamps: true,
     optimisticConcurrency: true,
-  }
+  },
 );
 
+GroupSchema.pre("validate", function () {
+  const settings = this.get(
+    "contributionSettings",
+  ) as IGroup["contributionSettings"];
+  if (
+    settings.frequency === "custom" &&
+    !settings.customIntervalDays &&
+    (this.isNew || this.isModified("contributionSettings"))
+  )
+    this.invalidate(
+      "contributionSettings.customIntervalDays",
+      "Intervalle personnalisé requis",
+    );
+  if (
+    this.isNew ||
+    [
+      "frequency",
+      "dueDay",
+      "firstDueAt",
+      "customIntervalDays",
+      "autoReminder",
+    ].some((key) => this.isModified(`contributionSettings.${key}`))
+  ) {
+    const anchor = settings.firstDueAt || new Date();
+    if (!settings.firstDueAt)
+      this.set("contributionSettings.firstDueAt", anchor);
+    this.set(
+      "contributionSettings.nextDueAt",
+      firstContributionDue({ ...settings, firstDueAt: anchor }, anchor),
+    );
+  }
+});
+
 // Indexes
-GroupSchema.index({ 'members.userId': 1 });
+GroupSchema.index({
+  isActive: 1,
+  "contributionSettings.autoReminder": 1,
+  "contributionSettings.nextDueAt": 1,
+});
+GroupSchema.index({ "members.userId": 1 });
 GroupSchema.index({ createdAt: -1 });
 
-export default mongoose.model<IGroup>('Group', GroupSchema);
+export default mongoose.model<IGroup>("Group", GroupSchema);

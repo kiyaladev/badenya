@@ -1,8 +1,11 @@
+import { Platform } from 'react-native';
+jest.mock('react-native', () => ({ Platform: { OS: 'ios' }, Alert: { alert: jest.fn() } }));
 import {
   uploadImage,
   imageToBase64,
   saveImageLocally,
   deleteImageLocally,
+  getUploadAccessUrl,
 } from '../upload.service';
 import api from '../api';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -11,6 +14,8 @@ jest.mock('../api', () => ({
   __esModule: true,
   default: {
     post: jest.fn(),
+    get: jest.fn(),
+    defaults: { baseURL: 'https://api.badenya.app/api/v1' },
   },
 }));
 
@@ -27,6 +32,7 @@ jest.mock('expo-file-system/legacy', () => ({
 describe('UploadService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true });
   });
 
   describe('imageToBase64', () => {
@@ -62,16 +68,21 @@ describe('UploadService', () => {
         },
       });
 
-      const result = await uploadImage({
-        uri: 'file:///photo.jpg',
-        name: 'photo.jpg',
-        type: 'image/jpeg',
-      });
+      const result = await uploadImage(
+        {
+          uri: 'file:///photo.jpg',
+          name: 'photo.jpg',
+          type: 'image/jpeg',
+        },
+        { purpose: 'receipt', groupId: 'group-1' }
+      );
 
       expect(api.post).toHaveBeenCalledWith('/uploads/image', {
         data: 'data:image/jpeg;base64,mockBase64String',
         filename: 'photo.jpg',
         mimeType: 'image/jpeg',
+        purpose: 'receipt',
+        groupId: 'group-1',
       });
       expect(result.url).toBe('https://api.badenya.app/uploads/img.jpg');
     });
@@ -82,11 +93,14 @@ describe('UploadService', () => {
       });
 
       await expect(
-        uploadImage({
-          uri: 'file:///photo.jpg',
-          name: 'photo.jpg',
-          type: 'image/jpeg',
-        })
+        uploadImage(
+          {
+            uri: 'file:///photo.jpg',
+            name: 'photo.jpg',
+            type: 'image/jpeg',
+          },
+          { purpose: 'avatar' }
+        )
       ).rejects.toThrow('Le serveur n’a pas retourné l’URL du fichier');
     });
   });
@@ -107,4 +121,24 @@ describe('UploadService', () => {
       );
     });
   });
+});
+
+it('requests a temporary link through the authenticated API and rejects external URLs', async () => {
+  const filename = 'a'.repeat(32) + '.webp';
+  (api.get as jest.Mock).mockResolvedValue({
+    data: { data: { url: 'https://api.badenya.app/signed' } },
+  });
+  expect(await getUploadAccessUrl(`https://api.badenya.app/uploads/${filename}`)).toBe(
+    'https://api.badenya.app/signed'
+  );
+  expect(api.get).toHaveBeenCalledWith(`/uploads/${filename}/access`);
+  await expect(getUploadAccessUrl('https://evil.test/uploads/file.png')).rejects.toThrow(
+    'Justificatif inaccessible'
+  );
+});
+it('keeps browser blob images usable without native filesystem calls', async () => {
+  Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true });
+  (FileSystem.copyAsync as jest.Mock).mockClear();
+  expect(await saveImageLocally('blob:photo', 'photo.png')).toBe('blob:photo');
+  expect(FileSystem.copyAsync).not.toHaveBeenCalled();
 });

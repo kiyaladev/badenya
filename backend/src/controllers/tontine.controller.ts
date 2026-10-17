@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
+import mongoose from "mongoose";
 import { Group, Transaction } from "../models";
+import TontineCycle from "../models/TontineCycle";
 import TontineSchedule, { Round } from "../models/TontineSchedule";
 import { AuthRequest } from "../middleware/auth";
 import { activeMember, entityId } from "../utils/membership";
@@ -124,7 +126,10 @@ export async function putSchedule(req: Request, res: Response) {
     const seen = new Set<string>();
     const rounds: Round[] = body.rounds.map((r: Round, index: number) => {
       const old = existing?.rounds.find((o) => o.roundId === r.roundId);
-      if (!activeIds.has(r.beneficiaryId) || seen.has(r.beneficiaryId))
+      if (
+        (!activeIds.has(r.beneficiaryId) && old?.status !== "completed") ||
+        seen.has(r.beneficiaryId)
+      )
         throw new BusinessError(400, "Bénéficiaires actifs et uniques requis");
       seen.add(r.beneficiaryId);
       if (old?.status === "completed") {
@@ -135,9 +140,7 @@ export async function putSchedule(req: Request, res: Response) {
           throw new BusinessError(409, "Tour versé immuable");
         const oldDoc = old as unknown as { toObject?: () => Round };
         const oldObj =
-          typeof oldDoc.toObject === "function"
-            ? oldDoc.toObject()
-            : old;
+          typeof oldDoc.toObject === "function" ? oldDoc.toObject() : old;
         return {
           roundId: old.roundId,
           roundNumber: index + 1,
@@ -303,6 +306,11 @@ export async function nextCycle(req: Request, res: Response) {
         ? new Date(dateAt(new Date(lastDate), 1, frequency, custom))
         : new Date();
       const start = nextDate > new Date() ? nextDate : new Date();
+      const snapshot = saved.toObject();
+      await TontineCycle.create(
+        [{ ...snapshot, _id: new mongoose.Types.ObjectId() }],
+        { session },
+      );
       saved.cycleNumber += 1;
       saved.revision += 1;
       saved.contributionAmount = amount;
@@ -325,6 +333,23 @@ export async function nextCycle(req: Request, res: Response) {
       return saved;
     });
     res.json({ status: "success", data: { schedule } });
+  } catch (error) {
+    failure(res, error);
+  }
+}
+
+/** Completed cycles remain available to active members without allowing edits. */
+export async function getCycleHistory(req: Request, res: Response) {
+  try {
+    const group = await access(req);
+    const page = Math.max(1, Math.floor(Number(req.query.page) || 1));
+    const limit = 20;
+    const cycles = await TontineCycle.find({ groupId: group._id })
+      .sort({ cycleNumber: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+    res.json({ status: "success", data: { cycles, page } });
   } catch (error) {
     failure(res, error);
   }
