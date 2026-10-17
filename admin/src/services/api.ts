@@ -41,17 +41,24 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_SUSPENDED') {
+      window.dispatchEvent(new Event('badenya:session-expired'));
+    }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (originalRequest?._retry && error.response?.status === 401) {
+      window.dispatchEvent(new Event('badenya:session-expired'));
+    }
+    if (originalRequest && error.response?.status === 401 && !originalRequest._retry) {
       // Don't attempt refresh for login or refresh-token requests
       if (
         originalRequest.url?.includes('/auth/login') ||
-        originalRequest.url?.includes('/auth/refresh-token')
+        originalRequest.url?.includes('/auth/refresh-token') ||
+        originalRequest.url?.includes('/auth/logout')
       ) {
-        window.location.href = '/login';
         return Promise.reject(error);
       }
 
+      originalRequest._retry = true;
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -74,7 +81,9 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        window.location.href = '/login';
+        if (axios.isAxiosError(refreshError) && [401, 403].includes(refreshError.response?.status || 0)) {
+          window.dispatchEvent(new Event('badenya:session-expired'));
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

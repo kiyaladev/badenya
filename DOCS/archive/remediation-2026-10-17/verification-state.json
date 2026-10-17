@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-17T08:16:29.442909+00:00",
+  "artifact": "/tmp/badenya-releases/audit-20261017-reviewed",
+  "manifestSha256": "d302be808df4f2900bc34a3aa50597d5e906723ec19de1eb8fbaa6c2eed85e25",
+  "verifiedFiles": 442,
+  "allChecksumsMatch": true,
+  "nativeHost": {
+    "kvmAvailable": false,
+    "xcodeAvailable": false
+  },
+  "goalComplete": false,
+  "remaining": [
+    "production activation pending user answer",
+    "native Android/iOS runtime validation on functional devices",
+    "real provider and signed distribution validation require project configuration and authorized accounts"
+  ]
+}

@@ -1,6 +1,9 @@
+import { notificationRoute } from '@/utils/notificationRoute';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Notification } from '@/services/notification.service';
+import { Icon } from '@/components/ui';
+import type { IconName } from '@/components/ui';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -15,33 +18,33 @@ export default function NotificationItem({
 }: NotificationItemProps) {
   const router = useRouter();
 
-  const getNotificationIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      group_invitation: '👥',
-      member_joined: '🎉',
-      proposal_created: '📝',
-      proposal_approved: '✅',
-      proposal_rejected: '❌',
-      contribution_received: '💰',
-      vote_reminder: '🗳️',
-      payment_reminder: '⏰',
-      expense_executed: '💸',
-      role_changed: '🔑',
-      group_archived: '📦',
+  const getNotificationIcon = (type: string): IconName => {
+    const icons: Record<string, IconName> = {
+      group_invitation: 'users',
+      member_joined: 'user-plus',
+      proposal_created: 'file-text-o',
+      proposal_approved: 'check-circle',
+      proposal_rejected: 'times-circle',
+      contribution_received: 'money',
+      vote_reminder: 'check-square-o',
+      payment_reminder: 'clock-o',
+      expense_executed: 'credit-card',
+      role_changed: 'key',
+      group_archived: 'archive',
     };
-    return icons[type] || '🔔';
+    return icons[type] || 'bell';
   };
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
-      high: 'border-red-500 bg-red-50',
-      normal: 'border-primary-500 bg-primary-50',
-      low: 'border-gray-300 bg-gray-50',
+      high: 'border-red-500 bg-red-50 dark:bg-red-950',
+      normal: 'border-primary-500 bg-primary-50 dark:bg-gray-800',
+      low: 'border-gray-300 bg-gray-50 dark:bg-gray-900',
     };
     return colors[priority] || colors.normal;
   };
 
-  const getTimeAgo = (date: Date) => {
+  const getTimeAgo = (date: string | Date) => {
     const now = new Date();
     const diff = now.getTime() - new Date(date).getTime();
     const minutes = Math.floor(diff / 60000);
@@ -63,35 +66,30 @@ export default function NotificationItem({
 
     // Navigate based on notification type
     const { data } = notification;
-    if (data?.groupId) {
-      router.push(`/(screens)/group-details?id=${data.groupId._id || data.groupId}`);
-    } else if (data?.proposalId) {
-      router.push(`/(screens)/proposal-details?id=${data.proposalId._id || data.proposalId}`);
-    } else if (data?.transactionId) {
-      router.push(
-        `/(screens)/transaction-details?id=${data.transactionId._id || data.transactionId}`
-      );
-    }
+    const target = notificationRoute(data);
+    if (target) router.push(target as Parameters<typeof router.push>[0]);
   };
 
   return (
     <TouchableOpacity
       onPress={handlePress}
       className={`mb-3 rounded-xl border-l-4 ${getPriorityColor(notification.priority)} ${
-        !notification.isRead ? 'bg-white shadow-sm' : 'bg-gray-50'
+        !notification.isRead ? 'bg-white dark:bg-gray-800 shadow-sm' : 'bg-gray-50 dark:bg-gray-900'
       }`}
       activeOpacity={0.7}
     >
       <View className="p-4">
         <View className="flex-row items-start">
           {/* Icon */}
-          <Text className="text-2xl mr-3">{getNotificationIcon(notification.type)}</Text>
+          <View className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 items-center justify-center mr-3">
+            <Icon name={getNotificationIcon(notification.type)} size={18} color="#6b7280" />
+          </View>
 
           {/* Content */}
           <View className="flex-1">
             <View className="flex-row items-start justify-between mb-1">
               <Text
-                className={`flex-1 text-gray-800 ${
+                className={`flex-1 text-gray-800 dark:text-gray-100 ${
                   !notification.isRead ? 'font-bold' : 'font-medium'
                 }`}
               >
@@ -104,7 +102,9 @@ export default function NotificationItem({
               )}
             </View>
 
-            <Text className="text-gray-600 text-sm mb-2">{notification.message}</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm mb-2">
+              {notification.message}
+            </Text>
 
             {/* Footer */}
             <View className="flex-row items-center justify-between">

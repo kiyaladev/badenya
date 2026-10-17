@@ -1,118 +1,43 @@
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import '@testing-library/jest-dom';
-
-// We need to test the route configuration, not the full App (which uses BrowserRouter)
-// Mock all pages
-jest.mock('../../pages/LoginPage', () => () => <div data-testid="login-page">LoginPage</div>);
-jest.mock('../../pages/DashboardPage', () => () => <div data-testid="dashboard-page">DashboardPage</div>);
-jest.mock('../../pages/UsersPage', () => () => <div data-testid="users-page">UsersPage</div>);
-jest.mock('../../pages/GroupsPage', () => () => <div data-testid="groups-page">GroupsPage</div>);
-jest.mock('../../pages/TransactionsPage', () => () => <div data-testid="transactions-page">TransactionsPage</div>);
-jest.mock('../../pages/UserDetailsPage', () => () => <div data-testid="user-details-page">UserDetailsPage</div>);
-jest.mock('../../pages/GroupDetailsPage', () => () => <div data-testid="group-details-page">GroupDetailsPage</div>);
-jest.mock('../../services/api');
-jest.mock('../../store/authStore');
-
+import { render, screen, waitFor, act } from '@testing-library/react';
+import App from '../../App';
 import { useAuthStore } from '../../store/authStore';
-import { Routes, Route, Navigate } from 'react-router-dom';
-
-// Simplification: replicate core routing logic for testability
-function TestRoutes() {
-  const { isAuthenticated } = useAuthStore();
-  return (
-    <Routes>
-      <Route path="/login" element={<div data-testid="login-page">LoginPage</div>} />
-      <Route
-        path="/dashboard"
-        element={isAuthenticated ? <div data-testid="dashboard-page">DashboardPage</div> : <Navigate to="/login" replace />}
-      />
-      <Route
-        path="/users"
-        element={isAuthenticated ? <div data-testid="users-page">UsersPage</div> : <Navigate to="/login" replace />}
-      />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
-}
-
-describe('App Routing', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('should redirect / to /dashboard', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      loadUser: jest.fn(),
-      isAuthenticated: true,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <TestRoutes />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
-  });
-
-  it('should redirect to /login when not authenticated', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      loadUser: jest.fn(),
-      isAuthenticated: false,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <TestRoutes />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  });
-
-  it('should show dashboard when authenticated', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      loadUser: jest.fn(),
-      isAuthenticated: true,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <TestRoutes />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
-  });
-
-  it('should show users page when authenticated', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      loadUser: jest.fn(),
-      isAuthenticated: true,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/users']}>
-        <TestRoutes />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByTestId('users-page')).toBeInTheDocument();
-  });
-
-  it('should redirect users page to login when not authenticated', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      loadUser: jest.fn(),
-      isAuthenticated: false,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/users']}>
-        <TestRoutes />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  });
+import authService from '../../services/authService';
+jest.mock('../../services/api');
+jest.mock('../../services/authService');
+jest.mock('../../pages/DashboardPage', () => () => <div>Dashboard content</div>);
+jest.mock('../../pages/GroupsPage', () => () => <div>Groups content</div>);
+const admin = { id: '1', fullName: 'Admin', email: 'admin@example.test', role: 'admin' };
+beforeEach(() => {
+  jest.clearAllMocks();
+  useAuthStore.setState({ user: null, isAuthenticated: false, isChecking: true, isLoading: false, error: null });
+});
+it('keeps the protected destination while checking and restoring the session', async () => {
+  window.history.replaceState({}, '', '/groups?search=test');
+  let finish!: (value: typeof admin) => void;
+  jest.mocked(authService.getCurrentUser).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  render(<App />);
+  expect(screen.getByRole('status')).toHaveTextContent('Vérification');
+  expect(window.location.pathname).toBe('/groups');
+  await act(async () => { finish(admin); });
+  expect(screen.getByText('Groups content')).toBeInTheDocument();
+  expect(window.location.search).toBe('?search=test');
+});
+it('treats a missing session as normal and does not retry bootstrap on the login page', async () => {
+  window.history.replaceState({}, '', '/groups');
+  jest.mocked(authService.getCurrentUser).mockRejectedValue({ response: { status: 401 } });
+  render(<App />);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument());
+  expect(window.location.pathname).toBe('/login');
+  expect(authService.getCurrentUser).toHaveBeenCalledTimes(1);
+  expect(screen.queryByText('Unknown error')).not.toBeInTheDocument();
+});
+it('clears an expired or suspended session without a document reload', async () => {
+  window.history.replaceState({}, '', '/groups');
+  jest.mocked(authService.getCurrentUser).mockResolvedValue(admin);
+  render(<App />);
+  await screen.findByText('Groups content');
+  act(() => { window.dispatchEvent(new Event('badenya:session-expired')); });
+  await screen.findByRole('button', { name: 'Se connecter' });
+  expect(useAuthStore.getState().user).toBeNull();
+  expect(authService.getCurrentUser).toHaveBeenCalledTimes(1);
 });

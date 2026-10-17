@@ -3,7 +3,7 @@
     "name": "Badenya",
     "slug": "badenya",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "badenya",
     "userInterfaceStyle": "automatic",
@@ -24,14 +24,24 @@
       },
       "package": "com.badenya.app",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Autoriser Badenya à utiliser Face ID pour déverrouiller votre session."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }

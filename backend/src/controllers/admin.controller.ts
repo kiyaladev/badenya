@@ -1,12 +1,15 @@
-import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth';
-import { User, Group, Transaction } from '../models';
+import { Response } from "express";
+import { AuthRequest } from "../middleware/auth";
+import { User, Group, Transaction } from "../models";
 
 /**
  * GET /admin/dashboard/stats
  * Get dashboard statistics for admin panel
  */
-export const getDashboardStats = async (_req: AuthRequest, res: Response): Promise<void> => {
+export const getDashboardStats = async (
+  _req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -28,8 +31,8 @@ export const getDashboardStats = async (_req: AuthRequest, res: Response): Promi
       Group.countDocuments({ isActive: true }),
       Transaction.countDocuments(),
       Transaction.aggregate([
-        { $match: { status: 'completed' } },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
+        { $match: { status: "completed" } },
+        { $group: { _id: "$currency", total: { $sum: "$amount" } } },
       ]),
       User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       Group.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
@@ -44,7 +47,12 @@ export const getDashboardStats = async (_req: AuthRequest, res: Response): Promi
         totalGroups,
         activeGroups,
         totalTransactions,
-        totalTransactionVolume: transactionVolume[0]?.total || 0,
+        totalTransactionVolume:
+          transactionVolume.find((v) => v._id === "XOF")?.total || 0,
+        totalsByCurrency: transactionVolume.map((v) => ({
+          currency: v._id,
+          totalTransactionVolume: v.total,
+        })),
         recentActivity: {
           newUsers: recentUsers,
           newGroups: recentGroups,
@@ -52,8 +60,11 @@ export const getDashboardStats = async (_req: AuthRequest, res: Response): Promi
         },
       },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to load dashboard stats' });
+  } catch {
+    res.status(500).json({
+      success: false,
+      message: "Impossible de charger les statistiques",
+    });
   }
 };
 
@@ -61,23 +72,31 @@ export const getDashboardStats = async (_req: AuthRequest, res: Response): Promi
  * GET /admin/users
  * List all users with pagination and search
  */
-export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllUsers = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(req.query.limit as string) || 10),
+    );
     const search = req.query.search as string | undefined;
 
     const filter: Record<string, unknown> = {};
     if (search) {
       filter.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
       ];
     }
 
     const [users, total] = await Promise.all([
       User.find(filter)
-        .select('-password -refreshTokens -emailVerificationToken -passwordResetToken -passwordResetExpires')
+        .select(
+          "-password -refreshTokens -emailVerificationToken -passwordResetToken -passwordResetExpires",
+        )
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -89,8 +108,10 @@ export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void
       success: true,
       data: { users, total },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to load users' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger les comptes" });
   }
 };
 
@@ -98,20 +119,27 @@ export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void
  * GET /admin/users/:id
  * Get a single user by ID
  */
-export const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getUserById = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.params.id)
-      .select('-password -refreshTokens -emailVerificationToken -passwordResetToken -passwordResetExpires')
+      .select(
+        "-password -refreshTokens -emailVerificationToken -passwordResetToken -passwordResetExpires",
+      )
       .lean();
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
+      res.status(404).json({ success: false, message: "Compte introuvable" });
       return;
     }
 
     res.json({ success: true, data: { user } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to load user' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger le compte" });
   }
 };
 
@@ -119,22 +147,34 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
  * PUT /admin/users/:id/suspend
  * Suspend a user
  */
-export const suspendUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const suspendUser = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { isActive: false },
-      { new: true }
-    ).select('-password -refreshTokens');
+      {
+        $set: {
+          isActive: false,
+          refreshTokens: [],
+          tokensValidAfter: new Date(),
+        },
+        $inc: { sessionVersion: 1 },
+      },
+      { new: true },
+    ).select("-password -refreshTokens");
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
+      res.status(404).json({ success: false, message: "Compte introuvable" });
       return;
     }
 
     res.json({ success: true, data: { user } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to suspend user' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de suspendre le compte" });
   }
 };
 
@@ -142,22 +182,27 @@ export const suspendUser = async (req: AuthRequest, res: Response): Promise<void
  * PUT /admin/users/:id/activate
  * Activate a user
  */
-export const activateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const activateUser = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { isActive: true },
-      { new: true }
-    ).select('-password -refreshTokens');
+      { new: true },
+    ).select("-password -refreshTokens");
 
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
+      res.status(404).json({ success: false, message: "Compte introuvable" });
       return;
     }
 
     res.json({ success: true, data: { user } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to activate user' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de réactiver le compte" });
   }
 };
 
@@ -165,16 +210,22 @@ export const activateUser = async (req: AuthRequest, res: Response): Promise<voi
  * GET /admin/groups
  * List all groups with pagination, search, and type filter
  */
-export const getAllGroups = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllGroups = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(req.query.limit as string) || 10),
+    );
     const search = req.query.search as string | undefined;
     const type = req.query.type as string | undefined;
 
     const filter: Record<string, unknown> = {};
     if (search) {
-      filter.name = { $regex: search, $options: 'i' };
+      filter.name = { $regex: search, $options: "i" };
     }
     if (type) {
       filter.type = type;
@@ -182,8 +233,8 @@ export const getAllGroups = async (req: AuthRequest, res: Response): Promise<voi
 
     const [groups, total] = await Promise.all([
       Group.find(filter)
-        .populate('createdBy', 'fullName email')
-        .populate('members.userId', 'fullName email')
+        .populate("createdBy", "fullName email")
+        .populate("members.userId", "fullName email")
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -195,8 +246,10 @@ export const getAllGroups = async (req: AuthRequest, res: Response): Promise<voi
       success: true,
       data: { groups, total },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to load groups' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger les groupes" });
   }
 };
 
@@ -204,21 +257,26 @@ export const getAllGroups = async (req: AuthRequest, res: Response): Promise<voi
  * GET /admin/groups/:id
  * Get a single group by ID
  */
-export const getGroupById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getGroupById = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const group = await Group.findById(req.params.id)
-      .populate('createdBy', 'fullName email')
-      .populate('members.userId', 'fullName email')
+      .populate("createdBy", "fullName email")
+      .populate("members.userId", "fullName email")
       .lean();
 
     if (!group) {
-      res.status(404).json({ success: false, message: 'Group not found' });
+      res.status(404).json({ success: false, message: "Groupe introuvable" });
       return;
     }
 
     res.json({ success: true, data: { group } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to load group' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de charger le groupe" });
   }
 };
 
@@ -226,22 +284,27 @@ export const getGroupById = async (req: AuthRequest, res: Response): Promise<voi
  * PUT /admin/groups/:id/archive
  * Archive a group
  */
-export const archiveGroup = async (req: AuthRequest, res: Response): Promise<void> => {
+export const archiveGroup = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const group = await Group.findByIdAndUpdate(
       req.params.id,
-      { isActive: false, archivedAt: new Date() },
-      { new: true }
+      { $set: { isActive: false, archivedAt: new Date() }, $inc: { __v: 1 } },
+      { new: true },
     );
 
     if (!group) {
-      res.status(404).json({ success: false, message: 'Group not found' });
+      res.status(404).json({ success: false, message: "Groupe introuvable" });
       return;
     }
 
     res.json({ success: true, data: { group } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to archive group' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible d’archiver le groupe" });
   }
 };
 
@@ -249,14 +312,30 @@ export const archiveGroup = async (req: AuthRequest, res: Response): Promise<voi
  * GET /admin/transactions
  * List all transactions with pagination and filters
  */
-export const getAllTransactions = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllTransactions = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(req.query.limit as string) || 10),
+    );
     const status = req.query.status as string | undefined;
     const type = req.query.type as string | undefined;
 
     const filter: Record<string, unknown> = {};
+    if (req.query.search) {
+      const search = String(req.query.search)
+        .slice(0, 100)
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { description: { $regex: search, $options: "i" } },
+        { "paymentMethod.reference": { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+      ];
+    }
     if (status) {
       filter.status = status;
     }
@@ -266,8 +345,8 @@ export const getAllTransactions = async (req: AuthRequest, res: Response): Promi
 
     const [transactions, total] = await Promise.all([
       Transaction.find(filter)
-        .populate('groupId', 'name')
-        .populate('initiatedBy', 'fullName email')
+        .populate("groupId", "name")
+        .populate("initiatedBy", "fullName email")
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -286,8 +365,11 @@ export const getAllTransactions = async (req: AuthRequest, res: Response): Promi
       success: true,
       data: { transactions: mapped, total },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to load transactions' });
+  } catch {
+    res.status(500).json({
+      success: false,
+      message: "Impossible de charger les opérations",
+    });
   }
 };
 
@@ -295,7 +377,10 @@ export const getAllTransactions = async (req: AuthRequest, res: Response): Promi
  * PUT /admin/transactions/:id/flag
  * Flag a transaction for review
  */
-export const flagTransaction = async (req: AuthRequest, res: Response): Promise<void> => {
+export const flagTransaction = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { reason } = req.body;
 
@@ -303,20 +388,26 @@ export const flagTransaction = async (req: AuthRequest, res: Response): Promise<
       req.params.id,
       {
         $set: {
-          'metadata.notes': `FLAGGED: ${reason || 'No reason provided'}`,
-          status: 'pending',
+          "metadata.notes": `FLAGGED: ${reason || "No reason provided"}`,
+          "flagged.reason": reason || "À vérifier",
+          "flagged.at": new Date(),
+          "flagged.by": req.user?.id,
         },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!transaction) {
-      res.status(404).json({ success: false, message: 'Transaction not found' });
+      res
+        .status(404)
+        .json({ success: false, message: "Opération introuvable" });
       return;
     }
 
     res.json({ success: true, data: { transaction } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to flag transaction' });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Impossible de signaler l’opération" });
   }
 };

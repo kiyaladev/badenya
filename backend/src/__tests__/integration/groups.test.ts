@@ -1,161 +1,66 @@
-import request from 'supertest';
-import { createTestApp } from '../helpers/app';
-
-const app = createTestApp();
-
-describe('Groups API Integration', () => {
-  describe('POST /api/v1/groups', () => {
-    it('should require authentication', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups')
-        .send({
-          name: 'Test Group',
-          type: 'tontine',
-          contributionAmount: 1000,
-          frequency: 'monthly',
-        });
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('token');
-    });
-
-    it('should validate required fields', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({});
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should reject invalid group types', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({
-          name: 'Test Group',
-          type: 'invalid-type',
-          contributionAmount: 1000,
-          frequency: 'monthly',
-        });
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('GET /api/v1/groups', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).get('/api/v1/groups');
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should return JSON content type', async () => {
-      const response = await request(app)
-        .get('/api/v1/groups')
-        .set('Authorization', 'Bearer invalid-token');
-
-      expect(response.headers['content-type']).toMatch(/json/);
-    });
-  });
-
-  describe('GET /api/v1/groups/:id', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).get('/api/v1/groups/123');
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should validate group ID format', async () => {
-      const response = await request(app)
-        .get('/api/v1/groups/invalid-id')
-        .set('Authorization', 'Bearer invalid-token');
-
-      // Expect 401 (unauthorized) or 400/404 (invalid ID)
-      expect([400, 401, 404, 500]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('PUT /api/v1/groups/:id', () => {
-    it('should require authentication', async () => {
-      const response = await request(app)
-        .put('/api/v1/groups/123')
-        .send({ name: 'Updated Group' });
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('DELETE /api/v1/groups/:id', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).delete('/api/v1/groups/123');
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('POST /api/v1/groups/:id/members', () => {
-    it('should require authentication', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups/123/members')
-        .send({ userId: '456' });
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should validate request body', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups/123/members')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({});
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('DELETE /api/v1/groups/:id/members/:userId', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).delete(
-        '/api/v1/groups/123/members/456'
-      );
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('PUT /api/v1/groups/:id/members/:userId/role', () => {
-    it('should require authentication', async () => {
-      const response = await request(app)
-        .put('/api/v1/groups/123/members/456/role')
-        .send({ role: 'admin' });
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should validate role value', async () => {
-      const response = await request(app)
-        .put('/api/v1/groups/123/members/456/role')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({ role: 'invalid-role' });
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-  });
+import request from "supertest";
+import { Group } from "../../models";
+import { financialFixture } from "../helpers/financial-fixture";
+const fixture = financialFixture();
+it("requires authentication to create groups", async () => {
+  await request(fixture.app)
+    .post("/api/v1/groups")
+    .send({ name: "Groupe", type: "tontine" })
+    .expect(401);
+  expect(await Group.countDocuments()).toBe(1);
+});
+it.each([
+  {},
+  { name: "Groupe", type: "invalid-type" },
+  { name: "", type: "tontine" },
+  { name: "Groupe", type: "tontine", contributionSettings: { amount: -1 } },
+])(
+  "rejects invalid group data with an authenticated session: %j",
+  async (body) => {
+    await request(fixture.app)
+      .post("/api/v1/groups")
+      .set(fixture.auth())
+      .send(body)
+      .expect(400);
+    expect(await Group.countDocuments()).toBe(1);
+  },
+);
+it("rejects malformed identifiers with 400", async () => {
+  await request(fixture.app)
+    .get("/api/v1/groups/invalid-id")
+    .set(fixture.auth())
+    .expect(400);
+});
+it("persists configuration and returns the group to its creator", async () => {
+  const created = await request(fixture.app)
+    .post("/api/v1/groups")
+    .set(fixture.auth())
+    .send({
+      name: "Épargne",
+      type: "association",
+      contributionSettings: { amount: 50, frequency: "weekly" },
+    })
+    .expect(201);
+  const id = created.body.data.group._id;
+  const saved = await Group.findById(id);
+  expect(saved?.contributionSettings.frequency).toBe("weekly");
+  expect(saved?.contributionSettings.nextDueAt).toBeInstanceOf(Date);
+  const result = await request(fixture.app)
+    .get(`/api/v1/groups/${id}`)
+    .set(fixture.auth())
+    .expect(200);
+  expect(result.body.data.group.members[0].role).toBe("admin");
+});
+it("validates member identity and role before changing persisted membership", async () => {
+  await request(fixture.app)
+    .post(`/api/v1/groups/${fixture.groupId}/members`)
+    .set(fixture.auth())
+    .send({ userId: "bad", role: "member" })
+    .expect(400);
+  await request(fixture.app)
+    .put(`/api/v1/groups/${fixture.groupId}/members/${fixture.actor}/role`)
+    .set(fixture.auth())
+    .send({ role: "invalid" })
+    .expect(400);
+  expect((await Group.findById(fixture.groupId))?.members).toHaveLength(1);
 });

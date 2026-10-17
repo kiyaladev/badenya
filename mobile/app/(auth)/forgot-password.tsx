@@ -1,16 +1,47 @@
+import { Alert } from '@/services/dialog.service';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Keyboard,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import authService from '@/services/auth.service';
+import { Button, Input, Icon } from '@/components/ui';
+
+// Shared NativeWind classes for the auth form screens (also used by reset-password).
+export const authForm = {
+  success: 'flex-1 bg-white dark:bg-gray-800 px-6 justify-center items-center',
+  successIcon: 'w-[88px] h-[88px] rounded-full bg-blue-100 items-center justify-center mb-6',
+  successTitle: 'text-2xl font-bold text-gray-900 dark:text-gray-50 mb-2.5',
+  successText: 'text-[15px] text-gray-500 dark:text-gray-300 text-center mb-8 leading-[22px]',
+  keyboard: 'flex-1',
+  scroll: 'bg-white dark:bg-gray-800',
+  backButton: 'flex-row items-center self-start py-2 px-3 rounded-full bg-white/20 mb-5',
+  backText: 'text-white text-[13px] font-semibold',
+  headerContent: 'items-center',
+  logo: 'w-[72px] h-[72px] rounded-full bg-white/20 items-center justify-center mb-4',
+  title: 'text-white text-[26px] font-bold mb-1.5',
+  subtitle: 'text-white/85 text-sm text-center',
+  formCard: 'flex-1 bg-white dark:bg-gray-800 rounded-t-[32px] -mt-8 px-6 pt-8',
+  description: 'text-sm text-gray-500 dark:text-gray-300 mb-5 leading-5',
+  submitButton: 'mt-2 mb-6',
+  footer: 'items-center',
+  footerText: 'text-primary-600 text-sm font-semibold',
+};
+
+// LinearGradient is not className-aware: keep its layout inline (with the safe-area inset).
+export const authHeaderStyle = (top: number) => ({
+  paddingTop: top + 20,
+  paddingBottom: 56,
+  paddingHorizontal: 24,
+});
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -18,13 +49,14 @@ export default function ForgotPasswordScreen() {
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const validateEmail = () => {
     if (!email) {
       setError('Email requis');
       return false;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Email invalide');
       return false;
     }
@@ -33,19 +65,20 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleResetPassword = async () => {
+    Keyboard.dismiss();
     if (!validateEmail()) {
       return;
     }
 
     setIsLoading(true);
     try {
-      await authService.forgotPassword(email);
+      await authService.forgotPassword(email.trim());
       setEmailSent(true);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const errorObj = err as { response?: { data?: { message?: string } } };
       Alert.alert(
         'Erreur',
-        error.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.'
+        errorObj.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.'
       );
     } finally {
       setIsLoading(false);
@@ -54,18 +87,16 @@ export default function ForgotPasswordScreen() {
 
   if (emailSent) {
     return (
-      <View className="flex-1 bg-white px-6 justify-center items-center">
-        <Text className="text-6xl mb-6">📧</Text>
-        <Text className="text-2xl font-bold text-gray-800 text-center mb-4">Email envoyé !</Text>
-        <Text className="text-base text-gray-600 text-center mb-8">
-          Vérifiez votre boîte mail pour réinitialiser votre mot de passe.
+      <View className={authForm.success}>
+        <View className={authForm.successIcon}>
+          <Icon name="envelope-open" size={40} color="#0284c7" />
+        </View>
+        <Text className={authForm.successTitle}>Demande prise en compte</Text>
+        <Text className={authForm.successText}>
+          Si un compte correspond, votre demande a été prise en compte. Si aucun email n’arrive,
+          réessayez plus tard.
         </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="bg-primary-600 py-4 px-8 rounded-lg"
-        >
-          <Text className="text-white text-base font-bold">Retour à la connexion</Text>
-        </TouchableOpacity>
+        <Button title="Retour à la connexion" onPress={() => router.back()} fullWidth size="lg" />
       </View>
     );
   }
@@ -73,53 +104,75 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
+      className={authForm.keyboard}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="bg-white"
+        contentContainerClassName="grow"
+        className={authForm.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-6 pt-16">
-          {/* Header */}
-          <View className="mb-10">
-            <TouchableOpacity onPress={() => router.back()} className="mb-6">
-              <Text className="text-primary-600 text-base font-medium">← Retour</Text>
-            </TouchableOpacity>
-
-            <Text className="text-4xl font-bold text-gray-800 mb-2">Mot de passe oublié ?</Text>
-            <Text className="text-lg text-gray-600">
-              Entrez votre email pour recevoir un lien de réinitialisation
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={text => {
-                setEmail(text);
-                setError('');
-              }}
-              placeholder="exemple@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="bg-gray-100 px-4 py-3 rounded-lg text-base"
-            />
-            {error ? <Text className="text-red-500 text-sm mt-1">{error}</Text> : null}
-          </View>
-
-          {/* Reset Button */}
-          <TouchableOpacity
-            onPress={handleResetPassword}
-            disabled={isLoading}
-            className={`py-4 rounded-lg ${isLoading ? 'bg-primary-400' : 'bg-primary-600'}`}
-          >
-            <Text className="text-white text-center text-base font-bold">
-              {isLoading ? 'Envoi...' : 'Envoyer le lien'}
-            </Text>
+        {/* Header with gradient accent */}
+        <LinearGradient
+          colors={['#0284c7', '#0369a1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={authHeaderStyle(insets.top)}
+        >
+          <TouchableOpacity onPress={() => router.back()} className={authForm.backButton}>
+            <View className="mr-1.5">
+              <Icon name="arrow-left" size={14} color="#ffffff" />
+            </View>
+            <Text className={authForm.backText}>Retour</Text>
           </TouchableOpacity>
+
+          <View className={authForm.headerContent}>
+            <View className={authForm.logo}>
+              <Icon name="key" size={30} color="#ffffff" />
+            </View>
+            <Text className={authForm.title}>Mot de passe oublié ?</Text>
+            <Text className={authForm.subtitle}>Recevez un lien de réinitialisation sécurisé</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Form Card */}
+        <View className={authForm.formCard}>
+          <Text className={authForm.description}>
+            Entrez l'adresse email associée à votre compte Badenya pour recevoir les instructions de
+            réinitialisation.
+          </Text>
+
+          <Input
+            label="Adresse email"
+            value={email}
+            onChangeText={text => {
+              setEmail(text);
+              setError('');
+            }}
+            placeholder="exemple@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={error}
+            leftIcon={<Icon name="envelope" size={18} color="#9ca3af" />}
+          />
+
+          <View className={authForm.submitButton}>
+            <Button
+              title="Envoyer le lien"
+              onPress={handleResetPassword}
+              loading={isLoading}
+              fullWidth
+              size="lg"
+              iconName="paper-plane"
+              iconPosition="right"
+            />
+          </View>
+
+          <View className={authForm.footer}>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Text className={authForm.footerText}>Retour à la connexion</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

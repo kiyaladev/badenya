@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { body } from 'express-validator';
+import { Router } from "express";
+import { body } from "express-validator";
 import {
   createProposal,
   getGroupProposals,
@@ -8,14 +8,13 @@ import {
   closeProposal,
   executeProposal,
   deleteProposal,
-} from '../controllers/proposal.controller';
-import { authenticate } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+} from "../controllers/proposal.controller";
+import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validation";
 
 const router = Router();
 
 // All routes require authentication
-router.use(authenticate);
 
 /**
  * @swagger
@@ -257,45 +256,57 @@ router.use(authenticate);
 
 // Validation rules
 const createProposalValidation = [
-  body('title').trim().notEmpty().withMessage('Title is required'),
-  body('description').trim().notEmpty().withMessage('Description is required'),
-  body('category')
-    .isIn(['loan', 'investment', 'charity', 'event', 'emergency', 'other'])
-    .withMessage('Invalid category'),
-  body('amount')
+  body("title").trim().notEmpty().withMessage("Le titre est requis"),
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("La description est requise"),
+  body("category")
+    .isIn(["loan", "investment", "charity", "event", "emergency", "other"])
+    .withMessage("Catégorie invalide"),
+  body("amount")
     .optional()
     .isNumeric()
     .isFloat({ min: 0 })
-    .withMessage('Amount must be a positive number'),
-  body('priority')
+    .withMessage("Le montant doit être positif"),
+  body("priority")
     .optional()
-    .isIn(['low', 'medium', 'high', 'urgent'])
-    .withMessage('Invalid priority'),
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Priorité invalide"),
 ];
 
 const castVoteValidation = [
-  body('vote')
-    .isIn(['for', 'against', 'abstain'])
-    .withMessage('Invalid vote value'),
-  body('comment').optional().trim(),
+  body("vote").isIn(["for", "against", "abstain"]).withMessage("Vote invalide"),
+  body("comment").optional().trim(),
 ];
 
-const closeProposalValidation = [
-  body('notes').optional().trim(),
-];
+const closeProposalValidation = [body("notes").optional().trim()];
 
 // Routes
 router.post(
-  '/groups/:groupId/proposals',
+  "/groups/:groupId/proposals",
+  authenticate,
   createProposalValidation,
   validate,
-  createProposal
+  createProposal,
 );
-router.get('/groups/:groupId/proposals', getGroupProposals);
-router.get('/proposals/:id', getProposalById);
-router.post('/proposals/:id/vote', castVoteValidation, validate, castVote);
-router.put('/proposals/:id/close', closeProposalValidation, validate, closeProposal);
-router.post('/proposals/:id/execute', executeProposal);
-router.delete('/proposals/:id', deleteProposal);
+router.get("/groups/:groupId/proposals", authenticate, getGroupProposals);
+router.get("/proposals/:id", authenticate, getProposalById);
+router.post(
+  "/proposals/:id/vote",
+  authenticate,
+  castVoteValidation,
+  validate,
+  castVote,
+);
+router.put(
+  "/proposals/:id/close",
+  authenticate,
+  closeProposalValidation,
+  validate,
+  closeProposal,
+);
+router.post("/proposals/:id/execute", authenticate, executeProposal);
+router.delete("/proposals/:id", authenticate, deleteProposal);
 
 export default router;

@@ -1,0 +1,44 @@
+{
+  "checks": [
+    "Actual API login, secure browser session",
+    "Browser confirmation verifies contribution once",
+    "Private deep link remains stable beyond splash bootstrap delay",
+    "Group details active member and EUR contract",
+    "Show more requests server page 2",
+    "Fixture-only deadline advanced after two actual ballots",
+    "Proposal deadline closure and UI financial execution",
+    "Tontine shared server payout from browser",
+    "Completed tontine starts next shared cycle after confirmation",
+    "Public family label, join request and administrator approval through UI",
+    "Light and dark screenshots at 375, 768 and 1440; dark GroupCard palette",
+    "Password reset and privacy pages accessible without session",
+    "Canonical production-target bundle: every API request redirected to isolated fixture; no production writes"
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "screenshots": [
+    "mobile-group-light-375.png",
+    "mobile-group-light-768.png",
+    "mobile-group-light-1440.png",
+    "mobile-group-dark-375.png",
+    "mobile-group-dark-768.png",
+    "mobile-group-dark-1440.png",
+    "mobile-my-groups-dark-375.png"
+  ],
+  "timings": {
+    "loginMs": 1341,
+    "groupDetailsMs": 3621
+  },
+  "redirectedApiRequests": 57,
+  "externalRequests": 0,
+  "darkGroupCardColor": "rgb(31, 41, 55)",
+  "artifact": "/tmp/badenya-releases/remediation-2026-10-06-final/mobile/dist",
+  "bundle": "entry-7e5e6ebc9a89f95e770621a8d4192fe0.js",
+  "groupId": "6ac50ae713a45375ecb0c570",
+  "overflowChecks": 6,
+  "accessibilityScope": "Role-based UI controls and public recovery/legal headings; no full screen-reader or axe audit",
+  "routePreservation": [
+    "Private group-details deep link beyond splash delay",
+    "Both tontine payouts and next-cycle on original route without reload"
+  ]
+}

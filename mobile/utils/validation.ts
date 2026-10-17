@@ -45,7 +45,7 @@ export function validateForm<T extends Record<string, string>>(
  * Returns true if any field has an error.
  */
 export function hasErrors(errors: Record<string, string>): boolean {
-  return Object.values(errors).some((e) => e.length > 0);
+  return Object.values(errors).some(e => e.length > 0);
 }
 
 // Common patterns
@@ -81,7 +81,7 @@ export function confirmPasswordRule(password: string): ValidationRule[] {
   return [
     { required: true, message: 'Confirmation requise' },
     {
-      custom: (v) => v === password,
+      custom: v => v === password,
       message: 'Les mots de passe ne correspondent pas',
     },
   ];

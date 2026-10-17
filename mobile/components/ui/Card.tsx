@@ -1,3 +1,4 @@
+import { useThemeStore } from '@/store/themeStore';
 import React from 'react';
 import { View, ViewProps, TouchableOpacity, TouchableOpacityProps, ViewStyle } from 'react-native';
 
@@ -17,21 +18,22 @@ export default function Card({
   style,
   ...props
 }: CardProps) {
+  const colors = useThemeStore(state => state.colors);
   const getVariantStyles = (): ViewStyle => {
     switch (variant) {
       case 'elevated':
         return {
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
         };
       case 'outlined':
         return {
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: '#e5e7eb',
+          borderColor: colors.border,
         };
       case 'filled':
         return {
-          backgroundColor: '#f9fafb',
+          backgroundColor: colors.surface,
         };
       case 'glass':
         return {
@@ -41,7 +43,7 @@ export default function Card({
         };
       default:
         return {
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
         };
     }
   };

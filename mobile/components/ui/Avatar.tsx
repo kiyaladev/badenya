@@ -58,31 +58,27 @@ export default function Avatar({ name, imageUrl, size = 'md', backgroundColor }:
   };
 
   if (imageUrl) {
+    const imageStyle = {
+      width: dimensions.container,
+      height: dimensions.container,
+    };
+
     return (
       <View style={containerStyle}>
-        <Image
-          source={{ uri: imageUrl }}
-          style={{
-            width: dimensions.container,
-            height: dimensions.container,
-          }}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: imageUrl }} style={imageStyle} resizeMode="cover" />
       </View>
     );
   }
 
+  const textStyle = {
+    color: '#ffffff',
+    fontSize: dimensions.text,
+    fontWeight: '600' as const,
+  };
+
   return (
     <View style={containerStyle}>
-      <Text
-        style={{
-          color: '#ffffff',
-          fontSize: dimensions.text,
-          fontWeight: '600',
-        }}
-      >
-        {initials}
-      </Text>
+      <Text style={textStyle}>{initials}</Text>
     </View>
   );
 }

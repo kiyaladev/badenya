@@ -1,143 +1,91 @@
-import request from 'supertest';
-import { createTestApp } from '../helpers/app';
+import request from "supertest";
+import { Transaction, Group } from "../../models";
+import { financialFixture } from "../helpers/financial-fixture";
+const fixture = financialFixture();
 
-const app = createTestApp();
-
-describe('Transactions API Integration', () => {
-  describe('POST /api/v1/groups/:id/transactions', () => {
-    it('should require authentication', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups/123/transactions')
-        .send({
-          type: 'contribution',
-          amount: 1000,
-          description: 'Monthly contribution',
-        });
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should validate required fields', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups/123/transactions')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({});
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should reject invalid transaction types', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups/123/transactions')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({
-          type: 'invalid-type',
-          amount: 1000,
-          description: 'Test',
-        });
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should reject negative amounts', async () => {
-      const response = await request(app)
-        .post('/api/v1/groups/123/transactions')
-        .set('Authorization', 'Bearer invalid-token')
-        .send({
-          type: 'contribution',
-          amount: -1000,
-          description: 'Test',
-        });
-
-      // Expect 401 (unauthorized) or 400 (validation error)
-      expect([400, 401]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
+it("requires a session for financial routes", async () => {
+  await request(fixture.app)
+    .post(`/api/v1/groups/${fixture.groupId}/transactions`)
+    .send({ type: "contribution", amount: 10 })
+    .expect(401);
+  expect(await Transaction.countDocuments()).toBe(0);
+});
+it.each([
+  { type: "invalid", amount: 10 },
+  { type: "contribution", amount: -1 },
+  { type: "contribution" },
+  { amount: 10 },
+])("rejects invalid authenticated transaction data: %j", async (body) => {
+  await request(fixture.app)
+    .post(`/api/v1/groups/${fixture.groupId}/transactions`)
+    .set(fixture.auth())
+    .send(body)
+    .expect(400);
+  expect(await Transaction.countDocuments()).toBe(0);
+  expect((await Group.findById(fixture.groupId))?.balance).toBe(1000);
+});
+it("rejects malformed identifiers before any transaction lookup", async () => {
+  await request(fixture.app)
+    .get("/api/v1/transactions/invalid-id")
+    .set(fixture.auth())
+    .expect(400);
+});
+it("creates, filters, validates and records the responsible person exactly once", async () => {
+  const created = await request(fixture.app)
+    .post(`/api/v1/groups/${fixture.groupId}/transactions`)
+    .set(fixture.auth())
+    .send({ type: "contribution", amount: 50 })
+    .expect(201);
+  const id = created.body.data.transaction._id;
+  await request(fixture.app)
+    .put(`/api/v1/transactions/${id}/verify`)
+    .set(fixture.auth())
+    .send({})
+    .expect(200);
+  await request(fixture.app)
+    .put(`/api/v1/transactions/${id}/verify`)
+    .set(fixture.auth())
+    .send({})
+    .expect(200);
+  const saved = await Transaction.findById(id);
+  expect(saved?.validatedBy?.toString()).toBe(fixture.actor);
+  expect(saved?.validatedAt).toBeInstanceOf(Date);
+  expect(saved?.auditTrail).toHaveLength(1);
+  expect(saved?.auditTrail[0].action).toBe("validated");
+  expect((await Group.findById(fixture.groupId))?.balance).toBe(1050);
+  const list = await request(fixture.app)
+    .get("/api/v1/transactions?type=contribution&status=completed")
+    .set(fixture.auth())
+    .expect(200);
+  expect(
+    list.body.data.transactions.map((tx: { _id: string }) => tx._id),
+  ).toEqual([id]);
+  const pending = await request(fixture.app)
+    .get("/api/v1/transactions?status=pending")
+    .set(fixture.auth())
+    .expect(200);
+  expect(pending.body.data.transactions).toEqual([]);
+});
+it("records a cancellation and refuses later validation", async () => {
+  const tx = await Transaction.create({
+    groupId: fixture.groupId,
+    initiatedBy: fixture.actor,
+    type: "contribution",
+    amount: 50,
   });
-
-  describe('GET /api/v1/groups/:id/transactions', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).get(
-        '/api/v1/groups/123/transactions'
-      );
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should return JSON content type', async () => {
-      const response = await request(app)
-        .get('/api/v1/groups/123/transactions')
-        .set('Authorization', 'Bearer invalid-token');
-
-      expect(response.headers['content-type']).toMatch(/json/);
-    });
-
-    it('should accept query parameters for filtering', async () => {
-      const response = await request(app)
-        .get('/api/v1/groups/123/transactions')
-        .query({ type: 'contribution', status: 'verified' })
-        .set('Authorization', 'Bearer invalid-token');
-
-      // Expect 401 (unauthorized) or valid response
-      expect([200, 401]).toContain(response.status);
-      expect(response.body.status).toBeDefined();
-    });
-  });
-
-  describe('GET /api/v1/transactions/:id', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).get('/api/v1/transactions/123');
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-
-    it('should validate transaction ID format', async () => {
-      const response = await request(app)
-        .get('/api/v1/transactions/invalid-id')
-        .set('Authorization', 'Bearer invalid-token');
-
-      // Expect 401 (unauthorized) or 400/404 (invalid ID)
-      expect([400, 401, 404, 500]).toContain(response.status);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('PUT /api/v1/transactions/:id/verify', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).put(
-        '/api/v1/transactions/123/verify'
-      );
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('DELETE /api/v1/transactions/:id', () => {
-    it('should require authentication', async () => {
-      const response = await request(app).delete('/api/v1/transactions/123');
-
-      expect(response.status).toBe(401);
-      expect(response.body.status).toBe('error');
-    });
-  });
-
-  describe('Transaction Statistics', () => {
-    it('should return group balance', async () => {
-      const response = await request(app)
-        .get('/api/v1/groups/123/balance')
-        .set('Authorization', 'Bearer invalid-token');
-
-      // Expect 401 (unauthorized) or valid response
-      expect([200, 401, 404]).toContain(response.status);
-      expect(response.body.status).toBeDefined();
-    });
-  });
+  await request(fixture.app)
+    .delete(`/api/v1/transactions/${tx.id}`)
+    .set(fixture.auth())
+    .send({ reason: "Doublon" })
+    .expect(200);
+  await request(fixture.app)
+    .put(`/api/v1/transactions/${tx.id}/verify`)
+    .set(fixture.auth())
+    .send({})
+    .expect(409);
+  const saved = await Transaction.findById(tx.id);
+  expect(saved?.auditTrail[0].actor.toString()).toBe(fixture.actor);
+  expect(saved?.auditTrail[0].reason).toBe("Doublon");
+  expect(saved?.validatedBy).toBeUndefined();
+  expect((await Group.findById(fixture.groupId))?.balance).toBe(1000);
 });

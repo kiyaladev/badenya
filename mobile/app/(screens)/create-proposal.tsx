@@ -1,55 +1,54 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Keyboard } from 'react-native';
-import { useState } from 'react';
+import { Alert } from '@/services/dialog.service';
+import { View, Text, ScrollView, TouchableOpacity, Keyboard } from 'react-native';
+import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useProposalStore } from '@/store/proposalStore';
 import { useGroupStore } from '@/store/groupStore';
-import { Button, Input } from '@/components/ui';
+import { Button, EmptyState, Icon, Input, Loading } from '@/components/ui';
+import type { IconName } from '@/components/ui/Icon';
+import { TRANSACTION_CATEGORY_LABELS } from '@/constants/labels';
 
 type ProposalCategory = 'loan' | 'investment' | 'charity' | 'event' | 'emergency' | 'other';
-type ProposalPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export default function CreateProposalScreen() {
   const router = useRouter();
-  const { groupId } = useLocalSearchParams<{ groupId: string }>();
-  const { createProposal, isLoading } = useProposalStore();
-  const { groups } = useGroupStore();
+  const { groupId: routeGroupId } = useLocalSearchParams<{ groupId?: string }>();
+  const { createProposal, isLoading: isSubmitting } = useProposalStore();
+  const { groups, fetchGroups, isLoading: isGroupsLoading } = useGroupStore();
 
-  const group = groups.find(g => g._id === groupId);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(routeGroupId || '');
+
+  useEffect(() => {
+    if (groups.length === 0) {
+      fetchGroups();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (routeGroupId) {
+      setSelectedGroupId(routeGroupId);
+    } else if (!selectedGroupId && groups.length > 0) {
+      setSelectedGroupId(groups[0]._id);
+    }
+  }, [routeGroupId, groups, selectedGroupId]);
+
+  const group = groups.find(g => g._id === selectedGroupId);
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     amount: '',
     category: 'other' as ProposalCategory,
-    priority: 'medium' as ProposalPriority,
     recipientName: '',
-    recipientDetails: '',
-    votingDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
   });
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = [
-    { value: 'loan', label: 'Prêt', icon: '💰', description: 'Prêt à un membre' },
-    {
-      value: 'investment',
-      label: 'Investissement',
-      icon: '📈',
-      description: 'Investissement collectif',
-    },
-    { value: 'charity', label: 'Charité', icon: '❤️', description: 'Don caritatif' },
-    { value: 'event', label: 'Événement', icon: '🎉', description: "Organisation d'événement" },
-    { value: 'emergency', label: 'Urgence', icon: '🚨', description: "Situation d'urgence" },
-    { value: 'other', label: 'Autre', icon: '📋', description: 'Autre type de proposition' },
-  ];
-
-  const priorities = [
-    { value: 'low', label: 'Basse', color: 'bg-gray-100 text-gray-700', icon: '⬇️' },
-    { value: 'medium', label: 'Moyenne', color: 'bg-blue-100 text-blue-700', icon: '➡️' },
-    { value: 'high', label: 'Haute', color: 'bg-orange-100 text-orange-700', icon: '⬆️' },
-    { value: 'urgent', label: 'Urgente', color: 'bg-red-100 text-red-700', icon: '🔴' },
+  const categories: Array<{ value: ProposalCategory; icon: IconName }> = [
+    { value: 'loan', icon: 'money' },
+    { value: 'emergency', icon: 'exclamation-triangle' },
+    { value: 'event', icon: 'calendar' },
+    { value: 'other', icon: 'file-text-o' },
   ];
 
   const validateForm = (): boolean => {
@@ -57,14 +56,10 @@ export default function CreateProposalScreen() {
 
     if (!formData.title.trim()) {
       newErrors.title = 'Le titre est requis';
-    } else if (formData.title.trim().length < 5) {
-      newErrors.title = 'Le titre doit contenir au moins 5 caractères';
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'La description est requise';
-    } else if (formData.description.trim().length < 20) {
-      newErrors.description = 'La description doit contenir au moins 20 caractères';
+      newErrors.description = 'Expliquez brièvement à quoi servira la dépense';
     }
 
     if (!formData.amount) {
@@ -78,10 +73,6 @@ export default function CreateProposalScreen() {
       }
     }
 
-    if (formData.votingDeadline <= new Date()) {
-      newErrors.votingDeadline = 'La date limite doit être dans le futur';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -93,25 +84,20 @@ export default function CreateProposalScreen() {
       return;
     }
 
-    if (!group) {
-      Alert.alert('Erreur', 'Groupe introuvable');
+    if (!selectedGroupId || !group) {
+      Alert.alert('Erreur', 'Veuillez sélectionner un groupe valide');
       return;
     }
 
     try {
-      await createProposal(groupId!, {
+      await createProposal(selectedGroupId, {
         title: formData.title.trim(),
         description: formData.description.trim(),
         amount: parseFloat(formData.amount),
         category: formData.category,
-        priority: formData.priority,
         recipient: formData.recipientName.trim()
-          ? {
-              name: formData.recipientName.trim(),
-              details: formData.recipientDetails.trim() || undefined,
-            }
+          ? { name: formData.recipientName.trim() }
           : undefined,
-        votingDeadline: formData.votingDeadline.toISOString(),
       });
 
       Alert.alert('Succès', 'Proposition créée avec succès', [
@@ -126,21 +112,30 @@ export default function CreateProposalScreen() {
     }
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  if (isGroupsLoading && groups.length === 0) {
+    return <Loading />;
+  }
+
+  if (groups.length === 0) {
+    return (
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900 items-center justify-center px-6">
+        <EmptyState
+          title="Aucun groupe actif"
+          description="Vous devez faire partie d'un groupe d'épargne pour créer une proposition de dépense."
+          actionLabel="Créer un groupe"
+          onAction={() => router.push('/(screens)/create-group')}
+        />
+      </View>
+    );
+  }
 
   if (!group) {
     return (
-      <View className="flex-1 bg-gray-50 items-center justify-center px-6">
-        <Text className="text-6xl mb-4">❌</Text>
-        <Text className="text-gray-800 text-xl font-bold mb-2">Groupe introuvable</Text>
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900 items-center justify-center px-6">
+        <Icon name="times-circle" size={48} color="#dc2626" />
+        <Text className="text-gray-800 dark:text-gray-100 text-xl font-bold mb-2">
+          Groupe introuvable
+        </Text>
         <TouchableOpacity
           onPress={() => router.back()}
           className="bg-primary-600 py-3 px-6 rounded-lg"
@@ -152,21 +147,74 @@ export default function CreateProposalScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-6 py-6">
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Nouvelle proposition</Text>
-          <Text className="text-gray-600">Créez une proposition pour le groupe {group.name}</Text>
-        </View>
-
-        {/* Info Box */}
-        <View className="bg-blue-50 p-4 rounded-lg mb-6">
-          <Text className="text-blue-800 text-sm">
-            💡 <Text className="font-semibold">Info:</Text> Tous les membres du groupe pourront
-            voter sur cette proposition.
+          <Text className="text-gray-600 dark:text-gray-300">
+            Créez une proposition pour le groupe {group.name}
           </Text>
         </View>
+
+        {/* Group Selector when not routed with groupId */}
+        {!routeGroupId && groups.length > 1 && (
+          <View className="mb-6">
+            <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">
+              Groupe concerné *
+            </Text>
+            <View className="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 overflow-hidden">
+              {groups.map((g, index) => {
+                const isSelected = g._id === selectedGroupId;
+                return (
+                  <TouchableOpacity
+                    key={g._id}
+                    onPress={() => setSelectedGroupId(g._id)}
+                    className={`flex-row items-center justify-between p-3.5 ${
+                      index !== groups.length - 1
+                        ? 'border-b border-gray-200 dark:border-gray-600'
+                        : ''
+                    } ${isSelected ? 'bg-primary-50/60' : ''}`}
+                  >
+                    <View className="flex-row items-center flex-1 mr-3">
+                      <View
+                        className={`w-9 h-9 rounded-full items-center justify-center mr-3 ${
+                          isSelected ? 'bg-primary-600' : 'bg-gray-100 dark:bg-gray-700'
+                        }`}
+                      >
+                        <Icon name="users" size={16} color={isSelected ? '#ffffff' : '#4b5563'} />
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className={`font-medium ${
+                            isSelected
+                              ? 'text-primary-700 font-semibold'
+                              : 'text-gray-800 dark:text-gray-100'
+                          }`}
+                          numberOfLines={1}
+                        >
+                          {g.name}
+                        </Text>
+                        <Text className="text-gray-500 dark:text-gray-400 text-xs">
+                          {g.balance.toLocaleString()} {g.currency} disponible • {g.members.length}{' '}
+                          membres
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
+                        isSelected ? 'border-primary-600 bg-primary-600' : 'border-gray-300'
+                      }`}
+                    >
+                      {isSelected && (
+                        <View className="w-2.5 h-2.5 rounded-full bg-white dark:bg-gray-800" />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Title */}
         <View className="mb-4">
@@ -186,10 +234,10 @@ export default function CreateProposalScreen() {
             label="Description *"
             value={formData.description}
             onChangeText={text => setFormData({ ...formData, description: text })}
-            placeholder="Décrivez en détail la proposition..."
+            placeholder="À quoi servira cette dépense ?"
             error={errors.description}
             multiline
-            numberOfLines={5}
+            numberOfLines={3}
             maxLength={500}
           />
         </View>
@@ -203,127 +251,57 @@ export default function CreateProposalScreen() {
             placeholder="Ex: 50000"
             keyboardType="numeric"
             error={errors.amount}
-            rightIcon={<Text className="text-gray-500 text-sm">XOF</Text>}
+            rightIcon={
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                {group?.currency || 'XOF'}
+              </Text>
+            }
           />
         </View>
 
         {/* Category */}
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Catégorie *</Text>
-          <View className="space-y-2">
-            {categories.map(cat => (
-              <TouchableOpacity
-                key={cat.value}
-                onPress={() =>
-                  setFormData({ ...formData, category: cat.value as ProposalCategory })
-                }
-                className={`p-4 rounded-lg border-2 ${
-                  formData.category === cat.value
-                    ? 'border-primary-600 bg-primary-50'
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                <View className="flex-row items-center">
-                  <Text className="text-2xl mr-3">{cat.icon}</Text>
-                  <View className="flex-1">
-                    <Text className="text-gray-800 font-semibold">{cat.label}</Text>
-                    <Text className="text-gray-600 text-sm">{cat.description}</Text>
-                  </View>
-                  {formData.category === cat.value && (
-                    <Text className="text-primary-600 text-xl">✓</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Priority */}
-        <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Priorité *</Text>
+          <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2">Catégorie *</Text>
           <View className="flex-row flex-wrap gap-2">
-            {priorities.map(priority => (
-              <TouchableOpacity
-                key={priority.value}
-                onPress={() =>
-                  setFormData({ ...formData, priority: priority.value as ProposalPriority })
-                }
-                className={`px-4 py-3 rounded-lg border-2 ${
-                  formData.priority === priority.value
-                    ? 'border-primary-600 ' + priority.color
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                <Text
-                  className={
-                    formData.priority === priority.value
-                      ? priority.color.split(' ')[1]
-                      : 'text-gray-600'
-                  }
+            {categories.map(cat => {
+              const isSelected = formData.category === cat.value;
+              return (
+                <TouchableOpacity
+                  key={cat.value}
+                  onPress={() => setFormData({ ...formData, category: cat.value })}
+                  className={`flex-row items-center px-4 py-3 rounded-lg border-2 ${
+                    isSelected
+                      ? 'border-primary-600 bg-primary-50 dark:bg-gray-800'
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
+                  }`}
                 >
-                  {priority.icon} {priority.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Icon name={cat.icon} size={14} color={isSelected ? '#0284c7' : '#6b7280'} />
+                  <Text className="ml-2 font-medium text-gray-800 dark:text-gray-100">
+                    {TRANSACTION_CATEGORY_LABELS[cat.value]}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
         {/* Recipient (Optional) */}
-        <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-2">Bénéficiaire (optionnel)</Text>
-          <View className="mb-2">
-            <Input
-              label="Nom du bénéficiaire"
-              value={formData.recipientName}
-              onChangeText={text => setFormData({ ...formData, recipientName: text })}
-              placeholder="Ex: Jean Dupont"
-            />
-          </View>
-          <View>
-            <Input
-              label="Détails"
-              value={formData.recipientDetails}
-              onChangeText={text => setFormData({ ...formData, recipientDetails: text })}
-              placeholder="Ex: Membre du groupe, entrepreneur..."
-              multiline
-              numberOfLines={2}
-            />
-          </View>
-        </View>
-
-        {/* Voting Deadline */}
         <View className="mb-6">
-          <Text className="text-gray-700 font-medium mb-2">Date limite de vote *</Text>
-          <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
-            className="bg-white border border-gray-300 rounded-lg px-4 py-3"
-          >
-            <Text className="text-gray-800">📅 {formatDate(formData.votingDeadline)}</Text>
-          </TouchableOpacity>
-          {errors.votingDeadline && (
-            <Text className="text-red-600 text-sm mt-1">{errors.votingDeadline}</Text>
-          )}
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={formData.votingDeadline}
-              mode="datetime"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(Platform.OS === 'ios');
-                if (selectedDate) {
-                  setFormData({ ...formData, votingDeadline: selectedDate });
-                }
-              }}
-              minimumDate={new Date()}
-            />
-          )}
+          <Input
+            label="Bénéficiaire (optionnel)"
+            value={formData.recipientName}
+            onChangeText={text => setFormData({ ...formData, recipientName: text })}
+            placeholder="Ex: Jean Dupont"
+          />
         </View>
 
         {/* Submit Button */}
-        <Button onPress={handleSubmit} disabled={isLoading}>
-          {isLoading ? 'Création en cours...' : 'Créer la proposition'}
-        </Button>
+        <Button
+          title="Créer la proposition"
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+          loading={isSubmitting}
+        />
 
         <View className="h-6" />
       </View>

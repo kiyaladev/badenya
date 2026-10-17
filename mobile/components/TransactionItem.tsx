@@ -2,6 +2,14 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Transaction } from '@/services/transaction.service';
+import { Icon } from '@/components/ui';
+import type { IconName } from '@/components/ui';
+import {
+  getCategoryLabel,
+  getPaymentMethodLabel,
+  getTransactionStatusLabel,
+  getTransactionTypeLabel,
+} from '@/constants/labels';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -10,33 +18,18 @@ interface TransactionItemProps {
 function TransactionItem({ transaction }: TransactionItemProps) {
   const router = useRouter();
 
-  const getTypeIcon = () => {
+  const getTypeIcon = (): IconName => {
     switch (transaction.type) {
       case 'contribution':
-        return '💰';
+        return 'money';
       case 'expense':
-        return '💸';
+        return 'credit-card';
       case 'refund':
-        return '↩️';
+        return 'reply';
       case 'adjustment':
-        return '⚖️';
+        return 'balance-scale';
       default:
-        return '📝';
-    }
-  };
-
-  const getTypeLabel = () => {
-    switch (transaction.type) {
-      case 'contribution':
-        return 'Contribution';
-      case 'expense':
-        return 'Dépense';
-      case 'refund':
-        return 'Remboursement';
-      case 'adjustment':
-        return 'Ajustement';
-      default:
-        return transaction.type;
+        return 'file-text-o';
     }
   };
 
@@ -49,24 +42,9 @@ function TransactionItem({ transaction }: TransactionItemProps) {
       case 'failed':
         return 'text-red-600';
       case 'cancelled':
-        return 'text-gray-500';
+        return 'text-gray-500 dark:text-gray-400';
       default:
-        return 'text-gray-600';
-    }
-  };
-
-  const getStatusLabel = () => {
-    switch (transaction.status) {
-      case 'completed':
-        return 'Complété';
-      case 'pending':
-        return 'En attente';
-      case 'failed':
-        return 'Échoué';
-      case 'cancelled':
-        return 'Annulé';
-      default:
-        return transaction.status;
+        return 'text-gray-600 dark:text-gray-300';
     }
   };
 
@@ -96,33 +74,37 @@ function TransactionItem({ transaction }: TransactionItemProps) {
 
   return (
     <TouchableOpacity
-      className="bg-white px-4 py-4 border-b border-gray-100"
+      className="bg-white dark:bg-gray-800 px-4 py-4 border-b border-gray-100 dark:border-gray-700"
       onPress={() => {
         router.push(`/(screens)/transaction-details?id=${transaction._id}`);
       }}
     >
       <View className="flex-row items-center">
         {/* Icon */}
-        <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center mr-3">
-          <Text className="text-2xl">{getTypeIcon()}</Text>
+        <View className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full items-center justify-center mr-3">
+          <Icon name={getTypeIcon()} size={20} color="#0284c7" />
         </View>
 
         {/* Transaction Info */}
         <View className="flex-1">
-          <Text className="text-gray-800 font-medium mb-1">
-            {transaction.description || getTypeLabel()}
+          <Text className="text-gray-800 dark:text-gray-100 font-medium mb-1">
+            {transaction.description || getTransactionTypeLabel(transaction.type)}
           </Text>
           <View className="flex-row items-center">
-            <Text className="text-gray-600 text-xs mr-2">{formatDate()}</Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-xs mr-2">{formatDate()}</Text>
             {transaction.category && (
               <>
                 <View className="w-1 h-1 bg-gray-400 rounded-full mr-2" />
-                <Text className="text-gray-600 text-xs">{transaction.category}</Text>
+                <Text className="text-gray-600 dark:text-gray-300 text-xs">
+                  {getCategoryLabel(transaction.category)}
+                </Text>
               </>
             )}
           </View>
           {transaction.status !== 'completed' && (
-            <Text className={`text-xs mt-1 ${getStatusColor()}`}>{getStatusLabel()}</Text>
+            <Text className={`text-xs mt-1 ${getStatusColor()}`}>
+              {getTransactionStatusLabel(transaction.status)}
+            </Text>
           )}
         </View>
 
@@ -130,14 +112,8 @@ function TransactionItem({ transaction }: TransactionItemProps) {
         <View className="items-end">
           {formatAmount()}
           {transaction.paymentMethod && (
-            <Text className="text-gray-500 text-xs mt-1">
-              {transaction.paymentMethod.type === 'mobile_money'
-                ? 'Mobile'
-                : transaction.paymentMethod.type === 'bank_transfer'
-                  ? 'Banque'
-                  : transaction.paymentMethod.type === 'card'
-                    ? 'Carte'
-                    : 'Cash'}
+            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+              {getPaymentMethodLabel(transaction.paymentMethod.type)}
             </Text>
           )}
         </View>

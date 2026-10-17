@@ -1,102 +1,62 @@
 import { create } from 'zustand';
 import authService, { type AdminUser, type LoginCredentials } from '../services/authService';
-
+import { getErrorMessage } from '../utils/errorHandler';
 interface AuthState {
   user: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isChecking: boolean;
   error: string | null;
-  
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
+  expireSession: () => void;
   clearError: () => void;
 }
-
+let checkingSession: Promise<void> | null = null;
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: authService.isAuthenticated(),
-  isLoading: false,
-  error: null,
-
-  login: async (credentials) => {
+  user: null, isAuthenticated: false, isLoading: false, isChecking: true, error: null,
+  expireSession: () => {
+    authService.setAuthenticated(false);
+    set({ user: null, isAuthenticated: false, isChecking: false, isLoading: false });
+  },
+  login: async credentials => {
     set({ isLoading: true, error: null });
     try {
       const response = await authService.login(credentials);
-      
-      // Check if user has admin role
       if (response.data.user.role !== 'admin') {
-        throw new Error('Access denied. Admin privileges required.');
+        await authService.logout();
+        throw new Error('Accès réservé aux administrateurs.');
       }
-      
-      set({ 
-        user: response.data.user, 
-        isAuthenticated: true, 
-        isLoading: false 
-      });
+      set({ user: response.data.user, isAuthenticated: true, isLoading: false, isChecking: false });
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data)
-          ? String(error.response.data.message)
-          : 'Login failed';
-      
-      set({ 
-        error: errorMessage,
-        isLoading: false,
-        isAuthenticated: false,
-        user: null
-      });
+      authService.setAuthenticated(false);
+      set({ error: getErrorMessage(error), isLoading: false, isAuthenticated: false, user: null });
       throw error;
     }
   },
-
   logout: async () => {
     set({ isLoading: true });
-    try {
-      await authService.logout();
-      set({ 
-        user: null, 
-        isAuthenticated: false, 
-        isLoading: false,
-        error: null
-      });
-    } catch (error) {
-      set({ isLoading: false });
-      throw error;
-    }
+    try { await authService.logout(); }
+    finally { set({ user: null, isAuthenticated: false, isLoading: false, isChecking: false, error: null }); }
   },
-
   loadUser: async () => {
-    set({ isLoading: true });
-    try {
-      // On page refresh, try to fetch user using httpOnly cookie
-      const user = await authService.getCurrentUser();
-      
-      // Check if user has admin role
-      if (user.role !== 'admin') {
-        throw new Error('Access denied. Admin privileges required.');
+    if (checkingSession) return checkingSession;
+    set({ isChecking: true });
+    checkingSession = (async () => {
+      try {
+        const user = await authService.getCurrentUser();
+        if (user.role !== 'admin') {
+          await authService.logout();
+          throw new Error('Accès réservé aux administrateurs.');
+        }
+        set({ user, isAuthenticated: true, isChecking: false, error: null });
+      } catch {
+        authService.setAuthenticated(false);
+        set({ user: null, isAuthenticated: false, isChecking: false, error: null });
       }
-      
-      set({ user, isAuthenticated: true, isLoading: false });
-    } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data)
-          ? String(error.response.data.message)
-          : 'Unknown error';
-      
-      set({ 
-        error: errorMessage,
-        isLoading: false,
-        isAuthenticated: false,
-        user: null
-      });
-      
-      // Mark as unauthenticated
-      authService.setAuthenticated(false);
-    }
+    })();
+    try { await checkingSession; } finally { checkingSession = null; }
   },
-
   clearError: () => set({ error: null }),
 }));

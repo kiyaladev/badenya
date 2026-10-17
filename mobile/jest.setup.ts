@@ -1,8 +1,17 @@
+import type { ReactNode } from 'react';
+
+declare global {
+  var __fbBatchedBridgeConfig: {
+    remoteModuleConfig: unknown[];
+    localModulesConfig: unknown[];
+  };
+}
+
 // Define global variables
-global.__DEV__ = true;
+Object.defineProperty(globalThis, '__DEV__', { value: true, writable: true });
 
 // Mock React Native native bridge
-global.__fbBatchedBridgeConfig = {
+globalThis.__fbBatchedBridgeConfig = {
   remoteModuleConfig: [],
   localModulesConfig: [],
 };
@@ -26,9 +35,9 @@ jest.mock('expo-router', () => ({
   usePathname: () => '/',
   useSegments: () => [],
   Link: 'Link',
-  Stack: ({ children }) => children,
-  Tabs: ({ children }) => children,
-  Slot: ({ children }) => children,
+  Stack: ({ children }: { children?: ReactNode }) => children,
+  Tabs: ({ children }: { children?: ReactNode }) => children,
+  Slot: ({ children }: { children?: ReactNode }) => children,
 }));
 
 // Mock expo-secure-store
@@ -63,6 +72,19 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+}));
+
+// Mock expo-local-authentication
+jest.mock('expo-local-authentication', () => ({
+  hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
+  isEnrolledAsync: jest.fn(() => Promise.resolve(true)),
+  supportedAuthenticationTypesAsync: jest.fn(() => Promise.resolve([1])),
+  authenticateAsync: jest.fn(() => Promise.resolve({ success: true })),
+  AuthenticationType: {
+    FINGERPRINT: 1,
+    FACIAL_RECOGNITION: 2,
+    IRIS: 3,
+  },
 }));
 
 // Silence console warnings in tests

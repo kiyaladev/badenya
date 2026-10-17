@@ -7,6 +7,9 @@ import prettierPlugin from 'eslint-plugin-prettier';
 
 export default [
   {
+    ignores: ['dist/**', '.expo/**', 'node_modules/**', 'coverage/**', 'expo-env.d.ts'],
+  },
+  {
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -35,7 +38,7 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       'react-native/no-inline-styles': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['debug', 'info', 'warn', 'error'] }],
     },
     settings: {
       react: {

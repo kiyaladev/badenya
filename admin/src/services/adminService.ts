@@ -7,6 +7,7 @@ export interface DashboardStats {
   activeGroups: number;
   totalTransactions: number;
   totalTransactionVolume: number;
+  totalsByCurrency?: Record<string, number | { totalTransactionVolume: number }>;
   recentActivity: {
     newUsers: number;
     newGroups: number;
@@ -25,7 +26,9 @@ export interface User {
 }
 
 export interface GroupMember {
-  user: string | { _id: string; fullName: string; email: string };
+  userId: string | { _id: string; fullName: string; email: string };
+  status?: string;
+  totalContributed?: number;
   role: string;
   joinedAt: string;
 }
@@ -37,6 +40,7 @@ export interface Group {
   balance: number;
   currency: string;
   members: GroupMember[];
+  stats?: { totalContributions: number; totalExpenses: number; totalTransactions?: number; activeProposals?: number };
   isActive: boolean;
   createdAt: string;
   createdBy: string | { _id: string; fullName: string };
@@ -48,6 +52,9 @@ export interface Transaction {
   user: string | { _id: string; fullName: string; email: string };
   type: string;
   amount: number;
+  currency?: string;
+  flagged?: boolean | { reason?: string; at?: string; by?: string };
+  flag?: { reason?: string; flaggedAt?: string };
   status: string;
   description?: string;
   category?: string;
@@ -58,7 +65,10 @@ class AdminService {
   // Dashboard Stats
   async getDashboardStats(): Promise<DashboardStats> {
     const response = await api.get('/admin/dashboard/stats');
-    return response.data.data;
+    const data = response.data.data;
+    return { ...data, totalsByCurrency: Array.isArray(data.totalsByCurrency)
+      ? Object.fromEntries(data.totalsByCurrency.map((total: { currency: string; totalTransactionVolume: number }) => [total.currency, total.totalTransactionVolume]))
+      : data.totalsByCurrency };
   }
 
   // Users Management
@@ -96,15 +106,18 @@ class AdminService {
   }
 
   // Transactions Management
-  async getAllTransactions(params?: { 
-    page?: number; 
-    limit?: number; 
-    status?: string; 
+  async getAllTransactions(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
     type?: string;
     search?: string;
   }): Promise<{ transactions: Transaction[]; total: number }> {
     const response = await api.get('/admin/transactions', { params });
-    return response.data.data;
+    const data = response.data.data;
+    return { ...data, transactions: data.transactions.map((transaction: Transaction & { groupId?: Transaction['group']; initiatedBy?: Transaction['user'] }) => ({
+      ...transaction, group: transaction.groupId || transaction.group, user: transaction.initiatedBy || transaction.user,
+    })) };
   }
 
   async flagTransaction(id: string, reason: string): Promise<void> {

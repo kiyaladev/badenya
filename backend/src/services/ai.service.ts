@@ -1,10 +1,11 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import AIReport from '../models/AIReport';
-import Transaction from '../models/Transaction';
-import Group from '../models/Group';
-import reportService from './report.service';
-import { IGroup, ITransaction } from '../models';
-import logger from '../utils/logger';
+import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
+import AIReport from "../models/AIReport";
+import Transaction from "../models/Transaction";
+import Group from "../models/Group";
+import reportService from "./report.service";
+import { IGroup, ITransaction } from "../models";
+import logger from "../utils/logger";
+import { isConfiguredValue } from "../utils/configuredValue";
 
 interface PopulatedUser {
   _id: string;
@@ -12,7 +13,7 @@ interface PopulatedUser {
   email: string;
 }
 
-interface PopulatedTransaction extends Omit<ITransaction, 'initiatedBy'> {
+interface PopulatedTransaction extends Omit<ITransaction, "initiatedBy"> {
   initiatedBy: PopulatedUser;
 }
 
@@ -48,24 +49,27 @@ interface DataContext {
   avgMonthlyContributions: number;
   avgMonthlyExpenses: number;
   avgDaysBetweenContributions: number;
-  contributionsByMember: TransactionSummary['contributionsByMember'];
-  expensesByCategory: TransactionSummary['expensesByCategory'];
+  contributionsByMember: TransactionSummary["contributionsByMember"];
+  expensesByCategory: TransactionSummary["expensesByCategory"];
 }
 
 /**
  * AI Service for generating insights using Google Gemini API
  */
-class AIService {
+export class AIService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: GenerativeModel | null = null;
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && apiKey !== 'your-gemini-api-key') {
+    const model = process.env.GEMINI_MODEL;
+    if (isConfiguredValue(apiKey) && isConfiguredValue(model)) {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      this.model = this.genAI.getGenerativeModel({ model: model.trim() });
     } else {
-      logger.warn('⚠️  Gemini API key not configured. AI features will be disabled.');
+      logger.warn(
+        "Gemini key or model not configured. AI features will be disabled.",
+      );
     }
   }
 
@@ -83,16 +87,18 @@ class AIService {
     groupId: string,
     userId: string,
     periodStart: Date,
-    periodEnd: Date
+    periodEnd: Date,
   ) {
     if (!this.isAvailable()) {
-      throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
+      throw new Error(
+        "AI service is not available. Please configure GEMINI_API_KEY.",
+      );
     }
 
     // Get group and transaction data
-    const group = await Group.findById(groupId);
+    const group = await this.getGroupForMember(groupId, userId);
     if (!group) {
-      throw new Error('Group not found');
+      throw new Error("Groupe introuvable");
     }
 
     const summary = await reportService.getGroupSummary(groupId, {
@@ -110,9 +116,11 @@ class AIService {
 
     // Generate insights using Gemini
     if (!this.model) {
-      throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
+      throw new Error(
+        "AI service is not available. Please configure GEMINI_API_KEY.",
+      );
     }
-    
+
     const prompt = this.buildInsightsPrompt(group, dataContext);
     const result = await this.model.generateContent(prompt);
     const response = await result.response;
@@ -129,7 +137,7 @@ class AIService {
       periodEnd,
       transactionsAnalyzed: transactions.length,
       report: insights,
-      modelUsed: 'gemini-pro',
+      modelUsed: "gemini-pro",
       tokensUsed: response.usageMetadata?.totalTokenCount || 0,
     });
 
@@ -139,15 +147,14 @@ class AIService {
   /**
    * Detect anomalies in transactions
    */
-  async detectAnomalies(groupId: string) {
+  async detectAnomalies(groupId: string, userId: string) {
     if (!this.isAvailable()) {
-      throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
+      throw new Error(
+        "AI service is not available. Please configure GEMINI_API_KEY.",
+      );
     }
 
-    const group = await Group.findById(groupId);
-    if (!group) {
-      throw new Error('Group not found');
-    }
+    const group = await this.getGroupForMember(groupId, userId);
 
     // Get last 3 months of transactions
     const threeMonthsAgo = new Date();
@@ -157,22 +164,27 @@ class AIService {
       groupId,
       createdAt: { $gte: threeMonthsAgo },
     })
-      .populate('initiatedBy', 'fullName')
+      .populate("initiatedBy", "fullName")
       .sort({ createdAt: -1 });
 
     if (transactions.length === 0) {
       return {
         anomalies: [],
-        summary: 'Pas assez de données pour détecter des anomalies.',
+        summary: "Pas assez de données pour détecter des anomalies.",
       };
     }
 
     if (!this.model) {
-      throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
+      throw new Error(
+        "AI service is not available. Please configure GEMINI_API_KEY.",
+      );
     }
 
     // Prepare anomaly detection prompt
-    const prompt = this.buildAnomalyDetectionPrompt(group, transactions as unknown as PopulatedTransaction[]);
+    const prompt = this.buildAnomalyDetectionPrompt(
+      group,
+      transactions as unknown as PopulatedTransaction[],
+    );
     const result = await this.model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -183,18 +195,19 @@ class AIService {
   /**
    * Generate personalized recommendations
    */
-  async generateRecommendations(groupId: string) {
+  async generateRecommendations(groupId: string, userId: string) {
     if (!this.isAvailable()) {
-      throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
+      throw new Error(
+        "AI service is not available. Please configure GEMINI_API_KEY.",
+      );
     }
 
-    const group = await Group.findById(groupId).populate('members.userId', 'fullName');
-    if (!group) {
-      throw new Error('Group not found');
-    }
+    const group = await this.getGroupForMember(groupId, userId, true);
 
     if (!this.model) {
-      throw new Error('AI service is not available. Please configure GEMINI_API_KEY.');
+      throw new Error(
+        "AI service is not available. Please configure GEMINI_API_KEY.",
+      );
     }
 
     // Get group statistics
@@ -213,14 +226,40 @@ class AIService {
     return this.parseRecommendationsResponse(text);
   }
 
+  private async getGroupForMember(
+    groupId: string,
+    userId: string,
+    populate = false,
+  ) {
+    const query = Group.findById(groupId);
+    const group = populate
+      ? await query.populate("members.userId", "fullName")
+      : await query;
+    if (!group) throw new Error("Groupe introuvable");
+
+    const isMember = group.members.some(
+      (member) =>
+        member.userId.toString() === userId && member.status === "active",
+    );
+    if (!isMember) throw new Error("Vous n’êtes pas membre actif de ce groupe");
+    return group;
+  }
+
   /**
    * Prepare data context for AI analysis
    */
-  private prepareDataContext(group: IGroup, summary: TransactionSummary, transactions: ITransaction[]): DataContext {
+  private prepareDataContext(
+    group: IGroup,
+    summary: TransactionSummary,
+    transactions: ITransaction[],
+  ): DataContext {
     // Calculate actual time span in months
     const firstTx = transactions[0]?.createdAt.getTime();
     const lastTx = transactions[transactions.length - 1]?.createdAt.getTime();
-    const daysDiff = firstTx && lastTx ? Math.abs(lastTx - firstTx) / (1000 * 60 * 60 * 24) : 0;
+    const daysDiff =
+      firstTx && lastTx
+        ? Math.abs(lastTx - firstTx) / (1000 * 60 * 60 * 24)
+        : 0;
     const monthsDiff = Math.max(1, Math.round(daysDiff / 30.44)); // 30.44 = average days per month
 
     const avgMonthlyContributions = summary.totalContributions / monthsDiff;
@@ -228,17 +267,17 @@ class AIService {
 
     // Calculate contribution regularity
     const contributionDates = transactions
-      .filter((t) => t.type === 'contribution')
+      .filter((t) => t.type === "contribution")
       .map((t) => t.createdAt);
-    
+
     const avgDaysBetweenContributions =
       contributionDates.length > 1
-        ? contributionDates
-            .slice(1)
-            .reduce((sum, date, i) => {
-              const diff = Math.abs(date.getTime() - contributionDates[i].getTime());
-              return sum + diff / (1000 * 60 * 60 * 24);
-            }, 0) /
+        ? contributionDates.slice(1).reduce((sum, date, i) => {
+            const diff = Math.abs(
+              date.getTime() - contributionDates[i].getTime(),
+            );
+            return sum + diff / (1000 * 60 * 60 * 24);
+          }, 0) /
           (contributionDates.length - 1)
         : 0;
 
@@ -283,10 +322,13 @@ Statistiques de la période:
 - Intervalle moyen entre cotisations: ${dataContext.avgDaysBetweenContributions.toFixed(1)} jours
 
 Top contributeurs:
-${dataContext.contributionsByMember.slice(0, 5).map((m) => `- ${m.userName}: ${m.amount} ${group.currency}`).join('\n')}
+${dataContext.contributionsByMember
+  .slice(0, 5)
+  .map((m) => `- ${m.userName}: ${m.amount} ${group.currency}`)
+  .join("\n")}
 
 Catégories de dépenses:
-${dataContext.expensesByCategory.map((c) => `- ${c.category}: ${c.amount} ${group.currency}`).join('\n')}
+${dataContext.expensesByCategory.map((c) => `- ${c.category}: ${c.amount} ${group.currency}`).join("\n")}
 
 Fournis une analyse structurée au format JSON avec:
 1. Un résumé global (1-2 phrases)
@@ -300,14 +342,17 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
   /**
    * Build anomaly detection prompt
    */
-  private buildAnomalyDetectionPrompt(group: IGroup, transactions: PopulatedTransaction[]): string {
+  private buildAnomalyDetectionPrompt(
+    group: IGroup,
+    transactions: PopulatedTransaction[],
+  ): string {
     const txSummary = transactions
       .slice(0, 20)
       .map((t) => {
         const user = t.initiatedBy;
-        return `${t.createdAt.toISOString().split('T')[0]} | ${t.type} | ${t.amount} ${t.currency} | ${user?.fullName || 'Unknown'}`;
+        return `${t.createdAt.toISOString().split("T")[0]} | ${t.type} | ${t.amount} ${t.currency} | ${user?.fullName || "Unknown"}`;
       })
-      .join('\n');
+      .join("\n");
 
     return `Tu es un expert en détection de fraudes et anomalies financières pour les tontines.
 
@@ -340,7 +385,10 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
   /**
    * Build recommendations prompt
    */
-  private buildRecommendationsPrompt(group: IGroup, summary: TransactionSummary): string {
+  private buildRecommendationsPrompt(
+    group: IGroup,
+    summary: TransactionSummary,
+  ): string {
     return `Tu es un conseiller financier expert en épargne collaborative.
 
 Groupe: "${group.name}" (${group.type})
@@ -377,14 +425,14 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
     try {
       // Remove markdown code blocks if present
       const cleanText = text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
         .trim();
 
       const parsed = JSON.parse(cleanText);
 
       return {
-        summary: parsed.summary || 'Analyse générée avec succès.',
+        summary: parsed.summary || "Analyse générée avec succès.",
         totalContributions: summary.totalContributions,
         totalExpenses: summary.totalExpenses,
         netBalance: summary.netBalance,
@@ -393,7 +441,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
         predictions: parsed.predictions || [],
       };
     } catch (error) {
-      logger.error('Failed to parse AI response:', error);
+      logger.error("Failed to parse AI response:", error);
       // Return fallback insights based on data
       return this.generateFallbackInsights(summary);
     }
@@ -405,16 +453,17 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
   private parseAnomalyResponse(text: string) {
     try {
       const cleanText = text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
         .trim();
 
       return JSON.parse(cleanText);
     } catch (error) {
-      logger.error('Failed to parse anomaly response:', error);
+      logger.error("Failed to parse anomaly response:", error);
       return {
         anomalies: [],
-        summary: 'Analyse des anomalies terminée. Aucune anomalie critique détectée.',
+        summary:
+          "Analyse des anomalies terminée. Aucune anomalie critique détectée.",
       };
     }
   }
@@ -425,21 +474,22 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
   private parseRecommendationsResponse(text: string) {
     try {
       const cleanText = text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
         .trim();
 
       return JSON.parse(cleanText);
     } catch (error) {
-      logger.error('Failed to parse recommendations response:', error);
+      logger.error("Failed to parse recommendations response:", error);
       return {
         recommendations: [
           {
-            category: 'general',
-            priority: 'medium',
-            title: 'Continuer la bonne gestion',
-            description: 'Le groupe fonctionne bien. Continuez avec les bonnes pratiques actuelles.',
-            impact: 'Maintien de la stabilité financière',
+            category: "general",
+            priority: "medium",
+            title: "Continuer la bonne gestion",
+            description:
+              "Le groupe fonctionne bien. Continuez avec les bonnes pratiques actuelles.",
+            impact: "Maintien de la stabilité financière",
           },
         ],
       };
@@ -452,7 +502,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
   private generateFallbackInsights(summary: TransactionSummary) {
     const savingsRate =
       summary.totalContributions > 0
-        ? ((summary.totalContributions - summary.totalExpenses) / summary.totalContributions) * 100
+        ? ((summary.totalContributions - summary.totalExpenses) /
+            summary.totalContributions) *
+          100
         : 0;
 
     return {
@@ -462,20 +514,20 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.`;
       netBalance: summary.netBalance,
       insights: [
         {
-          category: 'savings',
+          category: "savings",
           observation: `Taux d'épargne de ${savingsRate.toFixed(1)}%`,
           recommendation:
             savingsRate > 50
-              ? 'Excellent taux d\'épargne. Continuez ainsi!'
-              : 'Essayez de réduire les dépenses pour augmenter l\'épargne.',
+              ? "Excellent taux d'épargne. Continuez ainsi!"
+              : "Essayez de réduire les dépenses pour augmenter l'épargne.",
         },
       ],
       trends: [
         {
-          metric: 'Balance',
+          metric: "Balance",
           value: summary.netBalance,
           change: 0,
-          direction: 'stable' as const,
+          direction: "stable" as const,
         },
       ],
       predictions: [],

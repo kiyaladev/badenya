@@ -1,4 +1,5 @@
 import api from './api';
+import { getEntityId, unwrapApiData } from '@/utils/apiResponse';
 
 export interface Notification {
   _id: string;
@@ -14,8 +15,8 @@ export interface Notification {
   };
   priority: 'low' | 'normal' | 'high';
   isRead: boolean;
-  readAt?: Date;
-  createdAt: Date;
+  readAt?: string;
+  createdAt: string;
 }
 
 export interface NotificationsResponse {
@@ -23,6 +24,46 @@ export interface NotificationsResponse {
   count: number;
   total: number;
   unreadCount: number;
+}
+
+function normalizeNotification(rawNotification: unknown): Notification {
+  const raw = (rawNotification || {}) as {
+    _id?: unknown;
+    userId?: unknown;
+    type?: unknown;
+    title?: unknown;
+    message?: unknown;
+    data?: {
+      groupId?: unknown;
+      proposalId?: unknown;
+      transactionId?: unknown;
+      [key: string]: unknown;
+    };
+    priority?: unknown;
+    isRead?: unknown;
+    readAt?: unknown;
+    createdAt?: unknown;
+  };
+
+  return {
+    _id: getEntityId(raw._id),
+    userId: getEntityId(raw.userId),
+    type: String(raw.type || ''),
+    title: String(raw.title || ''),
+    message: String(raw.message || ''),
+    data: raw.data
+      ? {
+          ...raw.data,
+          groupId: raw.data.groupId ? getEntityId(raw.data.groupId) : undefined,
+          proposalId: raw.data.proposalId ? getEntityId(raw.data.proposalId) : undefined,
+          transactionId: raw.data.transactionId ? getEntityId(raw.data.transactionId) : undefined,
+        }
+      : undefined,
+    priority: (raw.priority || 'normal') as Notification['priority'],
+    isRead: Boolean(raw.isRead),
+    readAt: raw.readAt ? String(raw.readAt) : undefined,
+    createdAt: String(raw.createdAt || new Date().toISOString()),
+  };
 }
 
 const notificationService = {
@@ -33,19 +74,31 @@ const notificationService = {
     unreadOnly?: boolean;
   }): Promise<NotificationsResponse> => {
     const response = await api.get('/notifications', { params });
-    return response.data.data;
+    const data = unwrapApiData<{
+      notifications?: unknown[];
+      count?: number;
+      total?: number;
+      unreadCount?: number;
+    }>(response.data);
+    return {
+      notifications: (data.notifications || []).map(normalizeNotification),
+      count: Number(data.count || 0),
+      total: Number(data.total || 0),
+      unreadCount: Number(data.unreadCount || 0),
+    };
   },
 
   // Mark notification as read
   markAsRead: async (notificationId: string): Promise<Notification> => {
     const response = await api.put(`/notifications/${notificationId}/read`);
-    return response.data.data.notification;
+    const data = unwrapApiData<{ notification: unknown }>(response.data);
+    return normalizeNotification(data.notification);
   },
 
   // Mark all notifications as read
   markAllAsRead: async (): Promise<{ modifiedCount: number }> => {
     const response = await api.put('/notifications/mark-all-read');
-    return response.data.data;
+    return unwrapApiData<{ modifiedCount: number }>(response.data);
   },
 
   // Delete notification

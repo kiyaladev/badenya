@@ -1,13 +1,6 @@
+import { useThemeStore } from '@/store/themeStore';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  ViewStyle,
-  NativeSyntheticEvent,
-  TextInputFocusEventData,
-} from 'react-native';
+import { View, Text, TextInput, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -30,14 +23,15 @@ export default function Input({
   onBlur,
   ...props
 }: InputProps) {
+  const colors = useThemeStore(state => state.colors);
   const [isFocused, setIsFocused] = useState(false);
 
-  const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleFocus: NonNullable<InputProps['onFocus']> = e => {
     setIsFocused(true);
     onFocus?.(e);
   };
 
-  const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleBlur: NonNullable<InputProps['onBlur']> = e => {
     setIsFocused(false);
     onBlur?.(e);
   };
@@ -54,76 +48,80 @@ export default function Input({
       case 'outlined':
         return {
           ...baseStyles,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.card,
           borderWidth: error || isFocused ? 2 : 1,
           borderColor: error ? '#ef4444' : isFocused ? '#0284c7' : '#e5e7eb',
         };
       case 'filled':
         return {
           ...baseStyles,
-          backgroundColor: isFocused ? '#f0f9ff' : '#f3f4f6',
+          backgroundColor: isFocused ? colors.card : colors.surface,
           borderWidth: 2,
           borderColor: error ? '#ef4444' : isFocused ? '#0284c7' : 'transparent',
         };
       default:
         return {
           ...baseStyles,
-          backgroundColor: isFocused ? '#f8fafc' : '#f3f4f6',
+          backgroundColor: isFocused ? colors.card : colors.surface,
           borderWidth: 2,
           borderColor: error ? '#ef4444' : isFocused ? '#0284c7' : 'transparent',
         };
     }
   };
 
+  const fieldWrapperStyle: ViewStyle = { marginBottom: 16 };
+  const labelStyle: TextStyle = {
+    fontSize: 14,
+    fontWeight: '500',
+    color: error ? '#ef4444' : isFocused ? '#0284c7' : '#374151',
+    marginBottom: 8,
+  };
+  const leftIconStyle: ViewStyle = { paddingLeft: 14 };
+  const rightIconStyle: ViewStyle = { paddingRight: 14 };
+  const inputTextStyle: TextStyle = {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: colors.text,
+  };
+  const inputLeftSpacingStyle: TextStyle = leftIcon ? { paddingLeft: 8 } : {};
+  const inputRightSpacingStyle: TextStyle = rightIcon ? { paddingRight: 8 } : {};
+  const errorRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  };
+  const errorTextStyle: TextStyle = { fontSize: 13, color: '#ef4444' };
+  const helperTextStyle: TextStyle = { fontSize: 13, color: colors.textSecondary, marginTop: 6 };
+
   return (
-    <View style={{ marginBottom: 16 }}>
-      {label && (
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: '500',
-            color: error ? '#ef4444' : isFocused ? '#0284c7' : '#374151',
-            marginBottom: 8,
-          }}
-        >
-          {label}
-        </Text>
-      )}
+    <View style={fieldWrapperStyle}>
+      {label && <Text style={labelStyle}>{label}</Text>}
 
       <View style={getInputContainerStyles()}>
-        {leftIcon && <View style={{ paddingLeft: 14 }}>{leftIcon}</View>}
+        {leftIcon && <View style={leftIconStyle}>{leftIcon}</View>}
 
         <TextInput
-          style={[
-            {
-              flex: 1,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              fontSize: 16,
-              color: '#111827',
-            },
-            leftIcon ? { paddingLeft: 8 } : {},
-            rightIcon ? { paddingRight: 8 } : {},
-            style,
-          ]}
+          style={[inputTextStyle, inputLeftSpacingStyle, inputRightSpacingStyle, style]}
           placeholderTextColor="#9ca3af"
           onFocus={handleFocus}
           onBlur={handleBlur}
+          accessibilityLabel={props.accessibilityLabel || label}
+          accessibilityState={{ disabled: props.editable === false }}
           {...props}
         />
 
-        {rightIcon && <View style={{ paddingRight: 14 }}>{rightIcon}</View>}
+        {rightIcon && <View style={rightIconStyle}>{rightIcon}</View>}
       </View>
 
       {error && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-          <Text style={{ fontSize: 13, color: '#ef4444' }}>{error}</Text>
+        <View style={errorRowStyle}>
+          <Text style={errorTextStyle}>{error}</Text>
         </View>
       )}
 
-      {helperText && !error && (
-        <Text style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>{helperText}</Text>
-      )}
+      {helperText && !error && <Text style={helperTextStyle}>{helperText}</Text>}
     </View>
   );
 }

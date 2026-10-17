@@ -1,0 +1,201 @@
+[
+  {
+    "package": "braces",
+    "version": "3.0.3",
+    "file": "lib/parse.js",
+    "source": "https://github.com/micromatch/braces/issues/70",
+    "advisories": [
+      "GHSA-vfj7-8cjw-p6xm"
+    ],
+    "originalSha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+    "patchedSha256": "d768848314e7d12a20ae306e584bbf9ac1478e6d7c9523ced412383ae3c3f2af",
+    "edits": [
+      {
+        "before": "  const push = node => {",
+        "after": "  const push = node => {\n    if (stack.length > 100) throw new SyntaxError('Brace pattern nesting exceeds 100 levels');"
+      }
+    ]
+  },
+  {
+    "package": "braces",
+    "version": "3.0.3",
+    "file": "lib/compile.js",
+    "source": "https://github.com/micromatch/braces/issues/70",
+    "advisories": [
+      "GHSA-vfj7-8cjw-p6xm"
+    ],
+    "originalSha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+    "patchedSha256": "f968a766033105fbd7539132662beb0a9d0a7d4b0f1ac3f5ce72034e9a74b5fe",
+    "edits": [
+      {
+        "before": "const walk = (node, parent = {}) => {",
+        "after": "const walk = (node, parent = {}, level = 0) => {\n    if (level > 100) throw new SyntaxError('Brace AST nesting exceeds 100 levels');"
+      },
+      {
+        "before": "output += walk(child, node);",
+        "after": "output += walk(child, node, level + 1);"
+      }
+    ]
+  },
+  {
+    "package": "braces",
+    "version": "3.0.3",
+    "file": "lib/stringify.js",
+    "source": "https://github.com/micromatch/braces/issues/70",
+    "advisories": [
+      "GHSA-vfj7-8cjw-p6xm"
+    ],
+    "originalSha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+    "patchedSha256": "86db4dac7b0928c5f0759cd915242dd8052838ff2aea8e366c70ad50d9eb009c",
+    "edits": [
+      {
+        "before": "const stringify = (node, parent = {}) => {",
+        "after": "const stringify = (node, parent = {}, level = 0) => {\n    if (level > 100) throw new SyntaxError('Brace AST nesting exceeds 100 levels');"
+      },
+      {
+        "before": "output += stringify(child);",
+        "after": "output += stringify(child, {}, level + 1);"
+      }
+    ]
+  },
+  {
+    "package": "braces",
+    "version": "3.0.3",
+    "file": "lib/expand.js",
+    "source": "https://github.com/micromatch/braces/issues/70",
+    "advisories": [
+      "GHSA-vfj7-8cjw-p6xm"
+    ],
+    "originalSha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+    "patchedSha256": "0f20ed3b8c9e3e17036efe906d354cbabd9d6641eca7eca41fa9475958469f3f",
+    "edits": [
+      {
+        "before": "const expand = (ast, options = {}) => {",
+        "after": "const expand = (ast, options = {}) => {\n  const pending = [[ast, 0]];\n  while (pending.length) {\n    const [node, level] = pending.pop();\n    if (level > 100) throw new SyntaxError('Brace AST nesting exceeds 100 levels');\n    if (node && node.nodes) for (const child of node.nodes) pending.push([child, level + 1]);\n  }"
+      }
+    ]
+  },
+  {
+    "package": "node-forge",
+    "version": "1.4.0",
+    "file": "lib/rsa.js",
+    "source": "https://github.com/digitalbazaar/forge/commit/ceba34402e329f0365134f23fe19898756527d65",
+    "advisories": [
+      "GHSA-86w9-cpqp-85rv"
+    ],
+    "originalSha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+    "patchedSha256": "c9b1e3799e230528b6d6815c1f6cd3c6058b9d45975264b55d995abb976589af",
+    "edits": [
+      {
+        "before": "            obj.value.length !== 2) {",
+        "after": "            obj.value.length !== 2 ||\n            obj.value[0].value.length !==\n              (('parameters' in capture) ? 2 : 1)) {"
+      }
+    ]
+  },
+  {
+    "package": "image-size",
+    "version": "1.2.1",
+    "file": "dist/types/icns.js",
+    "source": "https://github.com/image-size/image-size/releases/tag/v2.0.4",
+    "advisories": [
+      "GHSA-w3rx-r6r6-pgpr"
+    ],
+    "originalSha256": "5e6a097fca237b0bb3b68a1be920e39a3846c0018d8917658b5ed88590a710e8",
+    "patchedSha256": "0c1f64cc212dd35118888fe55057f44fd7ead337eb60abddbbcfb756755cab8c",
+    "edits": [
+      {
+        "before": "    const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;",
+        "after": "    const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;\n    if (imageLengthOffset + 4 > input.length || (0, utils_1.readUInt32BE)(input, imageLengthOffset) < 8) throw new TypeError('Invalid ICNS');"
+      }
+    ]
+  },
+  {
+    "package": "image-size",
+    "version": "1.2.1",
+    "file": "dist/types/jxl.js",
+    "source": "https://github.com/image-size/image-size/releases/tag/v2.0.4",
+    "advisories": [
+      "GHSA-5p2g-fcmc-qvqq"
+    ],
+    "originalSha256": "2958da1fbda466a2aff5769e3353dc8da6848ae1be0e1f9ec6cd7af25f759721",
+    "patchedSha256": "e83451f1ef021bf908cdc1cbcedc66b1dd7538a57a70dba5286bef77487ad590",
+    "edits": [
+      {
+        "before": "        partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));",
+        "after": "        if (jxlpBox.size < 12) throw new TypeError('Invalid JXL');\n        partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));"
+      }
+    ]
+  },
+  {
+    "package": "image-size",
+    "version": "1.2.1",
+    "file": "dist/types/utils.js",
+    "source": "https://github.com/image-size/image-size/releases/tag/v2.0.4",
+    "advisories": [
+      "GHSA-5p2g-fcmc-qvqq"
+    ],
+    "originalSha256": "e9faf86abcc962a5fc2488a4c3c9d8dc915aa22a0dd6a7bad6556cd9a326c349",
+    "patchedSha256": "7c9b379e46de553323e421087d7846cd537a866d0fa3641d0a1b7f654097f1a9",
+    "edits": [
+      {
+        "before": "function readBox(input, offset) {\n    if (input.length - offset < 4)\n        return;\n    const boxSize = (0, exports.readUInt32BE)(input, offset);\n    if (input.length - offset < boxSize)\n        return;\n    return {\n        name: (0, exports.toUTF8String)(input, 4 + offset, 8 + offset),\n        offset,\n        size: boxSize,\n    };\n}\nfunction findBox(input, boxName, offset) {\n    while (offset < input.length) {\n        const box = readBox(input, offset);\n        if (!box)\n            break;\n        if (box.name === boxName)\n            return box;\n        // Fix the infinite loop by ensuring offset always increases\n        // If box.size is 0, advance by at least 8 bytes (the size of the box header)\n        offset += box.size > 0 ? box.size : 8;\n    }\n}\n",
+        "after": "function readBox(input, offset) {\n    if (input.length - offset < 8)\n        return undefined;\n    const boxSize = (0, exports.readUInt32BE)(input, offset);\n    if (input.length - offset < boxSize)\n        return undefined;\n    return {\n        name: (0, exports.toUTF8String)(input, 4 + offset, 8 + offset),\n        offset,\n        size: boxSize,\n    };\n}\nfunction findBox(input, boxName, startOffset) {\n    let currentOffset = startOffset;\n    while (currentOffset < input.length) {\n        if (input.length - currentOffset < 4)\n            break;\n        const boxSize = (0, exports.readUInt32BE)(input, currentOffset);\n        if (boxSize < 8) {\n            currentOffset += 8;\n            continue;\n        }\n        const box = readBox(input, currentOffset);\n        if (!box)\n            break;\n        if (box.name === boxName)\n            return box;\n        currentOffset += box.size;\n    }\n    return undefined;\n}\n"
+      }
+    ]
+  },
+  {
+    "package": "decode-uri-component",
+    "version": "0.2.2",
+    "file": "index.js",
+    "source": "https://github.com/SamVerschueren/decode-uri-component/releases/tag/v0.5.0",
+    "advisories": [
+      "GHSA-vcc3-ghjq-m6fr"
+    ],
+    "originalSha256": "3b8ba0a765e1089d11bba9a919d0d8789ecd9a6833ea078d8d9114e1db093863",
+    "patchedSha256": "de7bea07ef15e632b2ba1cb470ebd3dfca803422c5b9cfa9c83bf380c14f8684",
+    "edits": [
+      {
+        "before": "function decodeComponents(components, split) {\n\ttry {\n\t\t// Try to decode the entire string first\n\t\treturn [decodeURIComponent(components.join(''))];\n\t} catch (err) {\n\t\t// Do nothing\n\t}\n\n\tif (components.length === 1) {\n\t\treturn components;\n\t}\n\n\tsplit = split || 1;\n\n\t// Split the array in 2 parts\n\tvar left = components.slice(0, split);\n\tvar right = components.slice(split);\n\n\treturn Array.prototype.concat.call([], decodeComponents(left), decodeComponents(right));\n}\n\nfunction decode(input) {\n\ttry {\n\t\treturn decodeURIComponent(input);\n\t} catch (err) {\n\t\tvar tokens = input.match(singleMatcher) || [];\n\n\t\tfor (var i = 1; i < tokens.length; i++) {\n\t\t\tinput = decodeComponents(tokens, i).join('');\n\n\t\t\ttokens = input.match(singleMatcher) || [];\n\t\t}\n\n\t\treturn input;\n\t}\n}\n\n",
+        "after": "const hexPair = /^[a-f\\d]{2}$/i;\n\n// Read a `%XX` sequence at `position`, returning the byte value and where to continue scanning.\nfunction parsePercentByte(input, position) {\n\tif (input.codePointAt(position) !== 37 || position + 3 > input.length) {\n\t\treturn;\n\t}\n\n\tconst digits = input.slice(position + 1, position + 3);\n\n\tif (!hexPair.test(digits)) {\n\t\treturn;\n\t}\n\n\treturn {byte: Number.parseInt(digits, 16), next: position + 3};\n}\n\n/**\n * Return how many bytes a UTF-8 code point needs based on its lead byte.\n * Returns 0 for continuation bytes and other invalid lead bytes.\n */\nfunction utf8SequenceLength(byte) {\n\tif (byte <= 0x7F) {\n\t\treturn 1;\n\t}\n\n\t// Start at 0xC2 to exclude overlong 2-byte encodings (0xC0/0xC1).\n\tif (byte >= 0xC2 && byte <= 0xDF) {\n\t\treturn 2;\n\t}\n\n\tif (byte >= 0xE0 && byte <= 0xEF) {\n\t\treturn 3;\n\t}\n\n\tif (byte >= 0xF0 && byte <= 0xF4) {\n\t\treturn 4;\n\t}\n\n\treturn 0;\n}\n\nfunction isContinuationByte(byte) {\n\treturn byte >= 0x80 && byte <= 0xBF;\n}\n\n/**\n * Decode as much of `input` as possible without throwing.\n *Scans left-to-right in O(n), decoding valid UTF-8 runs and leaving the rest literal.\n */\nfunction decode(input) {\n\ttry {\n\t\treturn decodeURIComponent(input);\n\t} catch {\n\t\tlet output = '';\n\t\tlet position = 0;\n\n\t\twhile (position < input.length) {\n\t\t\tif (input.codePointAt(position) !== 37) {\n\t\t\t\toutput += input.charAt(position);\n\t\t\t\tposition++;\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\tconst firstByte = parsePercentByte(input, position);\n\n\t\t\t// `%` not followed by two hex digits (e.g. `%` or `%G`).\n\t\t\tif (!firstByte) {\n\t\t\t\toutput += input.charAt(position);\n\t\t\t\tposition++;\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\tconst sequenceLength = utf8SequenceLength(firstByte.byte);\n\n\t\t\t// Continuation byte or invalid lead byte \u2014 emit one `%XX` literally.\n\t\t\tif (sequenceLength === 0) {\n\t\t\t\toutput += input.slice(position, position + 3);\n\t\t\t\tposition += 3;\n\t\t\t\tcontinue;\n\t\t\t}\n\n\t\t\tlet end = firstByte.next;\n\t\t\tlet validSequence = true;\n\n\t\t\tfor (let index = 1; index < sequenceLength; index++) {\n\t\t\t\tconst nextByte = parsePercentByte(input, end);\n\n\t\t\t\tif (!nextByte || !isContinuationByte(nextByte.byte)) {\n\t\t\t\t\tvalidSequence = false;\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\n\t\t\t\tend = nextByte.next;\n\t\t\t}\n\n\t\t\tif (validSequence) {\n\t\t\t\tconst encodedSequence = input.slice(position, end);\n\n\t\t\t\ttry {\n\t\t\t\t\toutput += decodeURIComponent(encodedSequence);\n\t\t\t\t\tposition = end;\n\t\t\t\t\tcontinue;\n\t\t\t\t} catch {\n\t\t\t\t\t// Invalid UTF-8 despite correct structure \u2014 emit the first byte literally.\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Missing continuation bytes or decode failure \u2014 emit the first byte literally.\n\t\t\toutput += input.slice(position, position + 3);\n\t\t\tposition += 3;\n\t\t}\n\n\t\treturn output;\n\t}\n}\n\n"
+      },
+      {
+        "before": "var token = '%[a-f0-9]{2}';\nvar singleMatcher = new RegExp('(' + token + ')|([^%]+?)', 'gi');\n",
+        "after": "var token = '%[a-f0-9]{2}';\n"
+      }
+    ]
+  },
+  {
+    "package": "node-forge",
+    "version": "1.4.0",
+    "file": "dist/forge.min.js",
+    "source": "https://github.com/digitalbazaar/forge/pull/1152",
+    "advisories": [
+      "GHSA-86w9-cpqp-85rv"
+    ],
+    "originalSha256": "d9b9074e6861200d676e25dcfe97889db5e8f4150bb766d29c491ad709a51b58",
+    "patchedSha256": "a1d374dddbfd38635e74c08bddcd55553f9b3e29fa4346ff8ac8cbfa2f21414f",
+    "edits": [
+      {
+        "before": "if(!s.validate(n,d,o,c)||2!==n.value.length)",
+        "after": "if(!s.validate(n,d,o,c)||2!==n.value.length||n.value[0].value.length!==(\"parameters\"in o?2:1))"
+      }
+    ]
+  },
+  {
+    "package": "node-forge",
+    "version": "1.4.0",
+    "file": "dist/forge.all.min.js",
+    "source": "https://github.com/digitalbazaar/forge/pull/1152",
+    "advisories": [
+      "GHSA-86w9-cpqp-85rv"
+    ],
+    "originalSha256": "cb9ba4045a81825f8edb646c38d53a1ac30ce07665bf26042c8dea86d7208642",
+    "patchedSha256": "baaad7f257463658489c2860eb83da1ab6bf6485557a94a8a5a97f935784a1bb",
+    "edits": [
+      {
+        "before": "if(!s.validate(a,d,o,c)||2!==a.value.length)",
+        "after": "if(!s.validate(a,d,o,c)||2!==a.value.length||a.value[0].value.length!==(\"parameters\"in o?2:1))"
+      }
+    ]
+  }
+]

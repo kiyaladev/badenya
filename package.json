@@ -10,12 +10,19 @@
   ],
   "scripts": {
     "dev:backend": "npm run dev --workspace=backend",
+    "seed:backend": "npm run seed --workspace=backend",
+    "seed:backend:reset": "npm run seed:reset --workspace=backend",
     "dev:admin": "npm run dev --workspace=admin",
     "dev:landing": "npm run dev --workspace=landing-page",
     "build:backend": "npm run build --workspace=backend",
+    "build:mobile:web": "npm --prefix mobile run build:web",
     "build:admin": "npm run build --workspace=admin",
     "build:landing": "npm run build --workspace=landing-page",
     "test:backend": "npm run test:unit --workspace=backend",
+    "test:backend:integration": "npm run test:integration --workspace=backend",
+    "test:mobile": "npm --prefix mobile run test:ci",
+    "typecheck:mobile": "npm --prefix mobile run typecheck",
+    "lint:mobile": "npm --prefix mobile run lint",
     "test:admin": "npm run test --workspace=admin",
     "test:landing": "npm run test --workspace=landing-page",
     "lint:backend": "npm run lint --workspace=backend",
@@ -30,5 +37,14 @@
     "monorepo"
   ],
   "author": "Badenya Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2"
+  },
+  "overrides": {
+    "uuid": "^11.1.1",
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^4.1.1"
+    }
+  }
 }

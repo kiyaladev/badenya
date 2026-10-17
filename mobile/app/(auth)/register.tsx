@@ -1,8 +1,33 @@
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, Keyboard } from 'react-native';
+import { Alert } from '@/services/dialog.service';
+import {
+  View,
+  Text,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableOpacity,
+} from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Button, Input } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button, Icon, Input } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+
+const tw = {
+  keyboard: 'flex-1',
+  scroll: 'bg-white dark:bg-gray-800',
+  headerContent: 'items-center',
+  logo: 'w-[72px] h-[72px] rounded-full bg-white/20 items-center justify-center mb-4',
+  title: 'text-white text-[28px] font-bold mb-1.5',
+  subtitle: 'text-white/85 text-[15px]',
+  formCard: 'flex-1 bg-white dark:bg-gray-800 rounded-t-[32px] -mt-8 px-6 pt-7',
+  button: 'mt-2 mb-5',
+  loginLink: 'flex-row justify-center items-center mb-8',
+  loginPrompt: 'text-gray-500 dark:text-gray-300 text-[15px]',
+  loginText: 'text-primary-600 text-[15px] font-semibold',
+};
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
@@ -10,6 +35,9 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [errors, setErrors] = useState({
     fullName: '',
     email: '',
@@ -19,7 +47,10 @@ export default function RegisterScreen() {
   });
 
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { register, isLoading, clearError } = useAuthStore();
+  // LinearGradient is not className-aware: layout stays inline with the safe-area inset.
+  const headerStyle = { paddingTop: insets.top + 32, paddingBottom: 56, paddingHorizontal: 24 };
 
   const validateForm = () => {
     let valid = true;
@@ -46,6 +77,9 @@ export default function RegisterScreen() {
 
     if (!phone) {
       newErrors.phone = 'Téléphone requis';
+      valid = false;
+    } else if (!/^[0-9+\s-]{8,}$/.test(phone)) {
+      newErrors.phone = 'Numéro invalide (minimum 8 chiffres)';
       valid = false;
     }
 
@@ -75,39 +109,53 @@ export default function RegisterScreen() {
     }
 
     try {
-      await register({ fullName, email, phone, password });
+      await register({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password,
+      });
       router.replace('/(tabs)');
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message :
-        typeof err === 'object' && err !== null && 'response' in err
-          ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message)
-          : undefined;
-      Alert.alert(
-        "Erreur d'inscription",
-        message || 'Une erreur est survenue'
-      );
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'response' in err
+            ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+            : undefined;
+      Alert.alert("Erreur d'inscription", message || 'Une erreur est survenue');
     }
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
+      className={tw.keyboard}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="bg-white"
+        contentContainerClassName="grow"
+        className={tw.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-6 pt-16">
-          {/* Header */}
-          <View className="mb-8">
-            <Text className="text-4xl font-bold text-gray-800 mb-2">Créer un compte</Text>
-            <Text className="text-lg text-gray-600">Rejoignez Badenya aujourd'hui</Text>
+        {/* Header with gradient accent */}
+        <LinearGradient
+          colors={['#0284c7', '#0369a1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={headerStyle}
+        >
+          <View className={tw.headerContent}>
+            <View className={tw.logo}>
+              <Icon name="user-plus" size={30} color="#ffffff" />
+            </View>
+            <Text className={tw.title}>Créer un compte</Text>
+            <Text className={tw.subtitle}>Rejoignez Badenya dès aujourd'hui</Text>
           </View>
+        </LinearGradient>
 
-          {/* Form */}
+        {/* Form Card */}
+        <View className={tw.formCard}>
           <Input
             label="Nom complet"
             value={fullName}
@@ -117,6 +165,7 @@ export default function RegisterScreen() {
             }}
             placeholder="Jean Dupont"
             error={errors.fullName}
+            leftIcon={<Icon name="user" size={18} color="#9ca3af" />}
           />
 
           <Input
@@ -130,6 +179,7 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             error={errors.email}
+            leftIcon={<Icon name="envelope" size={18} color="#9ca3af" />}
           />
 
           <Input
@@ -142,6 +192,7 @@ export default function RegisterScreen() {
             placeholder="+225 07 XX XX XX XX"
             keyboardType="phone-pad"
             error={errors.phone}
+            leftIcon={<Icon name="phone" size={18} color="#9ca3af" />}
           />
 
           <Input
@@ -152,8 +203,14 @@ export default function RegisterScreen() {
               setErrors({ ...errors, password: '' });
             }}
             placeholder="••••••••"
-            secureTextEntry
+            secureTextEntry={!showPassword}
             error={errors.password}
+            leftIcon={<Icon name="lock" size={20} color="#9ca3af" />}
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Icon name={showPassword ? 'eye-slash' : 'eye'} size={18} color="#9ca3af" />
+              </TouchableOpacity>
+            }
           />
 
           <Input
@@ -164,29 +221,35 @@ export default function RegisterScreen() {
               setErrors({ ...errors, confirmPassword: '' });
             }}
             placeholder="••••••••"
-            secureTextEntry
+            secureTextEntry={!showConfirmPassword}
             error={errors.confirmPassword}
+            leftIcon={<Icon name="lock" size={20} color="#9ca3af" />}
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                <Icon name={showConfirmPassword ? 'eye-slash' : 'eye'} size={18} color="#9ca3af" />
+              </TouchableOpacity>
+            }
           />
 
           {/* Register Button */}
-          <Button
-            title="S'inscrire"
-            onPress={handleRegister}
-            loading={isLoading}
-            fullWidth
-            style={{ marginBottom: 24 }}
-          />
+          <View className={tw.button}>
+            <Button
+              title="S'inscrire"
+              onPress={handleRegister}
+              loading={isLoading}
+              fullWidth
+              size="lg"
+              iconName="check"
+              iconPosition="right"
+            />
+          </View>
 
           {/* Login Link */}
-          <View className="flex-row justify-center mb-8">
-            <Text className="text-gray-600 text-base">Déjà un compte ? </Text>
-            <Button
-              title="Se connecter"
-              variant="ghost"
-              size="sm"
-              onPress={() => router.back()}
-              style={{ padding: 0, marginTop: -8 }}
-            />
+          <View className={tw.loginLink}>
+            <Text className={tw.loginPrompt}>Déjà un compte ? </Text>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Text className={tw.loginText}>Se connecter</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

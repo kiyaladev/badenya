@@ -1,4 +1,8 @@
 import api from './api';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import authService from './auth.service';
+import { unwrapApiData } from '@/utils/apiResponse';
 
 export interface ReportSummary {
   totalContributions: number;
@@ -45,7 +49,8 @@ class ReportService {
     if (endDate) params.endDate = endDate;
 
     const response = await api.get(`/groups/${groupId}/reports/summary`, { params });
-    return response.data.data;
+    const data = unwrapApiData<{ summary?: ReportSummary } & Partial<ReportSummary>>(response.data);
+    return (data.summary || data) as ReportSummary;
   }
 
   /**
@@ -84,28 +89,61 @@ class ReportService {
     return url;
   }
 
-  /**
-   * Download PDF report (simplified - opens in browser)
-   */
+  private async downloadFile(url: string, filename: string): Promise<string> {
+    const accessToken = await authService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Session expirée. Veuillez vous reconnecter.');
+    }
+
+    const directory = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+    if (!directory) {
+      throw new Error('Stockage local indisponible');
+    }
+
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const targetUri = `${directory}${safeFilename}`;
+    const task = FileSystem.createDownloadResumable(url, targetUri, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const result = await task.downloadAsync();
+    if (!result?.uri) {
+      throw new Error('Le téléchargement du rapport a échoué');
+    }
+    return result.uri;
+  }
+
+  async shareReport(uri: string, mimeType: string): Promise<boolean> {
+    if (!(await Sharing.isAvailableAsync())) {
+      return false;
+    }
+    await Sharing.shareAsync(uri, { mimeType, dialogTitle: 'Partager le rapport' });
+    return true;
+  }
+
+  /** Download PDF report with the authenticated mobile session. */
   async downloadPdfReport(
     groupId: string,
     groupName: string,
     startDate?: string,
     endDate?: string
   ): Promise<string> {
-    return this.getPdfReportUrl(groupId, startDate, endDate);
+    return this.downloadFile(
+      this.getPdfReportUrl(groupId, startDate, endDate),
+      `${groupName}_rapport.pdf`
+    );
   }
 
-  /**
-   * Download Excel report (simplified - opens in browser)
-   */
+  /** Download Excel report with the authenticated mobile session. */
   async downloadExcelReport(
     groupId: string,
     groupName: string,
     startDate?: string,
     endDate?: string
   ): Promise<string> {
-    return this.getExcelReportUrl(groupId, startDate, endDate);
+    return this.downloadFile(
+      this.getExcelReportUrl(groupId, startDate, endDate),
+      `${groupName}_rapport.xlsx`
+    );
   }
 
   /**
@@ -113,7 +151,7 @@ class ReportService {
    */
   async getMonthlyReport(groupId: string, year: number, month: number): Promise<MonthlyReport> {
     const response = await api.get(`/groups/${groupId}/reports/monthly/${year}/${month}`);
-    return response.data.data;
+    return unwrapApiData<MonthlyReport>(response.data);
   }
 }
 

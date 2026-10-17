@@ -223,4 +223,11 @@ describe('GroupService', () => {
       }
     });
   });
+  it('submits a public admission with an explicit JSON body and keeps the server pending status', async () => {
+    (api.post as jest.Mock).mockResolvedValue({
+      data: { data: { status: 'pending', groupId: '1' } },
+    });
+    expect(await groupService.join('1')).toEqual({ status: 'pending', groupId: '1' });
+    expect(api.post).toHaveBeenCalledWith('/groups/1/join', {});
+  });
 });

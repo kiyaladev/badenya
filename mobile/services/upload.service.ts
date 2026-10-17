@@ -1,13 +1,22 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Alert } from 'react-native';
+import { Alert } from './dialog.service';
+import { Platform } from 'react-native';
 import logger from './logger';
+import api from './api';
 
 export interface ImageInfo {
   uri: string;
   name: string;
   type: string;
   size?: number;
+}
+
+export interface UploadedImage {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
 }
 
 /**
@@ -83,7 +92,8 @@ export const pickImage = async (options?: {
     const images: ImageInfo[] = [];
 
     for (const asset of result.assets) {
-      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+      const fileInfo =
+        Platform.OS === 'web' ? { size: asset.fileSize } : await FileSystem.getInfoAsync(asset.uri);
 
       images.push({
         uri: asset.uri,
@@ -124,7 +134,8 @@ export const takePhoto = async (options?: {
     }
 
     const asset = result.assets[0];
-    const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+    const fileInfo =
+      Platform.OS === 'web' ? { size: asset.fileSize } : await FileSystem.getInfoAsync(asset.uri);
 
     return {
       uri: asset.uri,
@@ -172,7 +183,7 @@ export const showImagePicker = async (options?: {
           onPress: () => resolve(null),
         },
       ],
-      { cancelable: true }
+      { cancelable: true, onDismiss: () => resolve(null) }
     );
   });
 };
@@ -186,6 +197,7 @@ export const saveImageLocally = async (
   filename: string
 ): Promise<string | null> => {
   try {
+    if (Platform.OS === 'web') return imageUri;
     const directory = `${FileSystem.documentDirectory}uploads/`;
 
     // Create directory if it doesn't exist
@@ -214,7 +226,7 @@ export const saveImageLocally = async (
  */
 export const deleteImageLocally = async (imageUri: string): Promise<boolean> => {
   try {
-    await FileSystem.deleteAsync(imageUri, { idempotent: true });
+    if (Platform.OS !== 'web') await FileSystem.deleteAsync(imageUri, { idempotent: true });
     return true;
   } catch (error) {
     logger.error('Upload', 'Error deleting image', error);
@@ -240,6 +252,15 @@ export const getImageSize = async (uri: string): Promise<number | null> => {
  */
 export const imageToBase64 = async (uri: string): Promise<string | null> => {
   try {
+    if (Platform.OS === 'web') {
+      const blob = await (await fetch(uri)).blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
     const base64 = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
     });
@@ -248,6 +269,29 @@ export const imageToBase64 = async (uri: string): Promise<string | null> => {
     logger.error('Upload', 'Error converting image to base64', error);
     return null;
   }
+};
+
+/** Upload a local image to the authenticated API and return its public URL. */
+export const uploadImage = async (
+  image: ImageInfo,
+  context: { purpose: 'avatar' } | { purpose: 'receipt'; groupId: string }
+): Promise<UploadedImage> => {
+  const base64 = await imageToBase64(image.uri);
+  if (!base64) {
+    throw new Error(`Impossible de lire l'image ${image.name}`);
+  }
+
+  const response = await api.post('/uploads/image', {
+    ...context,
+    data: `data:${image.type};base64,${base64}`,
+    filename: image.name,
+    mimeType: image.type,
+  });
+  const file = response.data?.data?.file;
+  if (!file?.url) {
+    throw new Error('Le serveur n’a pas retourné l’URL du fichier');
+  }
+  return file as UploadedImage;
 };
 
 export default {
@@ -260,4 +304,19 @@ export default {
   deleteImageLocally,
   getImageSize,
   imageToBase64,
+  uploadImage,
 };
+
+/** Resolve only Badenya uploads through the authenticated API, never external URLs. */
+export async function getUploadAccessUrl(url: string): Promise<string> {
+  const parsed = new URL(url);
+  const base = new URL(String(api.defaults.baseURL));
+  if (
+    parsed.origin !== base.origin ||
+    !/^\/uploads\/[a-f0-9]{32}\.(?:jpg|png|webp)$/.test(parsed.pathname)
+  )
+    throw new Error('Justificatif inaccessible');
+  const filename = parsed.pathname.split('/').pop();
+  const response = await api.get(`/uploads/${filename}/access`);
+  return response.data.data.url;
+}

@@ -1,28 +1,28 @@
-import { Request, Response } from 'express';
-import { Notification, User } from '../models';
-import { AuthRequest } from '../middleware/auth';
-import { requireAuth } from '../utils/typeGuards';
-import logger from '../utils/logger';
+import { Request, Response } from "express";
+import { Notification, User } from "../models";
+import { AuthRequest } from "../middleware/auth";
+import { requireAuth } from "../utils/typeGuards";
+import logger from "../utils/logger";
 
 // Get all notifications for current user
 export const getUserNotifications = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    
-    const { limit = '50', skip = '0', unreadOnly = 'false' } = req.query;
+
+    const { limit = "50", skip = "0", unreadOnly = "false" } = req.query;
 
     // Build query
     interface NotificationQuery {
       userId: string;
       isRead?: boolean;
     }
-    
+
     const query: NotificationQuery = { userId: authReq.user.id };
-    if (unreadOnly === 'true') {
+    if (unreadOnly === "true") {
       query.isRead = false;
     }
 
@@ -30,9 +30,9 @@ export const getUserNotifications = async (
       .sort({ createdAt: -1 })
       .limit(parseInt(limit as string))
       .skip(parseInt(skip as string))
-      .populate('data.groupId', 'name avatar')
-      .populate('data.proposalId', 'title')
-      .populate('data.transactionId', 'amount type');
+      .populate("data.groupId", "name avatar")
+      .populate("data.proposalId", "title")
+      .populate("data.transactionId", "amount type");
 
     const total = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({
@@ -41,7 +41,7 @@ export const getUserNotifications = async (
     });
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: {
         notifications,
         count: notifications.length,
@@ -50,16 +50,19 @@ export const getUserNotifications = async (
       },
     });
   } catch (error) {
-    logger.error('Get notifications error:', error);
+    logger.error("Get notifications error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to get notifications',
+      status: "error",
+      message: "Impossible de charger les notifications",
     });
   }
 };
 
 // Mark notification as read
-export const markAsRead = async (req: Request, res: Response): Promise<void> => {
+export const markAsRead = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
@@ -72,8 +75,8 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
 
     if (!notification) {
       res.status(404).json({
-        status: 'error',
-        message: 'Notification not found',
+        status: "error",
+        message: "Notification introuvable",
       });
       return;
     }
@@ -83,15 +86,15 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
     await notification.save();
 
     res.status(200).json({
-      status: 'success',
-      message: 'Notification marked as read',
+      status: "success",
+      message: "Notification marquée comme lue",
       data: { notification },
     });
   } catch (error) {
-    logger.error('Mark notification as read error:', error);
+    logger.error("Mark notification as read error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to mark notification as read',
+      status: "error",
+      message: "Impossible de marquer la notification comme lue",
     });
   }
 };
@@ -99,7 +102,7 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
 // Mark all notifications as read
 export const markAllAsRead = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
@@ -107,19 +110,19 @@ export const markAllAsRead = async (
 
     const result = await Notification.updateMany(
       { userId: authReq.user.id, isRead: false },
-      { $set: { isRead: true, readAt: new Date() } }
+      { $set: { isRead: true, readAt: new Date() } },
     );
 
     res.status(200).json({
-      status: 'success',
-      message: 'All notifications marked as read',
+      status: "success",
+      message: "Toutes les notifications sont marquées comme lues",
       data: { modifiedCount: result.modifiedCount },
     });
   } catch (error) {
-    logger.error('Mark all as read error:', error);
+    logger.error("Mark all as read error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to mark all notifications as read',
+      status: "error",
+      message: "Impossible de marquer les notifications comme lues",
     });
   }
 };
@@ -127,7 +130,7 @@ export const markAllAsRead = async (
 // Delete notification
 export const deleteNotification = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
@@ -141,84 +144,38 @@ export const deleteNotification = async (
 
     if (!notification) {
       res.status(404).json({
-        status: 'error',
-        message: 'Notification not found',
+        status: "error",
+        message: "Notification introuvable",
       });
       return;
     }
 
     res.status(200).json({
-      status: 'success',
-      message: 'Notification deleted successfully',
+      status: "success",
+      message: "Notification supprimée",
     });
   } catch (error) {
-    logger.error('Delete notification error:', error);
+    logger.error("Delete notification error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to delete notification',
+      status: "error",
+      message: "Impossible de supprimer la notification",
     });
   }
 };
-
-// Send notification (internal use or admin)
-export const sendNotification = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { userId, type, title, message, data, priority } = req.body;
-
-    // Verify user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    const notification = await Notification.create({
-      userId,
-      type,
-      title,
-      message,
-      data: data || {},
-      priority: priority || 'normal',
-      isRead: false,
-    });
-
-    // TODO: Send push notification via Firebase Cloud Messaging
-    // This will be implemented when Firebase is configured
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Notification sent successfully',
-      data: { notification },
-    });
-  } catch (error) {
-    logger.error('Send notification error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to send notification',
-    });
-  }
-};
-
 // Update device token for push notifications
 export const updateDeviceToken = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
     const { token } = req.body;
 
-    if (!token) {
+    if (typeof token !== "string" || !token || token.length > 4096) {
       res.status(400).json({
-        status: 'error',
-        message: 'Device token is required',
+        status: "error",
+        message: "Le jeton de l’appareil est requis",
       });
       return;
     }
@@ -226,32 +183,31 @@ export const updateDeviceToken = async (
     const user = await User.findById(authReq.user.id);
     if (!user) {
       res.status(404).json({
-        status: 'error',
-        message: 'User not found',
+        status: "error",
+        message: "Compte introuvable",
       });
       return;
     }
 
-    // Check if token already exists
-    const tokenExists = user.deviceTokens?.some((t) => t === token);
-
-    if (!tokenExists) {
-      if (!user.deviceTokens) {
-        user.deviceTokens = [];
-      }
-      user.deviceTokens.push(token);
-      await user.save();
-    }
+    // A device token belongs to the current account, including after an offline logout.
+    await User.updateMany(
+      { _id: { $ne: user._id }, deviceTokens: token },
+      { $pull: { deviceTokens: token } },
+    );
+    await User.updateOne(
+      { _id: user._id, isActive: true },
+      { $addToSet: { deviceTokens: token } },
+    );
 
     res.status(200).json({
-      status: 'success',
-      message: 'Device token updated successfully',
+      status: "success",
+      message: "Appareil enregistré pour les notifications",
     });
   } catch (error) {
-    logger.error('Update device token error:', error);
+    logger.error("Update device token error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to update device token',
+      status: "error",
+      message: "Impossible d’enregistrer l’appareil",
     });
   }
 };
@@ -259,17 +215,17 @@ export const updateDeviceToken = async (
 // Remove device token
 export const removeDeviceToken = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
     const { token } = req.body;
 
-    if (!token) {
+    if (typeof token !== "string" || !token || token.length > 4096) {
       res.status(400).json({
-        status: 'error',
-        message: 'Device token is required',
+        status: "error",
+        message: "Le jeton de l’appareil est requis",
       });
       return;
     }
@@ -277,8 +233,8 @@ export const removeDeviceToken = async (
     const user = await User.findById(authReq.user.id);
     if (!user) {
       res.status(404).json({
-        status: 'error',
-        message: 'User not found',
+        status: "error",
+        message: "Compte introuvable",
       });
       return;
     }
@@ -289,14 +245,14 @@ export const removeDeviceToken = async (
     }
 
     res.status(200).json({
-      status: 'success',
-      message: 'Device token removed successfully',
+      status: "success",
+      message: "Appareil retiré des notifications",
     });
   } catch (error) {
-    logger.error('Remove device token error:', error);
+    logger.error("Remove device token error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to remove device token',
+      status: "error",
+      message: "Impossible de retirer l’appareil",
     });
   }
 };

@@ -1,13 +1,41 @@
-import { Request, Response } from 'express';
-import { Transaction, Group } from '../models';
-import { AuthRequest } from '../middleware/auth';
-import { requireAuth } from '../utils/typeGuards';
-import logger from '../utils/logger';
+import { validateAttachments } from "../services/upload.service";
+import mongoose from "mongoose";
+import { createHash } from "crypto";
+import {
+  validateFinancialTransaction,
+  BusinessError,
+} from "../services/financial.service";
+import { activeMember, entityId } from "../utils/membership";
+import { Request, Response } from "express";
+import { Transaction, Group } from "../models";
+import { AuthRequest } from "../middleware/auth";
+import { requireAuth } from "../utils/typeGuards";
+import logger from "../utils/logger";
 
+function requestFingerprint(body: Record<string, unknown>): string {
+  const normalized: Record<string, unknown> = {
+    ...body,
+    amount: Number(body.amount),
+  };
+  delete normalized.idempotencyKey;
+  function canonical(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, item]) => [key, canonical(item)]),
+      );
+    return value;
+  }
+  return createHash("sha256")
+    .update(JSON.stringify(canonical(normalized)))
+    .digest("hex");
+}
 // Create new transaction
 export const createTransaction = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
@@ -27,63 +55,129 @@ export const createTransaction = async (
     // Check if group exists and user is a member
     const group = await Group.findById(groupId);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
-        status: 'error',
-        message: 'Group not found',
+        status: "error",
+        message: "Groupe introuvable",
       });
       return;
     }
 
     const isMember = group.members.some(
-      (m) => m.userId.toString() === authReq.user.id && m.status === 'active'
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active",
     );
 
     if (!isMember) {
       res.status(403).json({
-        status: 'error',
-        message: 'You are not a member of this group',
+        status: "error",
+        message: "Vous n’êtes pas membre actif de ce groupe",
       });
       return;
     }
 
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+      res
+        .status(400)
+        .json({ status: "error", message: "Montant positif requis" });
+      return;
+    }
+    const key = req.get("Idempotency-Key") || req.body.idempotencyKey;
+    if (key && (typeof key !== "string" || key.length > 200)) {
+      res
+        .status(400)
+        .json({ status: "error", message: "Clé de réessai invalide" });
+      return;
+    }
+    const fingerprint = requestFingerprint(req.body);
+    if (key) {
+      const existing = await Transaction.findOne({
+        groupId,
+        initiatedBy: authReq.user.id,
+        idempotencyKey: key,
+      });
+      if (existing) {
+        if (existing.requestFingerprint !== fingerprint) {
+          res.status(409).json({
+            status: "error",
+            message: "Clé déjà utilisée pour une autre opération",
+          });
+          return;
+        }
+        res
+          .status(200)
+          .json({ status: "success", data: { transaction: existing } });
+        return;
+      }
+    }
+    await validateAttachments(attachments, String(groupId), authReq.user.id);
     // Create transaction
     const transaction = await Transaction.create({
       groupId,
       initiatedBy: authReq.user.id,
       type,
       amount,
+      currency: group.currency,
+      recipient: req.body.recipient,
+      idempotencyKey: key,
+      requestFingerprint: fingerprint,
       description,
       category,
       paymentMethod: {
-        type: paymentMethod || 'cash',
+        type: paymentMethod || "cash",
         provider: paymentDetails?.provider,
         reference: paymentDetails?.reference,
       },
-      status: 'pending',
-      metadata: metadata || {},
+      status: "pending",
+      metadata: {
+        notes:
+          typeof metadata?.notes === "string"
+            ? metadata.notes.slice(0, 500)
+            : undefined,
+      },
       attachments: attachments || [],
     });
 
-    await transaction.populate('initiatedBy', 'fullName email avatar');
-    await transaction.populate('groupId', 'name type');
-
-    // Update group balance for contributions
-    if (type === 'contribution' && transaction.status === 'completed') {
-      group.balance += amount;
-      await group.save();
-    }
+    await transaction.populate("validatedBy", "fullName");
+    await transaction.populate("initiatedBy", "fullName email avatar");
+    await transaction.populate("groupId", "name type");
 
     res.status(201).json({
-      status: 'success',
-      message: 'Transaction created successfully',
+      status: "success",
+      message: "Opération créée",
       data: { transaction },
     });
   } catch (error) {
-    logger.error('Create transaction error:', error);
+    if (error instanceof BusinessError) {
+      res
+        .status(error.status)
+        .json({ status: "error", message: error.message });
+      return;
+    }
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      const authReq = req as AuthRequest;
+      const existing = await Transaction.findOne({
+        groupId: req.params.groupId,
+        initiatedBy: authReq.user?.id,
+        idempotencyKey: req.get("Idempotency-Key") || req.body.idempotencyKey,
+      });
+      if (existing?.requestFingerprint === requestFingerprint(req.body)) {
+        res
+          .status(200)
+          .json({ status: "success", data: { transaction: existing } });
+        return;
+      }
+      res.status(409).json({ status: "error", message: "Clé déjà utilisée" });
+      return;
+    }
+    logger.error("Create transaction error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to create transaction',
+      status: "error",
+      message: "Impossible de créer l’opération",
     });
   }
 };
@@ -91,80 +185,69 @@ export const createTransaction = async (
 // Get all transactions for a group
 export const getGroupTransactions = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
+  return getMyTransactions(req, res);
+};
+export const getMyTransactions = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const authReq = req as AuthRequest;
+  if (!requireAuth(authReq, res)) return;
   try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
-    const { groupId } = req.params;
-    const { type, status, limit = '50', skip = '0' } = req.query;
-
-    // Check if group exists and user is a member
-    const group = await Group.findById(groupId);
-
-    if (!group) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Group not found',
-      });
+    const requested = String(req.params.groupId || req.query.groupId || "");
+    const groups = await Group.find({
+      members: { $elemMatch: { userId: authReq.user.id, status: "active" } },
+      isActive: true,
+      archivedAt: { $exists: false },
+    }).select("_id");
+    if (requested && !groups.some((g) => entityId(g._id) === requested)) {
+      res.status(403).json({ status: "error", message: "Groupe inaccessible" });
       return;
     }
-
-    const isMember = group.members.some(
-      (m) => m.userId.toString() === authReq.user.id && m.status === 'active'
-    );
-
-    if (!isMember) {
-      res.status(403).json({
-        status: 'error',
-        message: 'You are not a member of this group',
-      });
-      return;
-    }
-
-    // Build query
-    interface TransactionQuery {
-      groupId: string;
-      type?: string;
-      status?: string;
-    }
-    
-    const query: TransactionQuery = { groupId: groupId as string };
-    if (type) query.type = type as string;
-    if (status) query.status = status as string;
-
-    const parsedLimit = Math.max(1, Math.min(parseInt(limit as string) || 50, 1000));
-    const parsedSkip = Math.max(0, parseInt(skip as string) || 0);
-
-    const transactions = await Transaction.find(query)
-      .populate('initiatedBy', 'fullName email avatar')
-      .sort({ createdAt: -1 })
-      .limit(parsedLimit)
-      .skip(parsedSkip);
-
-    const total = await Transaction.countDocuments(query);
-
-    res.status(200).json({
-      status: 'success',
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+    const skip =
+      req.query.skip !== undefined
+        ? Math.max(0, Number(req.query.skip) || 0)
+        : (page - 1) * limit;
+    const filter: Record<string, unknown> = {
+      groupId: requested || { $in: groups.map((g) => g._id) },
+    };
+    if (req.query.type) filter.type = String(req.query.type);
+    if (req.query.status) filter.status = String(req.query.status);
+    const [transactions, total] = await Promise.all([
+      Transaction.find(filter)
+        .populate("validatedBy", "fullName")
+        .populate("initiatedBy", "fullName email avatar")
+        .populate("groupId", "name type currency")
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit),
+      Transaction.countDocuments(filter),
+    ]);
+    res.json({
+      status: "success",
       data: {
         transactions,
-        count: transactions.length,
         total,
+        count: transactions.length,
+        page: Math.floor(skip / limit) + 1,
+        pages: Math.ceil(total / limit),
+        limit,
       },
     });
   } catch (error) {
-    logger.error('Get group transactions error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to get transactions',
-    });
+    logger.error("List transactions:", error);
+    res.status(500).json({ status: "error", message: "Échec du chargement" });
   }
 };
 
 // Get transaction by ID
 export const getTransactionById = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
@@ -172,13 +255,14 @@ export const getTransactionById = async (
     const { id } = req.params;
 
     const transaction = await Transaction.findById(id)
-      .populate('initiatedBy', 'fullName email avatar phone')
-      .populate('groupId', 'name type');
+      .populate("validatedBy", "fullName")
+      .populate("initiatedBy", "fullName email avatar phone")
+      .populate("groupId", "name type");
 
     if (!transaction) {
       res.status(404).json({
-        status: 'error',
-        message: 'Transaction not found',
+        status: "error",
+        message: "Opération introuvable",
       });
       return;
     }
@@ -186,35 +270,35 @@ export const getTransactionById = async (
     // Check if user is a member of the group
     const group = await Group.findById(transaction.groupId);
 
-    if (!group) {
+    if (!group || !group.isActive || group.archivedAt) {
       res.status(404).json({
-        status: 'error',
-        message: 'Group not found',
+        status: "error",
+        message: "Groupe introuvable",
       });
       return;
     }
 
     const isMember = group.members.some(
-      (m) => m.userId.toString() === authReq.user.id && m.status === 'active'
+      (m) => entityId(m.userId) === authReq.user.id && m.status === "active",
     );
 
     if (!isMember) {
       res.status(403).json({
-        status: 'error',
-        message: 'You are not a member of this group',
+        status: "error",
+        message: "Vous n’êtes pas membre actif de ce groupe",
       });
       return;
     }
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: { transaction },
     });
   } catch (error) {
-    logger.error('Get transaction error:', error);
+    logger.error("Get transaction error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to get transaction',
+      status: "error",
+      message: "Impossible de charger l’opération",
     });
   }
 };
@@ -222,177 +306,86 @@ export const getTransactionById = async (
 // Verify/Complete transaction (admin/treasurer only)
 export const verifyTransaction = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
+  const authReq = req as AuthRequest;
+  if (!requireAuth(authReq, res)) return;
   try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
-    const { id } = req.params;
-    const { notes } = req.body;
-
-    const transaction = await Transaction.findById(id);
-
-    if (!transaction) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Transaction not found',
-      });
-      return;
-    }
-
-    // Check if user is admin or treasurer
-    const group = await Group.findById(transaction.groupId);
-
-    if (!group) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Group not found',
-      });
-      return;
-    }
-
-    const member = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+    const transaction = await validateFinancialTransaction(
+      String(req.params.id),
+      authReq.user.id,
+      req.body.notes,
     );
-
-    if (!member || !['admin', 'treasurer'].includes(member.role)) {
-      res.status(403).json({
-        status: 'error',
-        message: 'Only admins or treasurers can verify transactions',
-      });
-      return;
-    }
-
-    if (transaction.status !== 'pending') {
-      res.status(400).json({
-        status: 'error',
-        message: 'Transaction is not pending',
-      });
-      return;
-    }
-
-    // Update transaction
-    transaction.status = 'completed';
-    transaction.processedAt = new Date();
-    
-    if (notes) {
-      transaction.metadata = {
-        ...transaction.metadata,
-        notes,
-      };
-    }
-
-    await transaction.save();
-
-    // Update group balance
-    if (transaction.type === 'contribution') {
-      group.balance += transaction.amount;
-      group.stats.totalContributions += transaction.amount;
-    } else if (transaction.type === 'expense') {
-      group.balance -= transaction.amount;
-      group.stats.totalExpenses += transaction.amount;
-    }
-
-    // Update member's contribution
-    const transactionMember = group.members.find(
-      (m) => m.userId.toString() === transaction.initiatedBy.toString()
-    );
-    if (transactionMember && transaction.type === 'contribution') {
-      transactionMember.totalContributed += transaction.amount;
-      transactionMember.lastContributionAt = new Date();
-    }
-
-    await group.save();
-
-    await transaction.populate('initiatedBy', 'fullName email avatar');
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Transaction verified successfully',
-      data: { transaction },
-    });
+    await transaction.populate("validatedBy", "fullName");
+    await transaction.populate("initiatedBy", "fullName email avatar");
+    res.status(200).json({ status: "success", data: { transaction } });
   } catch (error) {
-    logger.error('Verify transaction error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to verify transaction',
-    });
+    if (error instanceof BusinessError) {
+      res
+        .status(error.status)
+        .json({ status: "error", code: error.code, message: error.message });
+      return;
+    }
+    logger.error("Verify transaction error:", error);
+    res.status(500).json({ status: "error", message: "Échec de validation" });
   }
 };
 
 // Cancel transaction
 export const cancelTransaction = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
+  const authReq = req as AuthRequest;
+  if (!requireAuth(authReq, res)) return;
   try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
-    const { id } = req.params;
-    const { reason } = req.body;
-
-    const transaction = await Transaction.findById(id);
-
+    const transaction = await Transaction.findById(req.params.id);
     if (!transaction) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Transaction not found',
-      });
+      res
+        .status(404)
+        .json({ status: "error", message: "Opération introuvable" });
       return;
     }
-
-    // Check if user is the creator or admin/treasurer
     const group = await Group.findById(transaction.groupId);
-
-    if (!group) {
-      res.status(404).json({
-        status: 'error',
-        message: 'Group not found',
-      });
+    const member = activeMember(group, authReq.user.id);
+    if (
+      !member ||
+      (entityId(transaction.initiatedBy) !== authReq.user.id &&
+        !["admin", "treasurer"].includes(member.role))
+    ) {
+      res
+        .status(403)
+        .json({ status: "error", message: "Membre autorisé actif requis" });
       return;
     }
-
-    const member = group.members.find(
-      (m) => m.userId.toString() === authReq.user.id
+    const cancelled = await Transaction.findOneAndUpdate(
+      { _id: transaction._id, status: "pending" },
+      {
+        $set: {
+          status: "cancelled",
+          "metadata.notes": String(req.body.reason || "").slice(0, 500),
+        },
+        $push: {
+          auditTrail: {
+            action: "cancelled",
+            actor: new mongoose.Types.ObjectId(authReq.user.id),
+            at: new Date(),
+            reason: String(req.body.reason || "").slice(0, 500),
+          },
+        },
+      },
+      { new: true },
     );
-
-    const isCreator = transaction.initiatedBy.toString() === authReq.user.id;
-    const isAdminOrTreasurer =
-      member && ['admin', 'treasurer'].includes(member.role);
-
-    if (!isCreator && !isAdminOrTreasurer) {
-      res.status(403).json({
-        status: 'error',
-        message: 'Only the creator or admins/treasurers can cancel transactions',
+    if (!cancelled) {
+      res.status(409).json({
+        status: "error",
+        message: "Seule une opération en attente peut être annulée",
       });
       return;
     }
-
-    if (transaction.status === 'completed') {
-      res.status(400).json({
-        status: 'error',
-        message: 'Cannot cancel a completed transaction',
-      });
-      return;
-    }
-
-    transaction.status = 'cancelled';
-    transaction.metadata = {
-      ...transaction.metadata,
-      notes: reason || 'Cancelled by user',
-    };
-
-    await transaction.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Transaction cancelled successfully',
-    });
+    res.json({ status: "success", data: { transaction: cancelled } });
   } catch (error) {
-    logger.error('Cancel transaction error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to cancel transaction',
-    });
+    logger.error("Cancel transaction:", error);
+    res.status(500).json({ status: "error", message: "Échec de l’annulation" });
   }
 };

@@ -56,21 +56,6 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/chargement/i)).toBeInTheDocument();
   });
 
-  it('should redirect to login when not authenticated', () => {
-    (useAuthStore as unknown as jest.Mock).mockReturnValue({
-      user: null,
-      isAuthenticated: false,
-      logout: mockLogout,
-    });
-
-    render(
-      <BrowserRouter>
-        <DashboardPage />
-      </BrowserRouter>
-    );
-
-    expect(mockNavigate).toHaveBeenCalledWith('/login');
-  });
 
   it('should display dashboard content after loading', async () => {
     render(
@@ -82,6 +67,10 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(adminService.getDashboardStats).toHaveBeenCalled();
     });
+    expect(await screen.findByText('+10 cette semaine')).toBeInTheDocument();
+    expect(screen.getByText('+45 cette semaine')).toBeInTheDocument();
+    expect(screen.getByText('Montant total des transactions')).toBeInTheDocument();
+    expect(screen.queryByText('Actions rapides')).not.toBeInTheDocument();
   });
 
   it('should display error message when stats fail to load', async () => {

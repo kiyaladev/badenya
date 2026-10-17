@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { body } from 'express-validator';
+import { Router } from "express";
+import { body } from "express-validator";
 import {
   register,
   login,
@@ -11,10 +11,10 @@ import {
   updateProfile,
   changePassword,
   deleteAccount,
-} from '../controllers/auth.controller';
-import { authenticate } from '../middleware/auth';
-import { validate } from '../middleware/validation';
-import { authLimiter, passwordResetLimiter } from '../middleware/rateLimiter';
+} from "../controllers/auth.controller";
+import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validation";
+import { authLimiter, passwordResetLimiter } from "../middleware/rateLimiter";
 
 const router = Router();
 
@@ -90,38 +90,64 @@ const router = Router();
 
 // Validation rules
 const registerValidation = [
-  body('fullName').trim().notEmpty().withMessage('Full name is required'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('phone').trim().notEmpty().withMessage('Phone number is required'),
-  body('password')
+  body("fullName").trim().notEmpty().withMessage("Le nom complet est requis"),
+  body("email").isEmail().withMessage("Une adresse email valide est requise"),
+  body("phone")
+    .trim()
+    .notEmpty()
+    .withMessage("Le numéro de téléphone est requis"),
+  body("password")
     .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters'),
+    .withMessage("Le mot de passe doit contenir au moins 8 caractères"),
 ];
 
 const loginValidation = [
-  body('email').trim().notEmpty().withMessage('Email or phone is required'),
-  body('password').notEmpty().withMessage('Password is required'),
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("L’adresse email ou le téléphone est requis"),
+  body("password").notEmpty().withMessage("Le mot de passe est requis"),
 ];
 
 const refreshTokenValidation = [
-  body('refreshToken').notEmpty().withMessage('Refresh token is required'),
+  body("refreshToken")
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage(
+      "Le jeton de renouvellement doit être une chaîne de caractères",
+    ),
 ];
 
 const forgotPasswordValidation = [
-  body('email').isEmail().withMessage('Valid email is required'),
+  body("email")
+    .trim()
+    .isEmail()
+    .withMessage("Une adresse email valide est requise"),
 ];
 
 const resetPasswordValidation = [
-  body('token').notEmpty().withMessage('Reset token is required'),
-  body('newPassword')
+  body("token")
+    .isString()
+    .isLength({ min: 32, max: 256 })
+    .withMessage("Un lien de réinitialisation valide est requis"),
+  body("newPassword")
     .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters'),
+    .withMessage("Le mot de passe doit contenir au moins 8 caractères")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/)
+    .withMessage(
+      "Le mot de passe doit contenir une majuscule, une minuscule et un chiffre",
+    ),
 ];
 
 const updateProfileValidation = [
-  body('fullName').optional().trim().notEmpty(),
-  body('phone').optional().trim().notEmpty(),
-  body('avatar').optional(),
+  body("fullName").optional().trim().notEmpty(),
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Une adresse email valide est requise"),
+  body("phone").optional().trim().notEmpty(),
+  body("avatar").optional(),
 ];
 
 /**
@@ -279,24 +305,58 @@ const updateProfileValidation = [
  */
 
 const changePasswordValidation = [
-  body('currentPassword').notEmpty().withMessage('Current password is required'),
-  body('newPassword')
+  body("currentPassword")
+    .notEmpty()
+    .withMessage("Le mot de passe actuel est requis"),
+  body("newPassword")
     .isLength({ min: 8 })
-    .withMessage('New password must be at least 8 characters'),
+    .withMessage("Le nouveau mot de passe doit contenir au moins 8 caractères"),
 ];
 
 // Public routes (with rate limiting)
-router.post('/register', authLimiter, registerValidation, validate, register);
-router.post('/login', authLimiter, loginValidation, validate, login);
-router.post('/refresh-token', authLimiter, refreshTokenValidation, validate, refreshToken);
-router.post('/forgot-password', passwordResetLimiter, forgotPasswordValidation, validate, forgotPassword);
-router.post('/reset-password', passwordResetLimiter, resetPasswordValidation, validate, resetPassword);
+router.post("/register", authLimiter, registerValidation, validate, register);
+router.post("/login", authLimiter, loginValidation, validate, login);
+router.post(
+  "/refresh-token",
+  authLimiter,
+  refreshTokenValidation,
+  validate,
+  refreshToken,
+);
+router.post(
+  "/forgot-password",
+  passwordResetLimiter,
+  forgotPasswordValidation,
+  validate,
+  forgotPassword,
+);
+router.post(
+  "/reset-password",
+  passwordResetLimiter,
+  resetPasswordValidation,
+  validate,
+  resetPassword,
+);
 
 // Protected routes
-router.post('/logout', authenticate, logout);
-router.get('/me', authenticate, getCurrentUser);
-router.put('/profile', authenticate, authLimiter, updateProfileValidation, validate, updateProfile);
-router.put('/change-password', authenticate, authLimiter, changePasswordValidation, validate, changePassword);
-router.delete('/account', authenticate, deleteAccount);
+router.post("/logout", authenticate, logout);
+router.get("/me", authenticate, getCurrentUser);
+router.put(
+  "/profile",
+  authenticate,
+  authLimiter,
+  updateProfileValidation,
+  validate,
+  updateProfile,
+);
+router.put(
+  "/change-password",
+  authenticate,
+  authLimiter,
+  changePasswordValidation,
+  validate,
+  changePassword,
+);
+router.delete("/account", authenticate, deleteAccount);
 
 export default router;

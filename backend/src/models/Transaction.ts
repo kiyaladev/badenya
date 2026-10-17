@@ -1,8 +1,8 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface ITransaction extends Document {
   groupId: mongoose.Types.ObjectId;
-  type: 'contribution' | 'expense' | 'refund' | 'adjustment';
+  type: "contribution" | "expense" | "refund" | "adjustment";
   amount: number;
   currency: string;
   description?: string;
@@ -14,21 +14,32 @@ export interface ITransaction extends Document {
     details?: string;
   };
   paymentMethod?: {
-    type: 'cash' | 'mobile_money' | 'bank_transfer' | 'card';
+    type: "cash" | "mobile_money" | "bank_transfer" | "card";
     provider?: string;
     reference?: string;
   };
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  status: "pending" | "completed" | "failed" | "cancelled";
   metadata?: {
     proposalId?: mongoose.Types.ObjectId;
     voteId?: mongoose.Types.ObjectId;
     notes?: string;
   };
   attachments?: Array<{
-    type: 'image' | 'document' | 'receipt';
+    type: "image" | "document" | "receipt";
     url: string;
     filename: string;
     name: string;
+  }>;
+  flagged?: { reason: string; at: Date; by: mongoose.Types.ObjectId };
+  idempotencyKey?: string;
+  requestFingerprint?: string;
+  validatedBy?: mongoose.Types.ObjectId;
+  validatedAt?: Date;
+  auditTrail: Array<{
+    action: "validated" | "cancelled";
+    actor: mongoose.Types.ObjectId;
+    at: Date;
+    reason?: string;
   }>;
   processedAt?: Date;
   createdAt: Date;
@@ -39,13 +50,13 @@ const TransactionSchema: Schema = new Schema(
   {
     groupId: {
       type: Schema.Types.ObjectId,
-      ref: 'Group',
+      ref: "Group",
       required: true,
       index: true,
     },
     type: {
       type: String,
-      enum: ['contribution', 'expense', 'refund', 'adjustment'],
+      enum: ["contribution", "expense", "refund", "adjustment"],
       required: true,
       index: true,
     },
@@ -56,7 +67,7 @@ const TransactionSchema: Schema = new Schema(
     },
     currency: {
       type: String,
-      default: 'XOF',
+      default: "XOF",
     },
     description: {
       type: String,
@@ -65,13 +76,13 @@ const TransactionSchema: Schema = new Schema(
     category: String,
     initiatedBy: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     recipient: {
       userId: {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
       },
       name: String,
       details: String,
@@ -79,21 +90,21 @@ const TransactionSchema: Schema = new Schema(
     paymentMethod: {
       type: {
         type: String,
-        enum: ['cash', 'mobile_money', 'bank_transfer', 'card'],
+        enum: ["cash", "mobile_money", "bank_transfer", "card"],
       },
       provider: String,
       reference: String,
     },
     status: {
       type: String,
-      enum: ['pending', 'completed', 'failed', 'cancelled'],
-      default: 'pending',
+      enum: ["pending", "completed", "failed", "cancelled"],
+      default: "pending",
       index: true,
     },
     metadata: {
       proposalId: {
         type: Schema.Types.ObjectId,
-        ref: 'Proposal',
+        ref: "Proposal",
       },
       voteId: Schema.Types.ObjectId,
       notes: String,
@@ -102,22 +113,47 @@ const TransactionSchema: Schema = new Schema(
       {
         type: {
           type: String,
-          enum: ['image', 'document', 'receipt'],
+          enum: ["image", "document", "receipt"],
         },
         url: String,
         filename: String,
         name: String,
       },
     ],
+    flagged: {
+      reason: String,
+      at: Date,
+      by: { type: Schema.Types.ObjectId, ref: "User" },
+    },
+    idempotencyKey: String,
+    requestFingerprint: String,
+    validatedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    validatedAt: Date,
+    auditTrail: [
+      {
+        _id: false,
+        action: { type: String, enum: ["validated", "cancelled"] },
+        actor: { type: Schema.Types.ObjectId, ref: "User" },
+        at: Date,
+        reason: String,
+      },
+    ],
     processedAt: Date,
   },
   {
     timestamps: true,
-  }
+  },
 );
 
+TransactionSchema.index(
+  { groupId: 1, initiatedBy: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idempotencyKey: { $type: "string" } },
+  },
+);
 // Indexes
 TransactionSchema.index({ groupId: 1, createdAt: -1 });
 TransactionSchema.index({ initiatedBy: 1 });
 
-export default mongoose.model<ITransaction>('Transaction', TransactionSchema);
+export default mongoose.model<ITransaction>("Transaction", TransactionSchema);

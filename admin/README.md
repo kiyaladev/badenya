@@ -1,45 +1,11 @@
-# Badenya Admin Panel
+# Badenya — administration
 
-Panel d'administration pour l'application Badenya.
-
-## Stack Technique
-
-- **Framework**: React 19
-- **Build Tool**: Vite
-- **Language**: TypeScript
-- **UI**: Tailwind CSS (à installer)
-- **Routing**: React Router (à installer)
-- **State**: Zustand (à installer)
-
-## Installation
+Interface d'administration (React, Vite, Tailwind, Zustand) : tableau de bord, utilisateurs, groupes, transactions, messages et newsletter.
 
 ```bash
 npm install
-```
-
-## Développement
-
-```bash
-npm run dev
-```
-
-L'application démarre sur http://localhost:5173
-
-## Build Production
-
-```bash
+npm run dev      # http://localhost:5173
 npm run build
-npm run preview
 ```
 
-## Fonctionnalités
-
-- Dashboard avec statistiques
-- Gestion des utilisateurs
-- Gestion des groupes
-- Monitoring des transactions
-- Logs système
-
-## License
-
-ISC
+Configuration : copier `.env.example`. Le déploiement est décrit dans [DOCS/DEPLOYMENT_GUIDE.md](../DOCS/DEPLOYMENT_GUIDE.md).

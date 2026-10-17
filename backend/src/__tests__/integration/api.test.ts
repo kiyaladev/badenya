@@ -1,21 +1,21 @@
-import request from 'supertest';
-import { createTestApp } from '../helpers/app';
+import request from "supertest";
+import { createTestApp } from "../helpers/app";
 
 const app = createTestApp();
 
-describe('API Health & Basic Routes', () => {
-  describe('GET /health', () => {
-    it('should return 200 OK', async () => {
-      const response = await request(app).get('/health');
+describe("API Health & Basic Routes", () => {
+  describe("GET /health", () => {
+    it("reports unavailable database instead of false readiness", async () => {
+      const response = await request(app).get("/health");
 
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe('success');
-      expect(response.body.message).toBe('Badenya API is running');
-      expect(response.body.timestamp).toBeDefined();
+      expect(response.status).toBe(503);
+      expect(response.body.status).toBe("error");
+      expect(response.body.database).toBe(false);
+      expect(response.body.services).toBeDefined();
     });
 
-    it('should return valid timestamp', async () => {
-      const response = await request(app).get('/health');
+    it("should return valid timestamp", async () => {
+      const response = await request(app).get("/health");
 
       const timestamp = new Date(response.body.timestamp);
       expect(timestamp).toBeInstanceOf(Date);
@@ -23,61 +23,61 @@ describe('API Health & Basic Routes', () => {
     });
   });
 
-  describe('GET /api/v1', () => {
-    it('should handle root API route', async () => {
-      const response = await request(app).get('/api/v1');
+  describe("GET /api/v1", () => {
+    it("should handle root API route", async () => {
+      const response = await request(app).get("/api/v1");
 
-      // Since there's no explicit handler for /api/v1 in routes,
-      // it will return 404 (after hitting the router)
-      expect(response.status).toBeDefined();
+      expect(response.status).toBe(200);
+      expect(response.body.version).toBe("1.0.0");
     });
   });
 
-  describe('404 Handler', () => {
-    it('should return 404 for unknown routes', async () => {
-      const response = await request(app).get('/unknown/route');
+  describe("404 Handler", () => {
+    it("should return 404 for unknown routes", async () => {
+      const response = await request(app).get("/unknown/route");
 
       expect(response.status).toBe(404);
-      expect(response.body.status).toBe('error');
-      expect(response.body.message).toBe('Route not found');
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Route introuvable");
     });
   });
 
-  describe('Content-Type Headers', () => {
-    it('should return JSON content type', async () => {
-      const response = await request(app).get('/health');
+  describe("Content-Type Headers", () => {
+    it("should return JSON content type", async () => {
+      const response = await request(app).get("/health");
 
-      expect(response.headers['content-type']).toMatch(/json/);
+      expect(response.headers["content-type"]).toMatch(/json/);
     });
 
-    it('should accept JSON body', async () => {
+    it("should accept JSON body", async () => {
       const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send({ email: 'test@example.com', password: 'test' })
-        .set('Content-Type', 'application/json');
+        .post("/api/v1/auth/login")
+        .send({ email: "test@example.com" })
+        .set("Content-Type", "application/json");
 
-      // We expect an error since we don't have DB, but it should accept the JSON
-      expect(response.headers['content-type']).toMatch(/json/);
+      expect(response.status).toBe(400);
+      // Parsed JSON is validated before any database lookup.
+      expect(response.headers["content-type"]).toMatch(/json/);
     });
   });
 
-  describe('Security Headers', () => {
-    it('should include security headers from Helmet', async () => {
-      const response = await request(app).get('/health');
+  describe("Security Headers", () => {
+    it("should include security headers from Helmet", async () => {
+      const response = await request(app).get("/health");
 
       // Helmet sets various security headers
-      expect(response.headers).toHaveProperty('x-content-type-options');
-      expect(response.headers['x-content-type-options']).toBe('nosniff');
+      expect(response.headers).toHaveProperty("x-content-type-options");
+      expect(response.headers["x-content-type-options"]).toBe("nosniff");
     });
   });
 
-  describe('CORS Headers', () => {
-    it('should include CORS headers', async () => {
+  describe("CORS Headers", () => {
+    it("should include CORS headers", async () => {
       const response = await request(app)
-        .get('/health')
-        .set('Origin', 'http://localhost:3000');
+        .get("/health")
+        .set("Origin", "http://localhost:3000");
 
-      expect(response.headers['access-control-allow-origin']).toBeDefined();
+      expect(response.headers["access-control-allow-origin"]).toBeDefined();
     });
   });
 });

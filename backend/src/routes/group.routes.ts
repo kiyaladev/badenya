@@ -1,5 +1,19 @@
-import { Router } from 'express';
-import { body } from 'express-validator';
+import {
+  getSchedule,
+  putSchedule,
+  payout,
+  nextCycle,
+  getCycleHistory,
+} from "../controllers/tontine.controller";
+import {
+  discover,
+  join,
+  listJoinRequests,
+  decideJoinRequest,
+  invitationCode,
+} from "../controllers/community.controller";
+import { Router } from "express";
+import { body, param } from "express-validator";
 import {
   createGroup,
   getUserGroups,
@@ -9,9 +23,9 @@ import {
   addMember,
   removeMember,
   updateMemberRole,
-} from '../controllers/group.controller';
-import { authenticate } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+} from "../controllers/group.controller";
+import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validation";
 
 const router = Router();
 
@@ -270,41 +284,144 @@ router.use(authenticate);
  */
 
 // Validation rules
+const configurationValidation = [
+  body("description").optional().isString().isLength({ max: 500 }),
+  body("settings").optional().isObject(),
+  ...["isPrivate", "requireApprovalToJoin", "allowMemberProposals"].map((key) =>
+    body(`settings.${key}`).optional().isBoolean(),
+  ),
+  body("settings.maxMembers").optional().isInt({ min: 1, max: 5000 }),
+  body("settings.maxProposalsPerMonth").optional().isInt({ min: 1, max: 1000 }),
+  body("contributionSettings").optional().isObject(),
+  body("contributionSettings.frequency")
+    .optional()
+    .isIn(["daily", "weekly", "monthly", "custom"]),
+  body("contributionSettings.amount")
+    .optional()
+    .isFloat({ min: 0, max: 1000000000000 }),
+  body("contributionSettings.dueDay").optional().isInt({ min: 1, max: 31 }),
+  body("contributionSettings.customIntervalDays")
+    .optional()
+    .isInt({ min: 1, max: 3650 }),
+  body("contributionSettings.firstDueAt").optional().isISO8601(),
+  body("contributionSettings.nextDueAt").not().exists(),
+  body("contributionSettings.autoReminder").optional().isBoolean(),
+  body("votingRules").optional().isObject(),
+  body("votingRules.quorum").optional().isFloat({ min: 0, max: 100 }),
+  body("votingRules.approvalThreshold")
+    .optional()
+    .isFloat({ min: 0, max: 100 }),
+  body("votingRules.votingDuration").optional().isInt({ min: 1, max: 8760 }),
+  body("votingRules.allowAbstention").optional().isBoolean(),
+];
 const createGroupValidation = [
-  body('name').trim().notEmpty().withMessage('Group name is required'),
-  body('type')
-    .isIn(['tontine', 'association', 'family', 'friends', 'project'])
-    .withMessage('Invalid group type'),
+  ...configurationValidation,
+  body("currency")
+    .optional()
+    .isIn(["XOF", "XAF", "EUR", "USD", "GNF", "CDF", "MAD"]),
+  body("name")
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Le nom du groupe est requis"),
+  body("type")
+    .isIn(["tontine", "association", "family", "friends", "project"])
+    .withMessage("Type de groupe invalide"),
 ];
 
 const updateGroupValidation = [
-  body('name').optional().trim().notEmpty(),
-  body('description').optional().trim(),
-  body('avatar').optional().isURL(),
+  ...configurationValidation,
+  body("name").optional().isString().trim().isLength({ min: 1, max: 100 }),
+
+  body("type")
+    .optional()
+    .isIn(["tontine", "association", "family", "friends", "project"])
+    .withMessage("Type de groupe invalide"),
+  body("avatar")
+    .optional()
+    .custom(
+      (value) =>
+        typeof value === "object" &&
+        value !== null &&
+        typeof value.url === "string" &&
+        /^https?:\/\//.test(value.url),
+    ),
 ];
 
 const addMemberValidation = [
-  body('userId').notEmpty().withMessage('User ID is required'),
-  body('role')
+  body("userId").isMongoId().withMessage("L’identifiant du compte est requis"),
+  body("role")
     .optional()
-    .isIn(['admin', 'treasurer', 'member'])
-    .withMessage('Invalid role'),
+    .isIn(["admin", "treasurer", "member"])
+    .withMessage("Rôle invalide"),
 ];
 
 const updateMemberRoleValidation = [
-  body('role')
-    .isIn(['admin', 'treasurer', 'member'])
-    .withMessage('Invalid role'),
+  body("role")
+    .isIn(["admin", "treasurer", "member"])
+    .withMessage("Rôle invalide"),
 ];
 
+router.param("id", (_req, res, next, id) => {
+  if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+    res
+      .status(400)
+      .json({ status: "error", message: "Identifiant de groupe invalide" });
+    return;
+  }
+  next();
+});
 // Routes
-router.post('/', createGroupValidation, validate, createGroup);
-router.get('/', getUserGroups);
-router.get('/:id', getGroupById);
-router.put('/:id', updateGroupValidation, validate, updateGroup);
-router.delete('/:id', archiveGroup);
-router.post('/:id/members', addMemberValidation, validate, addMember);
-router.delete('/:id/members/:userId', removeMember);
-router.put('/:id/members/:userId/role', updateMemberRoleValidation, validate, updateMemberRole);
+router.get("/:id/tontine", getSchedule);
+router.get("/:id/tontine/history", getCycleHistory);
+router.put("/:id/tontine", putSchedule);
+router.post("/:id/tontine/payout", payout);
+router.post("/:id/tontine/next-cycle", nextCycle);
+router.get("/discover", discover);
+router.post(
+  "/join",
+  body("code")
+    .isString()
+    .bail()
+    .trim()
+    .toLowerCase()
+    .matches(/^[a-f0-9]{24}$/),
+  validate,
+  join,
+);
+router.post("/:id/join", join);
+router.get("/:id/invitation-code", invitationCode);
+router.get("/:id/join-requests", listJoinRequests);
+router.post(
+  "/:id/join-requests/:requestId/approve",
+  param("requestId").isMongoId(),
+  validate,
+  decideJoinRequest,
+);
+router.post(
+  "/:id/join-requests/:requestId/reject",
+  param("requestId").isMongoId(),
+  validate,
+  decideJoinRequest,
+);
+router.post("/", createGroupValidation, validate, createGroup);
+router.get("/", getUserGroups);
+router.get("/:id", getGroupById);
+router.put("/:id", updateGroupValidation, validate, updateGroup);
+router.delete("/:id", archiveGroup);
+router.post("/:id/members", addMemberValidation, validate, addMember);
+router.delete(
+  "/:id/members/:userId",
+  param("userId").isMongoId(),
+  validate,
+  removeMember,
+);
+router.put(
+  "/:id/members/:userId/role",
+  param("userId").isMongoId(),
+  updateMemberRoleValidation,
+  validate,
+  updateMemberRole,
+);
 
 export default router;

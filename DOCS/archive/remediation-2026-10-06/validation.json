@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-06",
+  "scope": "unpublished remediation worktree",
+  "backend": {
+    "fullRunPassed": 202,
+    "additionalRunPassed": 25,
+    "uniqueTestsPassed": 216,
+    "fullReport": "backend-tests.json",
+    "additionalReport": "backend-additional-tests.json",
+    "typescriptBuild": "passed",
+    "lint": "passed",
+    "docsRunPassed": 9,
+    "docsReport": "backend-docs-tests.json",
+    "compiledArtifactSwaggerPaths": 72,
+    "governanceRunPassed": 11,
+    "governanceReport": "backend-governance-final.json",
+    "providerRunPassed": 10,
+    "providerReport": "backend-provider-tests.json",
+    "compiledProviderCapabilities": {
+      "status": "passed",
+      "httpStatus": 200,
+      "placeholderEmail": false,
+      "placeholderAI": false,
+      "placeholderPush": false
+    }
+  },
+  "admin": {
+    "testsPassed": 47,
+    "lint": "passed",
+    "browserProof": "admin-browser.json"
+  },
+  "landing": {
+    "testsPassed": 12,
+    "lint": "passed",
+    "browserProof": "../remediation-landing-2026-10-06/browser-checks.json"
+  },
+  "workspacesAudit": {
+    "vulnerabilities": 0,
+    "report": "workspaces-dependencies.json"
+  },
+  "mobile": {
+    "testsPassed": 209,
+    "suites": 25,
+    "typescript": "passed",
+    "lint": "passed",
+    "testsReport": "../audit-evidence-2026-10-06/tests.json",
+    "dependenciesReport": "../audit-evidence-2026-10-06/dependencies.json",
+    "residualVulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 3,
+      "high": 52,
+      "critical": 0,
+      "total": 55
+    },
+    "browser": {
+      "status": "passed",
+      "checks": 13,
+      "redirectedApiRequests": 57,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "overflowChecks": 6,
+      "screenshots": 7,
+      "widths": [
+        375,
+        768,
+        1440
+      ],
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "proof": "../audit-evidence-2026-10-06/evidence.json",
+      "accessibilityScope": "Role-based UI controls and public headings; no full screen-reader or axe audit"
+    }
+  },
+  "production": {
+    "pm2RestartPerformed": false,
+    "nginxChanged": false,
+    "staticPublished": false,
+    "productionDataChanged": false,
+    "backendDistWrittenByLocalBuilds": true,
+    "observedFinancialStorage": "standalone",
+    "observedPm2Cron": "0 3 * * *"
+  },
+  "limitations": [
+    "real provider credentials and model configuration absent (documentation placeholders rejected)",
+    "physical Android/iOS unavailable",
+    "mobile residual dependency alerts",
+    "production Mongo migration and activation not performed"
+  ],
+  "release": {
+    "directory": "/tmp/badenya-releases/remediation-2026-10-06-final",
+    "backendAdminLandingBuilds": "passed",
+    "mobileWebExport": "passed; final canonical bundle verified in Chromium",
+    "checksums": "passed: sha256sum --quiet -c SHA256SUMS",
+    "expoRoutes": 66,
+    "compiledApiUrl": "https://badenya-api.naimba.com/api/v1",
+    "compiledProposalCloseMethod": "PUT",
+    "compiledEntry": "entry-7e5e6ebc9a89f95e770621a8d4192fe0.js",
+    "compiledSessionGuards": "passed",
+    "splashNavigationRegression": "passed"
+  },
+  "uniqueTestsPassed": 484,
+  "testEnvironment": "owned fixture, browser and static server stopped",
+  "migrationPreflight": {
+    "status": "passed",
+    "proof": "migration-preflight.json",
+    "collections": 12,
+    "documents": 41,
+    "sourceWritesPerformed": false,
+    "productionMigrationPerformed": false,
+    "installationAndCutover": "pending authorization"
+  }
+}

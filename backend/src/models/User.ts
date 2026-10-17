@@ -34,6 +34,8 @@ export interface IUser extends Document {
     theme: 'light' | 'dark' | 'auto';
   };
   isActive: boolean;
+  tokensValidAfter?: Date;
+  sessionVersion: number;
   lastLoginAt?: Date;
   lastActiveAt?: Date;
   deviceTokens: string[];
@@ -80,6 +82,8 @@ const UserSchema: Schema = new Schema(
       default: false,
     },
     emailVerificationToken: String,
+    tokensValidAfter: Date,
+    sessionVersion: {type:Number,default:0},
     passwordResetToken: String,
     passwordResetExpires: Date,
     refreshTokens: [
@@ -128,6 +132,12 @@ const UserSchema: Schema = new Schema(
   }
 );
 
+const sanitizeUser = (_document: unknown, user: Record<string,unknown>) => {
+  for (const key of ['password','refreshTokens','emailVerificationToken','passwordResetToken','passwordResetExpires','sessionVersion','tokensValidAfter','deviceTokens']) delete user[key];
+  return user;
+};
+UserSchema.set('toJSON',{transform:sanitizeUser});
+UserSchema.set('toObject',{transform:sanitizeUser});
 // Indexes
 UserSchema.index({ fullName: 'text' });
 

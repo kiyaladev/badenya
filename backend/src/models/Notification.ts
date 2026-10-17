@@ -34,6 +34,11 @@ export interface INotification extends Document {
 
 const NotificationSchema: Schema = new Schema(
   {
+    eventKey: {type:String,unique:true,sparse:true},
+    pushDeliveredAt: Date,
+    pushExpoDeliveredAt: Date,
+    pushFcmDeliveredAt: Date,
+    pushLeaseUntil: Date,
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',

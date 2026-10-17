@@ -1,137 +1,37 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
-// Custom hook for counting animation
-function useCountUp(end: number, duration: number = 2000) {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+const APP_URL = 'https://badenya.naimba.com';
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => observer.disconnect();
-  }, [isVisible]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    let startTime: number | null = null;
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      setCount(Math.floor(progress * end));
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      }
-    };
-    requestAnimationFrame(step);
-  }, [isVisible, end, duration]);
-
-  return { count, ref };
-}
-
-// FAQ Item component
-function FAQItem({ question, answer, isOpen, onClick }: { 
-  question: string; 
-  answer: string; 
-  isOpen: boolean; 
+function FAQItem({ question, answer, isOpen, onClick }: {
+  question: string;
+  answer: string;
+  isOpen: boolean;
   onClick: () => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      className="bg-white rounded-xl shadow-md overflow-hidden"
-    >
+    <div className="bg-white rounded-xl shadow-md overflow-hidden">
       <button
+        aria-expanded={isOpen}
         onClick={onClick}
-        className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+        className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50"
       >
         <h3 className="text-lg font-semibold text-gray-900 pr-4">{question}</h3>
-        <motion.svg
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-          className="w-5 h-5 text-blue-600 flex-shrink-0"
+        <svg
+          className={`w-5 h-5 text-blue-600 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </motion.svg>
+        </svg>
       </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <p className="px-6 pb-6 text-gray-600">{answer}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-// Stat Item component with animated counter
-function StatItem({ end, suffix, label, index }: { 
-  end: number; 
-  suffix: string; 
-  label: string;
-  index: number;
-}) {
-  const { count, ref } = useCountUp(end, 2000);
-  return (
-    <div ref={ref} className="text-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: index * 0.1 }}
-      >
-        <p className="text-4xl md:text-5xl font-bold text-white mb-2" aria-live="polite">
-          {count.toLocaleString()}{suffix}
-        </p>
-        <p className="text-blue-100 text-sm md:text-base">{label}</p>
-      </motion.div>
+      {isOpen && <p className="px-6 pb-6 text-gray-600">{answer}</p>}
     </div>
   );
 }
-
-// Demo statistics — will be replaced with real data from backend API
-const DEMO_STATS = [
-  { id: 'stat-users', end: 10000, suffix: '+', label: 'Utilisateurs actifs' },
-  { id: 'stat-groups', end: 500, suffix: '+', label: 'Groupes créés' },
-  { id: 'stat-savings', end: 50, suffix: 'M+', label: 'XOF épargnés' },
-  { id: 'stat-satisfaction', end: 98, suffix: '%', label: 'Satisfaction' },
-];
-
-// Demo balance showcase — illustrative data for hero section
-const DEMO_GROUPS = [
-  { emoji: '👥', name: 'Groupe Famille', amount: '850,000 XOF', progress: 85, gradient: 'from-blue-500 to-blue-600' },
-  { emoji: '💼', name: 'Investissement Pro', amount: '1,200,000 XOF', progress: 60, gradient: 'from-purple-500 to-purple-600' },
-  { emoji: '🎯', name: 'Projet Immo', amount: '400,000 XOF', progress: 40, gradient: 'from-green-500 to-green-600' },
-];
-const DEMO_TOTAL = '2,450,000 XOF';
 
 export default function HomePage() {
   const [email, setEmail] = useState('');
@@ -146,7 +46,7 @@ export default function HomePage() {
     setNewsletterError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://badenya-api.naimba.com/api/v1';
       const response = await fetch(`${apiUrl}/contact/newsletter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,12 +67,6 @@ export default function HomePage() {
     }
   };
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 },
-  };
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -180,8 +74,8 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div {...fadeInUp}>
+          <div className="max-w-3xl">
+            <div>
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
                 Gérez vos{' '}
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
@@ -190,16 +84,16 @@ export default function HomePage() {
                 en toute simplicité
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Badenya vous aide à créer, gérer et faire fructifier vos tontines et groupes d'épargne avec la puissance du digital.
+                Badenya vous aide à créer et gérer vos tontines et groupes d'épargne, directement depuis votre navigateur.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href="#download"
-                  className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl text-lg font-semibold text-center transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  href={APP_URL}
+                  className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl text-lg font-semibold text-center transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
                   <span className="flex items-center justify-center gap-2">
-                    Télécharger l'app
-                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    Ouvrir l’application
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </span>
@@ -211,35 +105,7 @@ export default function HomePage() {
                   En savoir plus
                 </a>
               </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 shadow-2xl">
-                <div className="bg-white rounded-xl p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Solde total</span>
-                    <span className="text-2xl font-bold text-gray-900 animate-pulse">{DEMO_TOTAL}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {DEMO_GROUPS.map((group) => (
-                      <div key={group.name}>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">{group.emoji} {group.name}</span>
-                          <span className="font-medium">{group.amount}</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                          <div className={`bg-gradient-to-r ${group.gradient} h-1.5 rounded-full`} style={{ width: `${group.progress}%` }}></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -247,7 +113,7 @@ export default function HomePage() {
       {/* Features Section */}
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
+          <div className="text-center mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Fonctionnalités</span>
             <h2 className="text-4xl font-bold text-gray-900 mt-2 mb-4">
               Fonctionnalités puissantes
@@ -255,9 +121,9 @@ export default function HomePage() {
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Tout ce dont vous avez besoin pour gérer vos groupes d'épargne de manière efficace
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               {
                 id: 'feature-groups',
@@ -267,7 +133,7 @@ export default function HomePage() {
                   </svg>
                 ),
                 title: 'Gestion de groupes',
-                description: 'Créez et gérez plusieurs groupes d\'épargne avec des rôles et permissions.',
+                description: 'Créez vos groupes d\'épargne et attribuez les rôles : membre, trésorier, administrateur.',
               },
               {
                 id: 'feature-contributions',
@@ -289,63 +155,17 @@ export default function HomePage() {
                 title: 'Votes démocratiques',
                 description: 'Prenez des décisions importantes ensemble grâce au système de vote intégré.',
               },
-              {
-                id: 'feature-reports',
-                icon: (
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                ),
-                title: 'Rapports détaillés',
-                description: 'Générez des rapports financiers complets et exportez-les en PDF ou Excel.',
-              },
-              {
-                id: 'feature-notifications',
-                icon: (
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                ),
-                title: 'Notifications en temps réel',
-                description: 'Restez informé de toutes les activités importantes de vos groupes.',
-              },
-              {
-                id: 'feature-security',
-                icon: (
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                ),
-                title: 'Sécurité maximale',
-                description: 'Vos données sont protégées avec un chiffrement de niveau bancaire.',
-              },
-            ].map((feature, index) => (
-              <motion.div
+            ].map((feature) => (
+              <div
                 key={feature.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100"
+                className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full flex items-center justify-center mb-6">
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Statistics Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {DEMO_STATS.map((stat, index) => (
-              <StatItem key={stat.id} {...stat} index={index} />
+              </div>
             ))}
           </div>
         </div>
@@ -354,51 +174,39 @@ export default function HomePage() {
       {/* How it works Section */}
       <section id="how-it-works" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
+          <div className="text-center mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Guide</span>
             <h2 className="text-4xl font-bold text-gray-900 mt-2 mb-4">
               Comment ça marche ?
             </h2>
             <p className="text-xl text-gray-600">
-              Commencez en 3 étapes simples
+              Commencez en 2 étapes simples
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               {
-                id: 'step-download',
-                step: '01',
-                title: 'Téléchargez l\'app',
-                description: 'Installez Badenya gratuitement sur votre smartphone Android ou iOS.',
-              },
-              {
                 id: 'step-create',
-                step: '02',
+                step: '01',
                 title: 'Créez votre groupe',
                 description: 'Configurez votre groupe d\'épargne en quelques clics et invitez vos membres.',
               },
               {
                 id: 'step-save',
-                step: '03',
+                step: '02',
                 title: 'Commencez à épargner',
                 description: 'Gérez les cotisations, votez sur les dépenses et suivez votre progression.',
               },
             ].map((step, index) => (
-              <motion.div
-                key={step.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-                className="relative"
+              <div key={step.id} className="relative"
               >
                 <div className="bg-white p-8 rounded-xl shadow-lg">
-                  <div className="text-6xl font-bold text-blue-100 mb-4">{step.step}</div>
+                  <div className="text-6xl font-bold text-blue-700 mb-4">{step.step}</div>
                   <h3 className="text-2xl font-semibold text-gray-900 mb-3">{step.title}</h3>
                   <p className="text-gray-600">{step.description}</p>
                 </div>
-                {index < 2 && (
+                {index < 1 && (
                   <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
                     <svg
                       className="w-8 h-8 text-blue-300"
@@ -415,84 +223,7 @@ export default function HomePage() {
                     </svg>
                   </div>
                 )}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
-            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Témoignages</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-2 mb-4">
-              Ce que disent nos utilisateurs
-            </h2>
-            <p className="text-xl text-gray-600">
-              Rejoignez des milliers d'utilisateurs satisfaits
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                id: 'testimonial-aminata',
-                name: 'Aminata Diallo',
-                role: 'Présidente de groupe, Dakar',
-                content: 'Badenya a transformé la gestion de notre tontine familiale. Tout est transparent et facile à suivre !',
-                rating: 5,
-                avatar: 'AD',
-              },
-              {
-                id: 'testimonial-moussa',
-                name: 'Moussa Kone',
-                role: 'Entrepreneur, Abidjan',
-                content: 'L\'application est intuitive et le système de vote nous aide à prendre de meilleures décisions ensemble.',
-                rating: 5,
-                avatar: 'MK',
-              },
-              {
-                id: 'testimonial-fatou',
-                name: 'Fatou Sow',
-                role: 'Trésorière, Bamako',
-                content: 'Les rapports automatiques me font gagner un temps précieux. Je recommande vivement !',
-                rating: 5,
-                avatar: 'FS',
-              },
-            ].map((testimonial, index) => (
-              <motion.div
-                key={testimonial.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900">{testimonial.name}</p>
-                    <p className="text-sm text-gray-600">{testimonial.role}</p>
-                  </div>
-                </div>
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className="w-5 h-5 text-yellow-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-gray-700 leading-relaxed italic">"{testimonial.content}"</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -501,7 +232,7 @@ export default function HomePage() {
       {/* FAQ Section */}
       <section id="faq" className="py-24 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeInUp} className="text-center mb-16">
+          <div className="text-center mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">FAQ</span>
             <h2 className="text-4xl font-bold text-gray-900 mt-2 mb-4">
               Questions fréquentes
@@ -509,34 +240,29 @@ export default function HomePage() {
             <p className="text-xl text-gray-600">
               Tout ce que vous devez savoir sur Badenya
             </p>
-          </motion.div>
+          </div>
 
           <div className="space-y-4">
             {[
               {
                 id: 'faq-create-group',
                 question: 'Comment créer un groupe d\'épargne ?',
-                answer: 'Il suffit de télécharger l\'application, créer votre compte et suivre les étapes de création de groupe. Vous pourrez ensuite inviter vos membres par SMS ou email.',
+                answer: 'Ouvrez Badenya dans votre navigateur, créez votre compte puis suivez les étapes de création de groupe. Vous pourrez ensuite inviter vos membres.',
               },
               {
                 id: 'faq-security',
-                question: 'Badenya est-il sécurisé ?',
-                answer: 'Oui ! Nous utilisons un chiffrement de niveau bancaire pour protéger toutes vos données. De plus, toutes les actions importantes nécessitent une authentification.',
+                question: 'Mes données sont-elles protégées ?',
+                answer: 'Les échanges avec Badenya passent par HTTPS et l’accès à votre compte et à vos groupes est contrôlé selon votre rôle. Consultez notre politique de confidentialité pour connaître les données traitées.',
               },
               {
                 id: 'faq-pricing',
-                question: 'Combien coûte l\'application ?',
-                answer: 'Badenya est gratuit pour les groupes de moins de 20 membres. Pour les groupes plus importants, nous proposons des plans premium avec des fonctionnalités avancées.',
-              },
-              {
-                id: 'faq-data-security',
-                question: 'Comment sont sécurisées mes données ?',
-                answer: 'Vos données sont protégées par un chiffrement de bout en bout et stockées sur des serveurs sécurisés. Nous utilisons les meilleures pratiques de sécurité pour garantir la confidentialité de vos informations.',
+                question: 'Combien coûte Badenya ?',
+                answer: 'Badenya est gratuit.',
               },
               {
                 id: 'faq-payments',
                 question: 'Comment sont gérés les paiements ?',
-                answer: 'Badenya s\'intègre avec les principales plateformes de paiement mobile (Wave, Orange Money, MTN Money) pour faciliter les transactions.',
+                answer: 'Badenya enregistre les cotisations et dépenses déclarées par les membres et validées par les responsables du groupe. Les transferts d’argent sont réalisés séparément par les participants.',
               },
             ].map((faq, index) => (
               <FAQItem
@@ -552,57 +278,27 @@ export default function HomePage() {
       </section>
 
       {/* Download Section */}
-      <section id="download" className="py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-white/5 rounded-full"></div>
-          <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-white/5 rounded-full"></div>
-        </div>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <motion.div {...fadeInUp}>
+      <section id="download" className="py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Prêt à commencer ?
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Téléchargez Badenya maintenant et transformez la gestion de vos épargnes collectives
+              Accédez à Badenya depuis votre navigateur pour gérer vos groupes
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a
-                href="/#download"
-                className="group bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center space-x-3"
-              >
-                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-xs">Télécharger sur</div>
-                  <div className="text-lg font-bold">App Store</div>
-                </div>
-              </a>
-              <a
-                href="/#download"
-                className="group bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center space-x-3"
-              >
-                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.802 8.99l-2.303 2.303-8.635-8.635z" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-xs">Télécharger sur</div>
-                  <div className="text-lg font-bold">Google Play</div>
-                </div>
-              </a>
-            </div>
+            <a href={APP_URL} className="inline-flex rounded-xl bg-white px-8 py-4 font-bold text-blue-800 hover:bg-blue-50">Ouvrir l’application web</a>
 
             {/* Newsletter */}
-            <div className="mt-12 pt-12 border-t border-white/20">
+            <div className="mt-12 rounded-xl bg-white/10 p-8">
               <h3 className="text-2xl font-bold mb-4">Restez informé</h3>
               <p className="mb-6 opacity-90">
                 Inscrivez-vous à notre newsletter pour recevoir les dernières actualités
               </p>
-              <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex gap-4">
+              <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex flex-col sm:flex-row gap-4">
                 {newsletterSubmitted ? (
                   <p className="text-white text-lg font-medium py-3">
-                    ✅ Merci pour votre inscription ! Vous recevrez nos prochaines actualités.
+                    Votre inscription a été enregistrée.
                   </p>
                 ) : (
                   <>
@@ -635,7 +331,7 @@ export default function HomePage() {
                 )}
               </form>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 

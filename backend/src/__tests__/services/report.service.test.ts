@@ -98,6 +98,89 @@ describe('Report Service', () => {
       expect(summary.expensesByCategory.length).toBeGreaterThan(0);
     });
 
+    it('should query only completed transactions', async () => {
+      const mockFind = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue([]),
+      });
+      (Transaction.find as jest.Mock) = mockFind;
+
+      await reportService.getGroupSummary(mockGroupId);
+
+      expect(mockFind).toHaveBeenCalledWith(
+        expect.objectContaining({
+          groupId: mockGroupId,
+          status: 'completed',
+        })
+      );
+    });
+
+    it('should correctly subtract refunds from net balance', async () => {
+      const mockTransactions = [
+        {
+          type: 'contribution',
+          amount: 100,
+          initiatedBy: { _id: 'user1', firstName: 'John' },
+          createdAt: new Date(),
+        },
+        {
+          type: 'expense',
+          amount: 30,
+          category: 'supplies',
+          initiatedBy: { _id: 'user1', firstName: 'John' },
+          createdAt: new Date(),
+        },
+        {
+          type: 'refund',
+          amount: 20,
+          initiatedBy: { _id: 'user1', firstName: 'John' },
+          createdAt: new Date(),
+        },
+      ];
+
+      const mockFind = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue(mockTransactions),
+      });
+      (Transaction.find as jest.Mock) = mockFind;
+
+      const summary = await reportService.getGroupSummary(mockGroupId);
+
+      expect(summary.totalContributions).toBe(100);
+      expect(summary.totalExpenses).toBe(30);
+      expect(summary.totalRefunds).toBe(20);
+      expect(summary.netBalance).toBe(50); // 100 - 30 - 20 = 50
+    });
+
+    it('should handle transactions where initiatedBy user was deleted', async () => {
+      const mockTransactions = [
+        {
+          type: 'contribution',
+          amount: 100,
+          initiatedBy: null,
+          createdAt: new Date(),
+        },
+      ];
+
+      const mockFind = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue(mockTransactions),
+      });
+      (Transaction.find as jest.Mock) = mockFind;
+
+      const summary = await reportService.getGroupSummary(mockGroupId);
+
+      expect(summary.totalContributions).toBe(100);
+      expect(summary.contributionsByMember).toEqual([
+        {
+          userId: 'deleted',
+          userName: 'Utilisateur supprimé',
+          amount: 100,
+          count: 1,
+        },
+      ]);
+    });
+
     it('should handle period filtering', async () => {
       const startDate = new Date('2024-01-01');
       const endDate = new Date('2024-12-31');
@@ -113,6 +196,7 @@ describe('Report Service', () => {
       expect(mockFind).toHaveBeenCalledWith(
         expect.objectContaining({
           groupId: mockGroupId,
+          status: 'completed',
           createdAt: expect.objectContaining({
             $gte: startDate,
             $lte: endDate,

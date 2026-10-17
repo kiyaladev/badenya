@@ -1,19 +1,19 @@
-import { Router } from 'express';
-import { body, param } from 'express-validator';
+import { Router } from "express";
+import { body, param } from "express-validator";
 import {
   createTransaction,
+  getMyTransactions,
   getGroupTransactions,
   getTransactionById,
   verifyTransaction,
   cancelTransaction,
-} from '../controllers/transaction.controller';
-import { authenticate } from '../middleware/auth';
-import { validate } from '../middleware/validation';
+} from "../controllers/transaction.controller";
+import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validation";
 
 const router = Router();
 
 // All routes require authentication
-router.use(authenticate);
 
 /**
  * @swagger
@@ -214,70 +214,76 @@ router.use(authenticate);
 
 // Validation rules
 const createTransactionValidation = [
-  body('type')
-    .isIn(['contribution', 'expense', 'refund', 'adjustment'])
-    .withMessage('Invalid transaction type'),
-  body('amount')
+  body("type")
+    .isIn(["contribution", "expense", "refund", "adjustment"])
+    .withMessage("Type d’opération invalide"),
+  body("amount")
     .isNumeric()
     .isFloat({ min: 0 })
-    .withMessage('Amount must be a positive number'),
-  body('description').optional().trim(),
-  body('category').optional().trim(),
-  body('paymentMethod')
+    .withMessage("Le montant doit être positif"),
+  body("description").optional().trim(),
+  body("category").optional().trim(),
+  body("paymentMethod")
     .optional()
-    .isIn(['cash', 'mobile_money', 'bank_transfer', 'card'])
-    .withMessage('Invalid payment method'),
+    .isIn(["cash", "mobile_money", "bank_transfer", "card"])
+    .withMessage("Moyen de paiement invalide"),
 ];
 
-const verifyTransactionValidation = [
-  body('notes').optional().trim(),
-];
+const verifyTransactionValidation = [body("notes").optional().trim()];
 
-const cancelTransactionValidation = [
-  body('reason').optional().trim(),
-];
+const cancelTransactionValidation = [body("reason").optional().trim()];
 
 const groupIdValidation = [
-  param('groupId').isMongoId().withMessage('Valid group ID is required'),
+  param("groupId")
+    .isMongoId()
+    .withMessage("Un identifiant de groupe valide est requis"),
 ];
 
 const transactionIdValidation = [
-  param('id').isMongoId().withMessage('Valid transaction ID is required'),
+  param("id")
+    .isMongoId()
+    .withMessage("Un identifiant d’opération valide est requis"),
 ];
 
 // Routes
+router.get("/transactions", authenticate, getMyTransactions);
 router.post(
-  '/groups/:groupId/transactions',
+  "/groups/:groupId/transactions",
+  authenticate,
   groupIdValidation,
   createTransactionValidation,
   validate,
-  createTransaction
+  createTransaction,
 );
 router.get(
-  '/groups/:groupId/transactions',
+  "/groups/:groupId/transactions",
+  authenticate,
   groupIdValidation,
   validate,
-  getGroupTransactions
+  getGroupTransactions,
 );
 router.get(
-  '/transactions/:id',
+  "/transactions/:id",
+  authenticate,
   transactionIdValidation,
   validate,
-  getTransactionById
+  getTransactionById,
 );
 router.put(
-  '/transactions/:id/verify',
+  "/transactions/:id/verify",
+  authenticate,
   transactionIdValidation,
   verifyTransactionValidation,
   validate,
-  verifyTransaction
+  verifyTransaction,
 );
 router.delete(
-  '/transactions/:id',
+  "/transactions/:id",
+  authenticate,
   transactionIdValidation,
   cancelTransactionValidation,
   validate,
-  cancelTransaction
+  cancelTransaction,
 );
 
 export default router;

@@ -1,8 +1,12 @@
-import { Router } from 'express';
-import { body } from 'express-validator';
-import { submitContactForm, subscribeNewsletter } from '../controllers/contact.controller';
-import { validate } from '../middleware/validation';
-import rateLimit from 'express-rate-limit';
+import { Router } from "express";
+import { body } from "express-validator";
+import {
+  submitContactForm,
+  subscribeNewsletter,
+  unsubscribeNewsletter,
+} from "../controllers/contact.controller";
+import { validate } from "../middleware/validation";
+import rateLimit from "express-rate-limit";
 
 const router = Router();
 
@@ -10,24 +14,32 @@ const router = Router();
 const contactLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: 'Too many contact requests, please try again later.',
+  message: "Trop de messages envoyés. Réessayez plus tard.",
 });
 
 // Validation rules
 const contactValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 100 }),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('subject').trim().notEmpty().withMessage('Subject is required').isLength({ max: 200 }),
-  body('message')
+  body("name")
     .trim()
     .notEmpty()
-    .withMessage('Message is required')
+    .withMessage("Le nom est requis")
+    .isLength({ max: 100 }),
+  body("email").isEmail().withMessage("Une adresse email valide est requise"),
+  body("subject")
+    .trim()
+    .notEmpty()
+    .withMessage("Le sujet est requis")
+    .isLength({ max: 200 }),
+  body("message")
+    .trim()
+    .notEmpty()
+    .withMessage("Le message est requis")
     .isLength({ min: 10, max: 2000 })
-    .withMessage('Message must be between 10 and 2000 characters'),
+    .withMessage("Le message doit contenir entre 10 et 2000 caractères"),
 ];
 
 const newsletterValidation = [
-  body('email').isEmail().withMessage('Valid email is required'),
+  body("email").isEmail().withMessage("Une adresse email valide est requise"),
 ];
 
 /**
@@ -67,7 +79,13 @@ const newsletterValidation = [
  *       429:
  *         description: Rate limit exceeded
  */
-router.post('/', contactLimiter, contactValidation, validate, submitContactForm);
+router.post(
+  "/",
+  contactLimiter,
+  contactValidation,
+  validate,
+  submitContactForm,
+);
 
 /**
  * @swagger
@@ -94,6 +112,25 @@ router.post('/', contactLimiter, contactValidation, validate, submitContactForm)
  *       429:
  *         description: Rate limit exceeded
  */
-router.post('/newsletter', contactLimiter, newsletterValidation, validate, subscribeNewsletter);
+router.post(
+  "/newsletter",
+  contactLimiter,
+  newsletterValidation,
+  validate,
+  subscribeNewsletter,
+);
+
+router.post(
+  "/newsletter/unsubscribe",
+  contactLimiter,
+  [
+    body("token")
+      .isString()
+      .matches(/^[a-f0-9]{64}$/)
+      .withMessage("Un lien de désabonnement valide est requis"),
+  ],
+  validate,
+  unsubscribeNewsletter,
+);
 
 export default router;

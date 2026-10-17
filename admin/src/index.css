@@ -28,3 +28,10 @@
     background-color: var(--color-gray-400, #9ca3af);
   }
 }
+
+@layer base {
+  body { min-width: 0; color: #111827; }
+  input, select, textarea { min-width: 0; max-width: 100%; }
+  :focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+  h1, h2, h3, p, dd { overflow-wrap: anywhere; }
+}

@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, development ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, development ]
 
 jobs:
   backend-test:
@@ -18,13 +18,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
         run: |
-          cd backend
           npm ci
       
       - name: Run linter
@@ -65,7 +64,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: mobile/package-lock.json
       
@@ -109,14 +108,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
-          cache-dependency-path: admin/package-lock.json
+          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        run: |
-          cd admin
-          npm ci
+        run: npm ci
       
       - name: Run linter
         run: |
@@ -153,14 +150,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
-          cache-dependency-path: landing-page/package-lock.json
+          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        run: |
-          cd landing-page
-          npm ci
+        run: npm ci
       
       - name: Run linter
         run: |
@@ -197,19 +192,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
       
-      - name: Audit backend dependencies
-        run: |
-          cd backend
-          npm audit --audit-level=high || true
+      - name: Audit workspace dependencies
+        run: npm audit --audit-level=high
       
-      - name: Audit admin dependencies
-        run: |
-          cd admin
-          npm audit --audit-level=high || true
-      
-      - name: Audit mobile dependencies
-        run: |
-          cd mobile
-          npm audit --audit-level=high || true
+      - name: Install mobile dependencies with verified backports
+        run: npm ci
+        working-directory: mobile
+
+      - name: Audit mobile dependencies and verify security backports
+        run: npm run security:audit
+        working-directory: mobile
+        env:
+          SECURITY_AUDIT_REPORT: ${{ runner.temp }}/badenya-mobile-audit.json
+
+      - name: Retain raw npm audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-security-audit
+          path: ${{ runner.temp }}/badenya-mobile-audit.json
+          if-no-files-found: ignore

@@ -1,15 +1,15 @@
+import { ErrorMessage } from '../components/Feedback';
+import Pagination from '../components/Pagination';
+import { roleLabels } from '../utils/labels';
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+
 import adminService, { type User } from '../services/adminService';
 import { getErrorMessage } from '../utils/errorHandler';
 import { useDebounce } from '../hooks/useDebounce';
-import { useFocusTrap } from '../hooks/useFocusTrap';
 import AdminLayout from '../components/AdminLayout';
+import { useUserStatusActions } from '../hooks/useAdminActions';
 
 export default function UsersPage() {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,8 +17,6 @@ export default function UsersPage() {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [confirmSuspend, setConfirmSuspend] = useState<string | null>(null);
-  const suspendModalRef = useFocusTrap<HTMLDivElement>(!!confirmSuspend);
   const limit = 10;
 
   const loadUsers = useCallback(async () => {
@@ -41,37 +39,14 @@ export default function UsersPage() {
   }, [currentPage, debouncedSearch]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     loadUsers();
-  }, [isAuthenticated, navigate, loadUsers]);
+  }, [loadUsers]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch]);
 
-  const handleSuspendUser = async (userId: string) => {
-    try {
-      await adminService.suspendUser(userId);
-      setConfirmSuspend(null);
-      await loadUsers();
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Erreur lors de la suspension');
-    }
-  };
-
-  const handleActivateUser = async (userId: string) => {
-    try {
-      await adminService.activateUser(userId);
-      await loadUsers();
-    } catch (err) {
-      setError(getErrorMessage(err) || 'Erreur lors de l\'activation');
-    }
-  };
-
-  const totalPages = Math.ceil(totalUsers / limit);
+  const { requestSuspend, activate, modal } = useUserStatusActions({ onSuccess: loadUsers, onError: setError });
 
   return (
     <AdminLayout subtitle="Gestion des utilisateurs">
@@ -89,33 +64,23 @@ export default function UsersPage() {
           />
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            <p>{error}</p>
-          </div>
-        )}
+        {error && <ErrorMessage message={error} />}
 
         {/* Users Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div tabIndex={0} role="region" aria-label="Tableau des utilisateurs" className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Utilisateur
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Téléphone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Rôle
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -123,13 +88,13 @@ export default function UsersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center">
+                  <td colSpan={4} className="px-6 py-4 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={4} className="px-6 py-4 text-center text-gray-600">
                     Aucun utilisateur trouvé
                   </td>
                 </tr>
@@ -147,23 +112,19 @@ export default function UsersPage() {
                           <div className="text-sm font-medium text-gray-900">
                             {user.fullName}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-600">{user.email}</div>
+                          {user.phone && <div className="text-sm text-gray-600">{user.phone}</div>}
+                          <div className="text-sm text-gray-600">
                             Inscrit le {new Date(user.createdAt).toLocaleDateString('fr-FR')}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.phone || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {user.role}
+                        {roleLabels[user.role] || user.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -174,22 +135,16 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => navigate(`/users/${user._id}`)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Détails
-                      </button>
                       {user.isActive ? (
                         <button
-                          onClick={() => setConfirmSuspend(user._id)}
+                          onClick={() => requestSuspend(user._id)}
                           className="text-red-600 hover:text-red-900"
                         >
                           Suspendre
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleActivateUser(user._id)}
+                          onClick={() => void activate(user._id)}
                           className="text-green-600 hover:text-green-900"
                         >
                           Activer
@@ -203,57 +158,9 @@ export default function UsersPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Affichage de {(currentPage - 1) * limit + 1} à {Math.min(currentPage * limit, totalUsers)} sur {totalUsers} utilisateurs
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Précédent
-              </button>
-              <span className="px-4 py-2 text-sm text-gray-700">
-                Page {currentPage} sur {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Suivant
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination page={currentPage} limit={limit} total={totalUsers} onChange={setCurrentPage} />
 
-      {/* Confirmation Modal */}
-      {confirmSuspend && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div ref={suspendModalRef} className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4" role="dialog" aria-modal="true" aria-labelledby="confirm-suspend-title">
-            <h3 id="confirm-suspend-title" className="text-lg font-semibold text-gray-900 mb-2">Confirmer la suspension</h3>
-            <p className="text-gray-600 mb-6">Êtes-vous sûr de vouloir suspendre cet utilisateur ?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setConfirmSuspend(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => handleSuspendUser(confirmSuspend)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-              >
-                Suspendre
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {modal}
     </AdminLayout>
   );
 }

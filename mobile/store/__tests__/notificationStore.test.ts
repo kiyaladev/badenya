@@ -145,7 +145,7 @@ describe('NotificationStore', () => {
 
       await useNotificationStore.getState().markAsRead('1');
 
-      expect(useNotificationStore.getState().error).toBe('Failed to mark as read');
+      expect(useNotificationStore.getState().error).toBe('Failed');
     });
   });
 
@@ -253,7 +253,7 @@ describe('NotificationStore', () => {
       await useNotificationStore.getState().updateDeviceToken('test-token');
 
       expect(consoleError).toHaveBeenCalledWith(
-        'Failed to update device token:',
+        expect.stringContaining('[ERROR] [NotificationStore] Failed to update device token'),
         expect.any(Error)
       );
       consoleError.mockRestore();
@@ -276,7 +276,7 @@ describe('NotificationStore', () => {
       await useNotificationStore.getState().removeDeviceToken('test-token');
 
       expect(consoleError).toHaveBeenCalledWith(
-        'Failed to remove device token:',
+        expect.stringContaining('[ERROR] [NotificationStore] Failed to remove device token'),
         expect.any(Error)
       );
       consoleError.mockRestore();

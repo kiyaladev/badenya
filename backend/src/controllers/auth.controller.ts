@@ -1,25 +1,18 @@
-import { Request, Response } from 'express';
-import crypto from 'crypto';
-import { User, Notification, Group } from '../models';
-import { hashPassword, comparePassword } from '../utils/password';
-import { generateTokens, verifyRefreshToken } from '../utils/jwt';
-import { generateToken } from '../utils/crypto';
-import { AuthRequest } from '../middleware/auth';
-import { requireAuth } from '../utils/typeGuards';
-import logger from '../utils/logger';
-import { sendPasswordResetEmail } from '../services/email.service';
+import { sessionVersionQuery } from "../utils/sessionVersion";
+import { Request, Response } from "express";
+import crypto from "crypto";
+import { User } from "../models";
+import { hashPassword, comparePassword } from "../utils/password";
+import { generateTokens, verifyRefreshToken } from "../utils/jwt";
+import { AuthRequest } from "../middleware/auth";
+import { requireAuth } from "../utils/typeGuards";
+import logger from "../utils/logger";
 
-/** Cookie options for httpOnly auth tokens (admin panel) */
-const cookieOptions = (maxAgeMs: number) => ({
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
-  path: '/',
-  maxAge: maxAgeMs,
-});
-
-const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
-const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7d
+import {
+  cookieOptions,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
+} from "../utils/authCookies";
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -29,24 +22,24 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Validate input formats
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({
-        status: 'error',
-        message: 'Invalid email format',
+        status: "error",
+        message: "Adresse email invalide",
       });
       return;
     }
 
     if (!password || password.length < 8) {
       res.status(400).json({
-        status: 'error',
-        message: 'Password must be at least 8 characters',
+        status: "error",
+        message: "Le mot de passe doit contenir au moins 8 caractères",
       });
       return;
     }
 
     if (!phone || !/^\+?[\d\s\-()]{10,}$/.test(phone)) {
       res.status(400).json({
-        status: 'error',
-        message: 'Invalid phone number format',
+        status: "error",
+        message: "Numéro de téléphone invalide",
       });
       return;
     }
@@ -58,8 +51,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     if (existingUser) {
       res.status(400).json({
-        status: 'error',
-        message: 'User with this email or phone already exists',
+        status: "error",
+        message: "Un compte utilise déjà cet email ou ce téléphone",
       });
       return;
     }
@@ -76,17 +69,26 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       isEmailVerified: false,
     });
 
+    if (!user.isActive) {
+      res.status(403).json({
+        status: "error",
+        code: "ACCOUNT_SUSPENDED",
+        message: "Compte suspendu",
+      });
+      return;
+    }
     // Generate tokens
     const tokens = generateTokens({
       id: user.id,
       email: user.email,
+      sessionVersion: user.sessionVersion || 0,
     });
 
     // Save refresh token (with minimal info for now)
     user.refreshTokens.push({
       token: tokens.refreshToken,
-      deviceId: deviceId || 'web',
-      deviceName: deviceName || 'Web Browser',
+      deviceId: deviceId || "web",
+      deviceName: deviceName || "Web Browser",
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
@@ -96,22 +98,31 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const userResponse = user.toObject();
     const { password: _, refreshTokens: __, ...safeUser } = userResponse;
 
-    res.status(201)
-      .cookie('admin_token', tokens.accessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE))
-      .cookie('admin_refresh_token', tokens.refreshToken, cookieOptions(REFRESH_TOKEN_MAX_AGE))
+    res
+      .status(201)
+      .cookie(
+        "admin_token",
+        tokens.accessToken,
+        cookieOptions(ACCESS_TOKEN_MAX_AGE),
+      )
+      .cookie(
+        "admin_refresh_token",
+        tokens.refreshToken,
+        cookieOptions(REFRESH_TOKEN_MAX_AGE),
+      )
       .json({
-      status: 'success',
-      message: 'User registered successfully',
-      data: {
-        user: safeUser,
-        tokens,
-      },
-    });
+        status: "success",
+        message: "Compte créé",
+        data: {
+          user: safeUser,
+          tokens,
+        },
+      });
   } catch (error) {
-    logger.error('Register error:', error);
+    logger.error("Register error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to register user',
+      status: "error",
+      message: "Impossible de créer le compte",
     });
   }
 };
@@ -128,8 +139,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     if (!user) {
       res.status(401).json({
-        status: 'error',
-        message: 'Invalid credentials',
+        status: "error",
+        message: "Identifiants incorrects",
       });
       return;
     }
@@ -139,51 +150,85 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     if (!isPasswordValid) {
       res.status(401).json({
-        status: 'error',
-        message: 'Invalid credentials',
+        status: "error",
+        message: "Identifiants incorrects",
       });
       return;
     }
 
+    if (!user.isActive) {
+      res.status(403).json({
+        status: "error",
+        code: "ACCOUNT_SUSPENDED",
+        message: "Compte suspendu",
+      });
+      return;
+    }
     // Generate tokens
     const tokens = generateTokens({
       id: user.id,
       email: user.email,
+      sessionVersion: user.sessionVersion || 0,
     });
 
     // Save refresh token
     user.refreshTokens.push({
       token: tokens.refreshToken,
-      deviceId: deviceId || 'web',
-      deviceName: deviceName || 'Web Browser',
+      deviceId: deviceId || "web",
+      deviceName: deviceName || "Web Browser",
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
-    
-    // Update last login
-    user.lastLoginAt = new Date();
-    await user.save();
+
+    // A concurrent suspension or password change must prevent session creation.
+    const authenticated = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        isActive: { $ne: false },
+        ...sessionVersionQuery(user.sessionVersion || 0),
+      },
+      {
+        $push: {
+          refreshTokens: user.refreshTokens[user.refreshTokens.length - 1],
+        },
+        $set: { lastLoginAt: new Date() },
+      },
+      { new: true },
+    );
+    if (!authenticated) {
+      res.status(401).json({ status: "error", message: "Session révoquée" });
+      return;
+    }
 
     // Remove password from response
     const userResponse = user.toObject();
     const { password: _, refreshTokens: __, ...safeUser } = userResponse;
 
-    res.status(200)
-      .cookie('admin_token', tokens.accessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE))
-      .cookie('admin_refresh_token', tokens.refreshToken, cookieOptions(REFRESH_TOKEN_MAX_AGE))
+    res
+      .status(200)
+      .cookie(
+        "admin_token",
+        tokens.accessToken,
+        cookieOptions(ACCESS_TOKEN_MAX_AGE),
+      )
+      .cookie(
+        "admin_refresh_token",
+        tokens.refreshToken,
+        cookieOptions(REFRESH_TOKEN_MAX_AGE),
+      )
       .json({
-      status: 'success',
-      message: 'Login successful',
-      data: {
-        user: safeUser,
-        tokens,
-      },
-    });
+        status: "success",
+        message: "Connexion réussie",
+        data: {
+          user: safeUser,
+          tokens,
+        },
+      });
   } catch (error) {
-    logger.error('Login error:', error);
+    logger.error("Login error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to login',
+      status: "error",
+      message: "Impossible de se connecter",
     });
   }
 };
@@ -191,16 +236,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 // Refresh access token
 export const refreshToken = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
-    const refreshToken = req.body.refreshToken || req.cookies?.admin_refresh_token;
-    const { deviceId, deviceName } = req.body;
+    const refreshToken =
+      req.body?.refreshToken || req.cookies?.admin_refresh_token;
+    const { deviceId, deviceName } = req.body || {};
 
     if (!refreshToken) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Refresh token is required',
+      res.status(401).json({
+        status: "error",
+        message: "Le jeton de renouvellement est requis",
       });
       return;
     }
@@ -213,12 +259,24 @@ export const refreshToken = async (
 
     if (!user) {
       res.status(401).json({
-        status: 'error',
-        message: 'Invalid refresh token',
+        status: "error",
+        message: "Jeton de renouvellement invalide",
       });
       return;
     }
 
+    if (!user.isActive) {
+      res.status(403).json({
+        status: "error",
+        code: "ACCOUNT_SUSPENDED",
+        message: "Compte suspendu",
+      });
+      return;
+    }
+    if ((decoded.sessionVersion || 0) !== (user.sessionVersion || 0)) {
+      res.status(401).json({ status: "error", message: "Session révoquée" });
+      return;
+    }
     const tokenExists = user.refreshTokens.some((t) => {
       try {
         const a = Buffer.from(t.token);
@@ -231,8 +289,8 @@ export const refreshToken = async (
 
     if (!tokenExists) {
       res.status(401).json({
-        status: 'error',
-        message: 'Invalid refresh token',
+        status: "error",
+        message: "Jeton de renouvellement invalide",
       });
       return;
     }
@@ -241,34 +299,61 @@ export const refreshToken = async (
     const tokens = generateTokens({
       id: user.id,
       email: user.email,
+      sessionVersion: user.sessionVersion || 0,
     });
 
-    // Replace old refresh token with new one
-    user.refreshTokens = user.refreshTokens.filter(
-      (t) => t.token !== refreshToken
+    // Rotate one matching session with a compare-and-set so revocation wins races.
+    const rotated = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        isActive: { $ne: false },
+        ...sessionVersionQuery(user.sessionVersion || 0),
+        refreshTokens: {
+          $elemMatch: { token: refreshToken, expiresAt: { $gt: new Date() } },
+        },
+      },
+      {
+        $set: {
+          "refreshTokens.$": {
+            token: tokens.refreshToken,
+            deviceId: deviceId || "web",
+            deviceName: deviceName || "Web Browser",
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE),
+          },
+        },
+      },
+      { new: true },
     );
-    user.refreshTokens.push({
-      token: tokens.refreshToken,
-      deviceId: deviceId || 'web',
-      deviceName: deviceName || 'Web Browser',
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
-    await user.save();
+    if (!rotated) {
+      res
+        .status(401)
+        .json({ status: "error", message: "Session expirée ou révoquée" });
+      return;
+    }
 
-    res.status(200)
-      .cookie('admin_token', tokens.accessToken, cookieOptions(ACCESS_TOKEN_MAX_AGE))
-      .cookie('admin_refresh_token', tokens.refreshToken, cookieOptions(REFRESH_TOKEN_MAX_AGE))
+    res
+      .status(200)
+      .cookie(
+        "admin_token",
+        tokens.accessToken,
+        cookieOptions(ACCESS_TOKEN_MAX_AGE),
+      )
+      .cookie(
+        "admin_refresh_token",
+        tokens.refreshToken,
+        cookieOptions(REFRESH_TOKEN_MAX_AGE),
+      )
       .json({
-      status: 'success',
-      message: 'Token refreshed successfully',
-      data: { tokens },
-    });
+        status: "success",
+        message: "Session renouvelée",
+        data: { tokens },
+      });
   } catch (error) {
-    logger.error('Refresh token error:', error);
+    logger.error("Refresh token error:", error);
     res.status(401).json({
-      status: 'error',
-      message: 'Invalid refresh token',
+      status: "error",
+      message: "Jeton de renouvellement invalide",
     });
   }
 };
@@ -278,289 +363,39 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     if (!requireAuth(authReq, res)) return;
-    const refreshTokenValue = req.body.refreshToken || req.cookies?.admin_refresh_token;
+    const refreshTokenValue =
+      req.body?.refreshToken || req.cookies?.admin_refresh_token;
 
-    // Find user and remove refresh token
-    const user = await User.findById(authReq.user.id);
-
-    if (user && refreshTokenValue) {
-      user.refreshTokens = user.refreshTokens.filter(
-        (t) => t.token !== refreshTokenValue
+    // Removing a session cannot overwrite a concurrent login or renewal.
+    if (refreshTokenValue)
+      await User.updateOne(
+        { _id: authReq.user.id },
+        { $pull: { refreshTokens: { token: refreshTokenValue } } },
       );
-      await user.save();
-    }
 
-    res.status(200)
-      .clearCookie('admin_token', { path: '/' })
-      .clearCookie('admin_refresh_token', { path: '/' })
+    res
+      .status(200)
+      .clearCookie("admin_token", { path: "/" })
+      .clearCookie("admin_refresh_token", { path: "/" })
       .json({
-      status: 'success',
-      message: 'Logout successful',
-    });
-  } catch (error) {
-    logger.error('Logout error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to logout',
-    });
-  }
-};
-
-// Forgot password - send reset token
-export const forgotPassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      // Don't reveal that user doesn't exist
-      res.status(200).json({
-        status: 'success',
-        message: 'If the email exists, a password reset link has been sent',
+        status: "success",
+        message: "Déconnexion réussie",
       });
-      return;
-    }
-
-    // Generate reset token
-    const resetToken = generateToken();
-    user.passwordResetToken = resetToken;
-    user.passwordResetExpires = new Date(Date.now() + 3600000); // 1 hour
-    await user.save();
-
-    // Send password reset email (non-blocking — failure is logged, not thrown)
-    sendPasswordResetEmail(user.email, resetToken, user.fullName).catch((err) => {
-      logger.error('Failed to send password reset email:', err);
-    });
-
-    res.status(200).json({
-      status: 'success',
-      message: 'If the email exists, a password reset link has been sent',
-    });
   } catch (error) {
-    logger.error('Forgot password error:', error);
+    logger.error("Logout error:", error);
     res.status(500).json({
-      status: 'error',
-      message: 'Failed to process password reset request',
-    });
-  }
-};
-
-// Reset password with token
-export const resetPassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { token, newPassword } = req.body;
-
-    const user = await User.findOne({
-      passwordResetToken: token,
-      passwordResetExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      res.status(400).json({
-        status: 'error',
-        message: 'Invalid or expired reset token',
-      });
-      return;
-    }
-
-    // Hash new password
-    user.password = await hashPassword(newPassword);
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    
-    // Clear all refresh tokens
-    user.refreshTokens = [];
-    
-    await user.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Password reset successful',
-    });
-  } catch (error) {
-    logger.error('Reset password error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to reset password',
+      status: "error",
+      message: "Impossible de se déconnecter",
     });
   }
 };
 
 // Get current user
-export const getCurrentUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
 
-    const user = await User.findById(authReq.user.id).select('-password -refreshTokens');
-
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    res.status(200).json({
-      status: 'success',
-      data: { user },
-    });
-  } catch (error) {
-    logger.error('Get current user error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to get user',
-    });
-  }
-};
-
-// Update user profile
-export const updateProfile = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
-    const { fullName, phone, avatar, preferences } = req.body;
-
-    const user = await User.findById(authReq.user.id);
-
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    // Update fields
-    if (fullName) user.fullName = fullName;
-    if (phone) user.phone = phone;
-    if (avatar) user.avatar = avatar;
-    if (preferences) {
-      user.preferences = { ...user.preferences, ...preferences };
-    }
-
-    await user.save();
-
-    const userResponse = user.toObject();
-    const { password: _, refreshTokens: __, ...safeUser } = userResponse;
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Profile updated successfully',
-      data: { user: safeUser },
-    });
-  } catch (error) {
-    logger.error('Update profile error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to update profile',
-    });
-  }
-};
-
-// Change password
-export const changePassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
-    const { currentPassword, newPassword } = req.body;
-
-    const user = await User.findById(authReq.user.id);
-
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    // Verify current password
-    const isPasswordValid = await comparePassword(currentPassword, user.password);
-
-    if (!isPasswordValid) {
-      res.status(401).json({
-        status: 'error',
-        message: 'Current password is incorrect',
-      });
-      return;
-    }
-
-    // Hash and save new password
-    user.password = await hashPassword(newPassword);
-    
-    // Clear all refresh tokens (force re-login on all devices)
-    user.refreshTokens = [];
-    
-    await user.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Password changed successfully',
-    });
-  } catch (error) {
-    logger.error('Change password error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to change password',
-    });
-  }
-};
-
-// Delete user account
-export const deleteAccount = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const authReq = req as AuthRequest;
-    if (!requireAuth(authReq, res)) return;
-
-    const userId = authReq.user.id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-      });
-      return;
-    }
-
-    // Cleanup related data
-    await Notification.deleteMany({ userId });
-    await Group.updateMany(
-      { 'members.userId': userId },
-      { $pull: { members: { userId } } }
-    );
-    await User.findByIdAndDelete(userId);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Account deleted successfully',
-    });
-  } catch (error) {
-    logger.error('Delete account error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to delete account',
-    });
-  }
-};
+export { forgotPassword, resetPassword } from "./password.controller";
+export {
+  getCurrentUser,
+  updateProfile,
+  changePassword,
+  deleteAccount,
+} from "./account.controller";

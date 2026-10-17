@@ -6,9 +6,7 @@ import {
   TouchableOpacityProps,
   View,
 } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-
-type IconName = keyof typeof FontAwesome.glyphMap;
+import Icon, { IconName } from './Icon';
 
 interface ButtonProps extends Omit<TouchableOpacityProps, 'children'> {
   title?: string;
@@ -34,11 +32,12 @@ export default function Button({
   fullWidth = false,
   disabled,
   style,
+  className,
   ...props
 }: ButtonProps) {
   const getVariantStyles = (): string => {
     if (disabled || loading) {
-      return 'bg-gray-200';
+      return 'bg-gray-200 dark:bg-gray-600';
     }
 
     switch (variant) {
@@ -97,18 +96,31 @@ export default function Button({
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';
+  // Callers pass layout classes (mr-2, mb-3…): merge them instead of letting
+  // the spread props replace the variant background, which left white text on
+  // a transparent button.
+  const extraClassName = className ?? '';
   const textColor = getTextColor();
+  const iconSpacingStyle = { marginHorizontal: 6 };
+  const buttonShadowStyle = {
+    shadowColor: variant !== 'ghost' && variant !== 'outline' && !disabled ? '#000' : 'transparent',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: variant !== 'ghost' && variant !== 'outline' && !disabled ? 2 : 0,
+  };
 
   const renderIcon = () => {
     if (loading) return null;
-    if (icon) return <View style={{ marginHorizontal: 6 }}>{icon}</View>;
+    if (icon) return <View style={iconSpacingStyle}>{icon}</View>;
     if (iconName) {
       return (
-        <FontAwesome
+        <Icon
           name={iconName}
           size={size === 'sm' ? 14 : 16}
           color={textColor}
-          style={{ marginHorizontal: 6 }}
+          decorative
+          style={iconSpacingStyle}
         />
       );
     }
@@ -118,19 +130,10 @@ export default function Button({
   return (
     <TouchableOpacity
       disabled={disabled || loading}
-      className={`rounded-xl flex-row items-center justify-center ${getVariantStyles()} ${getSizeStyles()} ${widthStyle}`}
-      style={[
-        {
-          shadowColor:
-            variant !== 'ghost' && variant !== 'outline' && !disabled ? '#000' : 'transparent',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: variant !== 'ghost' && variant !== 'outline' && !disabled ? 2 : 0,
-        },
-        style,
-      ]}
+      className={`rounded-xl flex-row items-center justify-center ${getVariantStyles()} ${getSizeStyles()} ${widthStyle} ${extraClassName}`}
+      style={[buttonShadowStyle, style]}
       activeOpacity={0.8}
+      accessibilityRole="button"
       {...props}
     >
       {loading ? (

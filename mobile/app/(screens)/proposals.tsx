@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { Alert } from '@/services/dialog.service';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProposalStore } from '@/store/proposalStore';
-import { Loading } from '@/components/ui';
+import { Icon, Loading } from '@/components/ui';
 import VoteCard from '@/components/VoteCard';
 
 export default function ProposalsScreen() {
@@ -38,7 +39,7 @@ export default function ProposalsScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-gray-50 dark:bg-gray-900"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View className="px-4 mt-4">
@@ -52,10 +53,12 @@ export default function ProposalsScreen() {
 
         {/* Proposals List */}
         {proposals.length === 0 ? (
-          <View className="bg-white rounded-xl p-8 items-center">
-            <Text className="text-6xl mb-4">📋</Text>
-            <Text className="text-gray-800 text-lg font-bold mb-2">Aucune proposition</Text>
-            <Text className="text-gray-600 text-sm text-center mb-6">
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-8 items-center">
+            <Icon name="file-text-o" size={48} color="#0284c7" />
+            <Text className="text-gray-800 dark:text-gray-100 text-lg font-bold mb-2">
+              Aucune proposition
+            </Text>
+            <Text className="text-gray-600 dark:text-gray-300 text-sm text-center mb-6">
               Les propositions de dépenses apparaîtront ici
             </Text>
           </View>

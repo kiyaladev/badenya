@@ -27,7 +27,7 @@ export function getErrorMessage(
 
   // Check if it's an Error instance
   if (error instanceof Error) {
-    return error.message;
+    return error.message || defaultMessage;
   }
 
   // Check if it's an object with a message property
@@ -37,7 +37,7 @@ export function getErrorMessage(
     'message' in error &&
     typeof error.message === 'string'
   ) {
-    return error.message;
+    return error.message || defaultMessage;
   }
 
   // Return default message

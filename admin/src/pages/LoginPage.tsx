@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const requested = location.state?.from;
+  const destination = typeof requested === 'string' && requested.startsWith('/') && !requested.startsWith('//') && requested !== '/login' ? requested : '/dashboard';
   const { login, isAuthenticated, isLoading, error, clearError } = useAuthStore();
   
   const [formData, setFormData] = useState({
@@ -18,9 +21,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, destination]);
 
   useEffect(() => {
     return () => {
@@ -61,7 +64,7 @@ export default function LoginPage() {
     
     try {
       await login(formData);
-      navigate('/dashboard');
+      navigate(destination, { replace: true });
     } catch (error) {
       // Error is handled by the store
       console.error('Login error:', error);
@@ -111,6 +114,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 id="email"
+                required
                 value={formData.email}
                 onChange={(e) => {
                   setFormData({ ...formData, email: e.target.value });
@@ -140,6 +144,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 id="password"
+                required
                 value={formData.password}
                 onChange={(e) => {
                   setFormData({ ...formData, password: e.target.value });
@@ -176,7 +181,7 @@ export default function LoginPage() {
         </form>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
           <p>🔒 Accès réservé aux administrateurs</p>
         </div>
       </div>
